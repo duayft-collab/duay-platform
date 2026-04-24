@@ -7576,8 +7576,9 @@ function _renderCariDetail(id) {
 
   var odm = typeof loadOdm === 'function' ? loadOdm() : [];
   var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
-  var cOdm = odm.filter(function(o) { return o.cariId === c.id || (o.note || '').toLowerCase().includes(c.name.toLowerCase()); });
-  var cTah = tah.filter(function(t) { return t.cariId === c.id || (t.from || '').toLowerCase().includes(c.name.toLowerCase()); });
+  /* [CARI-EKSTRE-ID-MATCH-001] note/from fallback kaldırıldı — yanlış eşleşme önlendi */
+  var cOdm = odm.filter(function(o) { return String(o.cariId) === String(c.id); });
+  var cTah = tah.filter(function(t) { return String(t.cariId) === String(c.id); });
   var totalBorc = cOdm.reduce(function(a, o) { return a + (parseFloat(o.amount) || 0); }, 0);
   var totalAlacak = cTah.reduce(function(a, t) { return a + (parseFloat(t.amount) || 0); }, 0);
   var netBakiye = totalAlacak - totalBorc;
@@ -7951,8 +7952,9 @@ window._exportCariXlsx = function() {
   if (!c) return;
   var odm = typeof loadOdm === 'function' ? loadOdm() : [];
   var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
-  var cOdm = odm.filter(function(o) { return o.cariId === c.id || (o.note || '').toLowerCase().includes(c.name.toLowerCase()); });
-  var cTah = tah.filter(function(t) { return t.cariId === c.id || (t.from || '').toLowerCase().includes(c.name.toLowerCase()); });
+  /* [CARI-EKSTRE-ID-MATCH-001] note/from fallback kaldırıldı — yanlış eşleşme önlendi */
+  var cOdm = odm.filter(function(o) { return String(o.cariId) === String(c.id); });
+  var cTah = tah.filter(function(t) { return String(t.cariId) === String(c.id); });
   var rows = [['Tarih', 'Tip', 'Açıklama', 'Tutar', 'Durum']];
   cOdm.forEach(function(o) { rows.push([o.due || '', 'Ödeme', o.name, -(o.amount || 0), o.paid ? 'Ödendi' : 'Bekliyor']); });
   cTah.forEach(function(t) { rows.push([t.due || '', 'Tahsilat', t.name, t.amount || 0, t.collected ? 'Tahsil' : 'Bekliyor']); });
@@ -7973,8 +7975,9 @@ window._exportCariPDF = function() {
   if (!c) return;
   var odm = typeof loadOdm === 'function' ? loadOdm() : [];
   var tah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
-  var cOdm = odm.filter(function(o) { return o.cariId === c.id || (o.note || '').toLowerCase().includes(c.name.toLowerCase()); });
-  var cTah = tah.filter(function(t) { return t.cariId === c.id || (t.from || '').toLowerCase().includes(c.name.toLowerCase()); });
+  /* [CARI-EKSTRE-ID-MATCH-001] note/from fallback kaldırıldı — yanlış eşleşme önlendi */
+  var cOdm = odm.filter(function(o) { return String(o.cariId) === String(c.id); });
+  var cTah = tah.filter(function(t) { return String(t.cariId) === String(c.id); });
   var totalB = cOdm.reduce(function(a, o) { return a + (parseFloat(o.amount) || 0); }, 0);
   var totalA = cTah.reduce(function(a, t) { return a + (parseFloat(t.amount) || 0); }, 0);
 
