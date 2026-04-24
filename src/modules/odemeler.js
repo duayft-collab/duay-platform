@@ -6965,9 +6965,10 @@ function deleteCari(id) {
   var odm = typeof loadOdm === 'function' ? loadOdm({tumKullanicilar:true}) : [];
   var tah = typeof loadTahsilat === 'function' ? loadTahsilat({tumKullanicilar:true}) : [];
   var sat = typeof loadSatinalma === 'function' ? loadSatinalma() : (window.loadSatinalma?.() || []);
-  var odmBagli = odm.filter(function(o){ return !o.isDeleted && (String(o.cariId||'') === cariId || (o.supplier||'') === cariAd); }).length;
-  var tahBagli = tah.filter(function(t){ return !t.isDeleted && (String(t.cariId||'') === cariId || (t.cariName||'') === cariAd); }).length;
-  var satBagli = sat.filter(function(s){ return !s.isDeleted && ((s.supplier||'') === cariAd || (s.piNo||'') === cariAd); }).length;
+  /* [CARI-UX-COKLU-FIX-001] Boş cari adı → tüm supplier'sız hareketlere sahte "bağlı" yok — sadece cariId match */
+  var odmBagli = odm.filter(function(o){ return !o.isDeleted && (String(o.cariId||'') === cariId || (cariAd && (o.supplier||'') === cariAd)); }).length;
+  var tahBagli = tah.filter(function(t){ return !t.isDeleted && (String(t.cariId||'') === cariId || (cariAd && (t.cariName||'') === cariAd)); }).length;
+  var satBagli = sat.filter(function(s){ return !s.isDeleted && cariAd && ((s.supplier||'') === cariAd || (s.piNo||'') === cariAd); }).length;
   var toplamHareket = odmBagli + tahBagli + satBagli;
 
   var silFunc = function() {
@@ -7032,7 +7033,8 @@ function _cariDropdownHTML(selectedId, inputId) {
  */
 window._openQuickCari = function(editId) {
   var old = document.getElementById('mo-quick-cari'); if (old) old.remove();
-  var c = editId ? loadCari().find(function(x) { return x.id === editId; }) : null;
+  /* [CARI-UX-COKLU-FIX-001] String/Number id toleransı — kalem düzenleme bulunamadı bug fix */
+  var c = editId ? loadCari().find(function(x) { return String(x.id) === String(editId); }) : null;
 
   var mo = document.createElement('div');
   mo.className = 'mo'; mo.id = 'mo-quick-cari'; mo.style.display = 'flex'; ;
@@ -7606,7 +7608,13 @@ window._selectCari = function(id) {
 window._cariTeklifVer = function(id) {
   var c = (typeof loadCari === 'function' ? loadCari() : []).find(function(x) { return String(x.id) === String(id); });
   if (!c) { window.toast?.('Cari bulunamadı', 'err'); return; }
-  if (typeof window._openSTModal !== 'function') { window.toast?.('Satış Teklifleri modülü yüklenemedi', 'err'); return; }
+  /* [CARI-UX-COKLU-FIX-001] _openSTModal alternatif fallback: yoksa Satış → Proforma Teklif menüsüne yönlendir + console.info teşhis */
+  if (typeof window._openSTModal !== 'function') {
+    console.info('[CARI-TEKLIF-VER] _openSTModal yok — nav fallback', { fonksiyon: 'window._openSTModal', cariAd: c.name });
+    window.toast?.('Satış Teklifi modalı yüklenmedi — menüden Proforma Teklif sekmesine gidiyorum...', 'warn');
+    if (typeof window.goTo === 'function') setTimeout(function(){ window.goTo('proforma-teklifler'); }, 800);
+    return;
+  }
   window._openSTModal(null); // yeni teklif modal
   // Modal async render olduğundan 100ms sonra müşteri select'i doldur
   setTimeout(function() {
@@ -7876,6 +7884,8 @@ function _renderCariDetail(id) {
         + ((c.type === 'musteri' || !c.type) ? '<button class="btn btnp" onclick="window._cariTeklifVer?.(' + c.id + ')" style="font-size:11px;background:var(--ac);color:#fff;border-color:var(--ac)">📄 Teklif Ver</button>' : '')
         + '<button class="btn btns" onclick="openCariStatement(' + c.id + ',\'user\')" style="font-size:11px">📊 Özet</button>'
         + ((c.cariType === 'potansiyel' || !c.cariType) ? '<button class="btn btns" onclick="window._upgradeCariToActive(' + c.id + ')" style="font-size:11px;color:#F59E0B">⬆ Aktif Yap</button>' : '')
+        /* [CARI-UX-COKLU-FIX-001] Reddedilmiş cari → tekrar değerlendirme: status=rejected temizle, cariType='potansiyel' yap */
+        + (c.status === 'rejected' && _isManagerO() ? '<button class="btn btns" onclick="event.stopPropagation();if(confirm(\'Reddedilmiş cari tekrar potansiyel aşamasına alınsın mı?\')){var cs=loadCari();var idx=cs.findIndex(function(x){return String(x.id)===String(' + c.id + ');});if(idx>=0){cs[idx].status=null;cs[idx].cariType=\'potansiyel\';cs[idx].updatedAt=Date.now();storeCari(cs);window.toast?.(\'Cari tekrar potansiyel\',\'ok\');renderCari();}}" style="font-size:11px;color:#16A34A">↻ Tekrar Aç</button>' : '')
         + (c.cariType === 'aktif' && _isManagerO() ? '<button class="btn btns" onclick="window._approveCariUpgrade(' + c.id + ')" style="font-size:11px;color:#16A34A">✓ Onayla</button>' : '')
         + (_isManagerO() ? '<button class="btn btns" onclick="window._assignCariReview(' + c.id + ')" style="font-size:11px;color:#6366F1">👁 İncelet</button>' : '')
         + '<button class="btn btns" onclick="window._openQuickCari?.(' + c.id + ')" style="font-size:11px">✏️</button>'
@@ -7923,7 +7933,8 @@ function _renderCariDetail(id) {
         return '';
       })()
     // Bento
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:16px">'
+    /* [CARI-UX-COKLU-FIX-001] 4→5 sütun: Toplam Alacak + Borç + Net Bakiye + İşlem Sayısı + Risk Skoru aynı satırda */
+    + '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">'
       + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Toplam Alacak</div><div style="font-size:18px;font-weight:700;color:#16A34A">₺' + Math.round(totalAlacak).toLocaleString('tr-TR') + '</div></div>'
       + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Toplam Borç</div><div style="font-size:18px;font-weight:700;color:#DC2626">₺' + Math.round(totalBorc).toLocaleString('tr-TR') + '</div></div>'
       + '<div style="background:var(--sf);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--t3)">Net Bakiye</div><div style="font-size:18px;font-weight:700;color:' + (netBakiye >= 0 ? '#16A34A' : '#DC2626') + '">' + (netBakiye >= 0 ? '+' : '') + '₺' + Math.abs(Math.round(netBakiye)).toLocaleString('tr-TR') + '</div></div>'
@@ -9195,7 +9206,8 @@ window._qcUploadDoc = function(docType) {
       var editId = parseInt(document.getElementById('qc-edit-id')?.value || '0') || 0;
       if (editId) {
         var d = loadCari();
-        var c = d.find(function(x) { return x.id === editId; });
+        /* [CARI-UX-COKLU-FIX-001] Evrak yüklemede de String/Number toleransı — sessiz fail fix */
+        var c = d.find(function(x) { return String(x.id) === String(editId); });
         if (c) {
           c[docType] = { name: file.name, data: e.target.result, ts: _nowTso() };
           c.evrakTamamlandi = !!(c.vergiLevhasi && c.imzaSirkuleri);
