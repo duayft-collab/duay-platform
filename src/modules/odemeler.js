@@ -7537,7 +7537,8 @@ function renderCari() {
         + '</div>'
         + '<div style="font-size:10px;color:var(--t3)">' + (c.type === 'musteri' ? 'Müşteri' : c.type === 'tedarikci' ? 'Tedarikçi' : 'Diğer') + ' · ' + stageLabel + '</div></div>'
       /* CARI-HIZLI-TEKLIF-001: cari satırından direkt satış teklifi aç */
-      + ((c.type === 'musteri' || !c.type) ? '<button onclick="event.stopPropagation();window._stYeniMusteri?.(\'' + String(c.name||'').replace(/\'/g,'').replace(/</g,'') + '\')" class="btn btns cari-row-action" style="font-size:9px;padding:2px 7px;flex-shrink:0;opacity:0;transition:opacity .15s" title="Bu müşteriye yeni satış teklifi">+ Teklif</button>' : '')
+      /* [CARI-TEKLIF-BUTON-AKTIF-001] Her zaman görünür — hover-gizli bug (Safari/iPad'de çalışmıyordu) */
+      + ((c.type === 'musteri' || !c.type) ? '<button onclick="event.stopPropagation();window._stYeniMusteri?.(\'' + String(c.name||'').replace(/\'/g,'').replace(/</g,'') + '\')" class="btn btns cari-row-action" style="font-size:9px;padding:3px 8px;flex-shrink:0;border:0.5px solid rgba(24,95,165,0.3);color:#185FA5;background:transparent" title="Bu müşteriye yeni satış teklifi">+ Teklif</button>' : '')
     + '</div>';
   }).join('');
 
@@ -9506,8 +9507,12 @@ window._csdTab = function(btn, panelName) {
 
 /* CARI-HIZLI-TEKLIF-001: cari listesinden müşteri adı prefilled satış teklifi aç */
 window._stYeniMusteri = function(musteriAdi) {
+  /* [CARI-TEKLIF-BUTON-AKTIF-001] _openSTModal yoksa Proforma Teklifler sayfasına yönlendir + teşhis log */
   if (typeof window._openSTModal !== 'function') {
-    window.toast?.('Satış teklif modülü yüklenmedi','err'); return;
+    console.info('[CARI-TEKLIF-BUTON] _openSTModal yok — nav fallback', { musteriAdi: musteriAdi });
+    window.toast?.('Satış Teklifi modalı yüklenmedi — Proforma Teklif sekmesine yönlendiriliyor...', 'warn');
+    if (typeof window.goTo === 'function') setTimeout(function(){ window.goTo('proforma-teklifler'); }, 800);
+    return;
   }
   window._openSTModal();
   setTimeout(function(){
