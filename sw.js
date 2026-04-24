@@ -7,8 +7,9 @@
  * ════════════════════════════════════════════════════════════════
  */
 
-const CACHE_NAME    = 'duay-platform-v21';
-const CACHE_VERSION = '21.0.0';
+/* [CACHE-BUMP-2026-04-24-V22] Oturum sonu bump — 26 commit aktivasyon */
+const CACHE_NAME    = 'duay-platform-v22';
+const CACHE_VERSION = '22.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
