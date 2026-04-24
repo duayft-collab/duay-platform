@@ -201,7 +201,8 @@ window.renderSatinAlmaV2 = function() {
     /* SA-LISTE-REDESIGN-001: TUTAR + KUR (TRY) hesabı + fiyat trend (KUR cell'e gömülür) */
     var _alisFN=parseFloat(window._saV2AlisF?.(t))||0;
     var _paraN=window._saV2Para?.(t)||'TRY';
-    var _kurN=(_paraN!=='TRY'&&window._saKur&&window._saKur[_paraN])?Math.round(_alisFN*parseFloat(window._saKur[_paraN])):null;
+    /* [ALIS-LIST-KUR-HASSASIYET-001] Math.round kaldırıldı — kuruş hassasiyeti korundu */
+    var _kurN=(_paraN!=='TRY'&&window._saKur&&window._saKur[_paraN])?(_alisFN*parseFloat(window._saKur[_paraN])):null;
     /* SA-LISTE-REDESIGN-001 (fix): trend KUR cell içinde, grid-cell sayısı aligned (8/8) */
     /* SA-TREND-FIX-001: aynı para birimi kıyası — USD/TRY karışımı sahte yüzde üretiyordu */
     var _oncF=liste.filter(function(x){return x.id!==t.id&&x.jobId&&x.jobId===t.jobId&&!x.isDeleted&&(window._saV2Para?.(x)||'USD')===(window._saV2Para?.(t)||'USD');}).sort(function(a,b){return (b.createdAt||'').localeCompare(a.createdAt||'');});
@@ -210,7 +211,7 @@ window.renderSatinAlmaV2 = function() {
     if(_oncFiyat>0&&_alisFN>0){var _trendPct=Math.round(((_alisFN-_oncFiyat)/_oncFiyat)*100);var _trendRenk=_trendPct<0?'#0F6E56':_trendPct>0?'#A32D2D':'var(--color-text-tertiary)';_trendHTML='<div style="font-size:9px;font-weight:500;color:'+_trendRenk+'">'+(_trendPct<=0?'↓':'↑')+Math.abs(_trendPct)+'%</div>';}
     h+='<div style="font-size:11px;font-weight:500;color:var(--color-text-primary);white-space:nowrap">'+((window._saV2AlisF?.(t)||parseFloat(t.toplamTutar)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}))+' <span style="font-size:9px;color:var(--color-text-tertiary);font-weight:400">'+(window._saV2Para?.(t)||t.toplamPara||'USD')+'</span></div>';
     /* SA-LISTE-ROW-FIX-001: KUR + trend wrapper nowrap — 2 satıra kayma önlendi */
-    h+='<div style="text-align:right;white-space:nowrap"><div style="font-size:10px;color:var(--color-text-tertiary)">'+(_kurN?_kurN.toLocaleString('tr-TR')+'₺':'—')+'</div>'+_trendHTML+'</div>';
+    h+='<div style="text-align:right;white-space:nowrap"><div style="font-size:10px;color:var(--color-text-tertiary)">'+(_kurN?_kurN.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+'₺':'—')+'</div>'+_trendHTML+'</div>';
     // Kolon 5: durum badge + geçerlilik badge (mevcut _bittiBadge/_uyariIkon mantığı korunsun)
     /* SA-PIPELINE-001b: badge renk/label SA_PIPELINE_STAGES'tan, fallback eski renkler */
     /* SA-DURUM-MIGRATE-001: eski durum değerleri için SA_DURUM_MAP fallback */
