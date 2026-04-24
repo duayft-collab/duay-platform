@@ -7293,25 +7293,55 @@ function renderCari() {
   /* [CARI-KPI-BAKIYE-UNIFY-001] Kaynak değişti: c.islemler → odm+tah (detay panel ile tutarlı) */
   var _kpiEl = document.getElementById('cari-kpi');
   if (_kpiEl) {
-    var _topAlacak = 0, _topBorc = 0;
+    /* [CARI-KPI-MULTI-CURRENCY-001] Para birimi ayrımı — currency alanı, cariId + cariName fallback */
+    var _alacakByPara = {}, _borcByPara = {};
     var _kpiOdm = typeof loadOdm === 'function' ? loadOdm() : [];
     var _kpiTah = typeof loadTahsilat === 'function' ? loadTahsilat() : [];
-    var _cariIdSet = {};
-    all.forEach(function(c) { _cariIdSet[String(c.id)] = true; });
+    var _cariIdSet = {}, _cariNameSet = {};
+    all.forEach(function(c) {
+      _cariIdSet[String(c.id)] = true;
+      if (c.name) _cariNameSet[String(c.name).toLowerCase()] = true;
+    });
+    var _kpiEslesir = function(r) {
+      if (r.cariId && _cariIdSet[String(r.cariId)]) return true;
+      if (r.cariName && _cariNameSet[String(r.cariName).toLowerCase()]) return true;
+      return false;
+    };
     _kpiOdm.forEach(function(o) {
       if (o.isDeleted) return;
-      if (_cariIdSet[String(o.cariId)]) _topBorc += parseFloat(o.amount) || 0;
+      if (!_kpiEslesir(o)) return;
+      var tt = parseFloat(o.amount) || 0; if (tt <= 0) return;
+      var para = o.currency || o.para || o.paraBirimi || 'TRY';
+      _borcByPara[para] = (_borcByPara[para] || 0) + tt;
     });
     _kpiTah.forEach(function(t) {
       if (t.isDeleted) return;
-      if (_cariIdSet[String(t.cariId)]) _topAlacak += parseFloat(t.amount) || 0;
+      if (!_kpiEslesir(t)) return;
+      var vv = parseFloat(t.amount) || 0; if (vv <= 0) return;
+      var para = t.currency || t.para || t.paraBirimi || 'TRY';
+      _alacakByPara[para] = (_alacakByPara[para] || 0) + vv;
     });
-    var _kpiNet = _topAlacak - _topBorc;
+    var _netByPara = {};
+    Object.keys(_alacakByPara).forEach(function(p){ _netByPara[p] = (_alacakByPara[p] || 0) - (_borcByPara[p] || 0); });
+    Object.keys(_borcByPara).forEach(function(p){ if (!(p in _netByPara)) _netByPara[p] = -(_borcByPara[p] || 0); });
+    var _kpiParaSimge = function(p) { return p==='USD'?'$':p==='EUR'?'€':p==='GBP'?'£':p==='TRY'?'₺':p==='CNY'?'¥':p==='JPY'?'¥':(p+' '); };
+    var _kpiParaBirimRender = function(obj, renk, mutlak) {
+      var keys = Object.keys(obj).filter(function(k){ return obj[k] !== 0; });
+      if (!keys.length) return '<div style="font-size:20px;font-weight:600;color:var(--t3);margin-top:4px">—</div>';
+      var fs = keys.length > 1 ? '13px' : '20px';
+      return keys.map(function(p){
+        var v = obj[p];
+        var prefix = mutlak && v < 0 ? '-' : (mutlak && v >= 0 ? '+' : '');
+        var abs = mutlak ? Math.abs(v) : v;
+        return '<div style="font-size:'+fs+';font-weight:600;color:'+renk+';font-variant-numeric:tabular-nums;line-height:1.25;margin-top:2px">'+prefix+_kpiParaSimge(p)+Math.round(abs).toLocaleString('tr-TR')+'</div>';
+      }).join('');
+    };
     _kpiEl.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:0.5px solid var(--b);background:var(--sf)">'
       + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">MÜŞTERİ</div><div style="font-size:20px;font-weight:600;color:var(--t);margin-top:4px">' + all.length + '</div></div>'
-      + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">TOPLAM ALACAK</div><div style="font-size:20px;font-weight:600;color:#16A34A;margin-top:4px">₺' + Math.round(_topAlacak).toLocaleString('tr-TR') + '</div></div>'
-      + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">TOPLAM BORÇ</div><div style="font-size:20px;font-weight:600;color:#DC2626;margin-top:4px">₺' + Math.round(_topBorc).toLocaleString('tr-TR') + '</div></div>'
-      + '<div style="padding:14px 20px"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">NET BAKİYE</div><div style="font-size:20px;font-weight:600;color:' + (_kpiNet >= 0 ? '#16A34A' : '#DC2626') + ';margin-top:4px">' + (_kpiNet >= 0 ? '+' : '-') + '₺' + Math.abs(Math.round(_kpiNet)).toLocaleString('tr-TR') + '</div></div>'
+      /* [CARI-KPI-MULTI-CURRENCY-001] Her para birimi ayrık satır gösterim */
+      + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">TOPLAM ALACAK</div>' + _kpiParaBirimRender(_alacakByPara, '#16A34A', false) + '</div>'
+      + '<div style="padding:14px 20px;border-right:0.5px solid var(--b)"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">TOPLAM BORÇ</div>' + _kpiParaBirimRender(_borcByPara, '#DC2626', false) + '</div>'
+      + '<div style="padding:14px 20px"><div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em">NET BAKİYE</div>' + (function(){ var html=''; var keys=Object.keys(_netByPara).filter(function(k){return _netByPara[k]!==0;}); if(!keys.length) return '<div style="font-size:20px;font-weight:600;color:var(--t3);margin-top:4px">—</div>'; var fs=keys.length>1?'13px':'20px'; return keys.map(function(p){var v=_netByPara[p];var renk=v>=0?'#16A34A':'#DC2626';return '<div style="font-size:'+fs+';font-weight:600;color:'+renk+';font-variant-numeric:tabular-nums;line-height:1.25;margin-top:2px">'+(v>=0?'+':'-')+_kpiParaSimge(p)+Math.abs(Math.round(v)).toLocaleString('tr-TR')+'</div>';}).join(''); })() + '</div>'
       + '</div>';
   }
   var search = (document.getElementById('cari-search')?.value || '').toLowerCase();
