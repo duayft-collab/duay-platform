@@ -439,7 +439,24 @@ window._saV2FormKaydet = function() {
   if (!urunler.length) { window.toast?.('Ge\u00e7erli \u00fcr\u00fcn bulunamad\u0131', 'warn'); return; }
   var notDiv = document.getElementById('sav2f-not-div');
   var kosulDiv = document.getElementById('sav2f-teslimatKosul-div');
-  var toplamTutar = urunler.reduce(function(s, u) { return s + parseFloat(u.toplam || 0); }, 0);
+  /* [ALIS-FORM-TOPLAM-NORMALIZE-001] Tek birim → eski davranış; karışık → TL normalize */
+  var _paraSet = [];
+  urunler.forEach(function(u) { var p = u.para || 'USD'; if (_paraSet.indexOf(p) === -1) _paraSet.push(p); });
+  var _tekPara = _paraSet.length === 1 ? _paraSet[0] : null;
+  var _kurlar = window._saKur || window.DUAY_KUR || {};
+  var _fallbackKur = function(p) { return p==='USD'?44.55:p==='EUR'?51.70:p==='GBP'?59.30:p==='TRY'?1:1; };
+  var toplamTutar, toplamPara;
+  if (_tekPara) {
+    toplamTutar = urunler.reduce(function(s, u) { return s + parseFloat(u.toplam || 0); }, 0);
+    toplamPara = _tekPara;
+  } else {
+    toplamTutar = urunler.reduce(function(s, u) {
+      var p = u.para || 'USD';
+      var k = parseFloat(_kurlar[p]) || _fallbackKur(p);
+      return s + (parseFloat(u.alisF) || 0) * k * (parseFloat(u.miktar) || 0);
+    }, 0);
+    toplamPara = 'TRY';
+  }
   var kayit = {
     id: typeof window.generateId === 'function' ? window.generateId() : ('SA' + Date.now()),
     tedarikci: baslik.tedarikci, jobId: baslik.jobId, piNo: baslik.piNo, piTarih: baslik.piTarih,
@@ -448,7 +465,7 @@ window._saV2FormKaydet = function() {
     teslimYeri: baslik.teslimYeri, teslimMasraf: baslik.teslimMasraf, teslimat: baslik.teslimat,
     teklifId: baslik.teklifId || '',
     urunler: urunler, urunSayisi: urunler.length,
-    toplamTutar: toplamTutar.toFixed(2), toplamPara: urunler[0]?.para || 'USD',
+    toplamTutar: toplamTutar.toFixed(2), toplamPara: toplamPara, paraBirimleri: _paraSet,
     icNotlar: notDiv ? notDiv.innerHTML : '', teslimatKosul: kosulDiv ? kosulDiv.innerHTML : '',
     /* SA-FORM-PIPELINE-001: yeni teklif araştırma aşamasıyla başlar + 72h timer */
       gorsel: window._saV2FormGorselData || '', durum: 'arastirma', pipelineTimerBaslangic: new Date().toISOString(), pipelineTimerSaat: 72, pipelineAdimlari: [{ durum: 'arastirma', yeniDurum: 'arastirma', tarih: new Date().toISOString(), kim: window.CU?.()?.displayName || window.CU?.()?.name || '' }],
