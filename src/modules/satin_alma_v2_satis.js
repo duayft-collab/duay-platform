@@ -181,17 +181,26 @@ window._saV2TeklifOlustur = function(id) {
   ic += '</div>';
   ic += '</div>';
 
-  ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;margin:0 16px 8px">';
+  ic += '<div style="border:0.5px solid var(--b);border-radius:8px;overflow:hidden;margin:0 16px 8px">';
+  ic += '<div style="display:grid;grid-template-columns:65% 35%;gap:0">';
+  ic += '<div>';
   ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--s2);border-bottom:0.5px solid var(--b)">';
   ic += '<div style="font-size:9px;font-weight:500;color:var(--t2)">TEKL\u0130F \u015eARTLARI <span style="font-size:8px;color:var(--t3)">(max 10)</span></div>';
   ic += '<button onclick="event.stopPropagation();window._saV2SartEkle()" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">+ Ekle</button></div>';
-  ic += '<div id="st-sartlar-liste" style="padding:6px 10px;max-height:140px;overflow-y:auto"></div>';
-  ic += '<div style="padding:6px 10px;border-top:0.5px solid var(--b);display:flex;gap:6px">';
+  ic += '<div id="st-sartlar-liste" style="padding:6px 10px;max-height:180px;overflow-y:auto"></div>';
+  ic += '</div>';
+  ic += '<div style="border-left:0.5px solid var(--b);background:var(--s2);padding:14px;display:flex;flex-direction:column;justify-content:center;gap:14px">';
+  ic += '<div>';
+  ic += '<div style="font-size:10px;font-weight:500;color:var(--t3);letter-spacing:.08em;margin-bottom:6px">HAZIR SART</div>';
+  ic += '<div style="display:flex;gap:6px">';
   ic += '<select id="st-sart-sec" onclick="event.stopPropagation()" style="flex:1;font-size:10px;padding:4px 6px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit"><option value="">Haz\u0131r \u015fart se\u00e7in...</option>';
   (window._saV2Sartlar?.() || []).forEach(function(s) { ic += '<option value="' + _saEsc(s) + '">' + _saEsc(s.length > 60 ? s.slice(0, 57) + '...' : s) + '</option>'; });
   ic += '</select><button onclick="event.stopPropagation();window._saV2SartComboEkle()" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Se\u00e7</button></div>';
-  ic += '<div style="padding:4px 10px 8px;display:flex;gap:6px"><input id="st-sart-manuel" placeholder="Manuel \u015fart yaz..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:10px;padding:4px 6px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit">';
-  ic += '<button onclick="event.stopPropagation();window._saV2SartManuelEkle()" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Ekle</button></div></div>';
+  ic += '</div>';
+  ic += '<div>';
+  ic += '<div style="font-size:10px;font-weight:500;color:var(--t3);letter-spacing:.08em;margin-bottom:6px">MANUEL SART</div>';
+  ic += '<div style="display:flex;gap:6px"><input id="st-sart-manuel" placeholder="Manuel \u015fart yaz..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="flex:1;font-size:10px;padding:4px 6px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);font-family:inherit">';
+  ic += '<button onclick="event.stopPropagation();window._saV2SartManuelEkle()" style="font-size:10px;padding:4px 10px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Ekle</button></div></div></div></div></div>';
 
   ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:0.5px solid var(--b);flex-shrink:0;background:var(--sf)">';
   ic += '<button onclick="event.stopPropagation();document.getElementById(\'sav2-satis-modal\')?.remove();window._saV2AktifDuzenlemeTeklif=null" style="font-size:11px;padding:7px 16px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">\u0130ptal</button>';
