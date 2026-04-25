@@ -2795,13 +2795,17 @@ window._pdfNum = function(val, cur, useSym) {
   return num + ' ' + cur;
 };
 
+/* PDF-HARMONIZE-001: _pdfTeklifNormalize tanımı src/core/utils.js'e taşındı (paylaşımlı). Çağrılar burada kalır. */
+
 /* YENİ-1: PDF oluştur + Firebase Storage upload (format A)
  * Yeni pencere açıldıktan sonra w.document.documentElement.outerHTML ile HTML alınır,
  * html2pdf ile blob'a dönüştürülür, storageUpload ile Firebase'e yüklenir,
  * URL kayıt obj'inin pdfUrls[] array'ine push edilir.
  * Hata durumunda print dialog akışı etkilenmez — sadece toast uyarısı verilir.
  */
-window._pdfProformaUpload = async function(t, html) {
+window._pdfProformaUpload = async function(t, html, fmt) {
+  /* PDF-HARMONIZE-001: B/C için format param — default 'A' (geriye uyumlu) */
+  fmt = fmt || 'A';
   if (!window.html2pdf) {
     window.toast?.('PDF kütüphanesi yüklenemedi', 'warn');
     return null;
@@ -2833,7 +2837,7 @@ window._pdfProformaUpload = async function(t, html) {
       teklifler[idx].pdfUrls = teklifler[idx].pdfUrls || [];
       teklifler[idx].pdfUrls.push({
         revNo: revStr,
-        format: 'A',
+        format: fmt,
         url: result.url,
         path: result.path,
         size: result.size,
@@ -2856,6 +2860,9 @@ window._printSatisTeklif = function(id) {
   var t = d.find(function(x){return String(x.id)===String(id);});
   /* BUG-02/03: silent fail yerine kullanıcıya bilgi ver */
   if (!t) { window.toast?.('Teklif bulunamadı (id: ' + id + ')', 'warn'); return; }
+  /* PDF-HARMONIZE-001: tek truth source — şema fallback + cari lookup */
+  var n = window._pdfTeklifNormalize(t);
+  if (!n) return;
   var esc = window._esc;
   var cur = t.paraBirimi || 'USD';
   var curSym = cur==='USD'?'$':cur==='EUR'?'€':cur==='TRY'?'₺':cur;
@@ -2891,8 +2898,12 @@ window._printSatisTeklif = function(id) {
     // Header
     + '<div class="header"><h1>DUAY GLOBAL LLC</h1><h2>ISTANBUL &bull; T\u00dcRK\u0130YE</h2><h3>PROFORMA INVOICE</h3></div>'
     // Meta
-    + '<div class="meta"><div class="meta-box"><b>REF:</b> ' + esc(t.teklifNo) + '</div><div class="meta-box"><b>DATE:</b> ' + (t.ts||'').slice(0,10) + '</div><div class="meta-box"><b>VALIDITY:</b> ' + (t.gecerlilikTarihi ? t.gecerlilikTarihi : '5 working days') + '</div></div>'
-    + '<div class="meta-box" style="margin-bottom:12px"><b>CUSTOMER:</b> ' + esc(t.musteri||'—') + '</div>'
+    /* PDF-HARMONIZE-001: REF + revNo · VALIDITY n.gecerlilik */
+    + '<div class="meta"><div class="meta-box"><b>REF:</b> ' + esc(n.teklifNo) + (n.revNo !== '01' ? ' · R' + esc(n.revNo) : '') + '</div><div class="meta-box"><b>DATE:</b> ' + (t.ts||'').slice(0,10) + '</div><div class="meta-box"><b>VALIDITY:</b> ' + esc(n.gecerlilik) + '</div></div>'
+    /* PDF-HARMONIZE-001: müşteri detay — kod + adres + vergi no */
+    + '<div class="meta-box" style="margin-bottom:6px"><b>CUSTOMER:</b> ' + esc(n.musteri||'—') + (n.musteriKod ? ' <span style="font-size:9px;color:#888">[' + esc(n.musteriKod) + ']</span>' : '') + '</div>'
+    + (n.musteriAdres ? '<div style="font-size:10px;color:#666;line-height:1.5;padding:0 12px;margin-bottom:4px">' + esc(n.musteriAdres) + '</div>' : '')
+    + (n.musteriVergiNo ? '<div style="font-size:10px;color:#666;padding:0 12px;margin-bottom:12px">Tax ID: ' + esc(n.musteriVergiNo) + '</div>' : '<div style="margin-bottom:6px"></div>')
     // IMO uyarısı
     + (function(){var hasIMO=(t.urunler||[]).some(function(u){return u.imoMu;});return hasIMO?'<div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:6px;padding:10px 14px;margin-bottom:12px;color:#991B1B;font-weight:700;font-size:12px">⚠ ATTENTION: THIS SHIPMENT CONTAINS HAZARDOUS MATERIALS (IMO/DG CARGO)<br><span style="font-weight:400;font-size:10px">MSDS documents available upon request</span></div>':'';})()
     // Tablo — fotoğraflı
@@ -2907,14 +2918,21 @@ window._printSatisTeklif = function(id) {
     + '<tr class="total-row"><td colspan="5" style="text-align:right">TOTAL AMOUNT</td><td style="text-align:right;font-size:15px">' + totalAmt + '</td></tr>'
     + '</tbody></table>'
     // Terms — genişletilmiş
+    /* PDF-HARMONIZE-001: V2 form fallback (n.odeme/n.teslim/n.gecerlilik) */
     + '<div class="terms"><h4>TERMS & CONDITIONS</h4>'
-    + '<div>• Payment: ' + (t.odemeKosulu || '35% advance payment, 65% before dispatch') + '</div>'
-    + '<div>• Delivery: ' + (t.teslimSekli || 'FOB') + ' Istanbul · Lead time: ' + (t.teslimatSuresi || '30 working days') + '</div>'
+    + '<div>• Payment: ' + esc(n.odeme) + '</div>'
+    + '<div>• Delivery: ' + esc(n.teslim) + ' · Lead time: ' + (t.teslimatSuresi || '30 working days') + '</div>'
     + '<div>• All banking charges outside Turkey are on buyer\'s account</div>'
     + '<div>• Prices are exclusive of local taxes and duties at destination</div>'
     + '<div>• Insurance: To be covered by buyer unless otherwise agreed</div>'
     + '<div>• Any dispute shall be settled under Istanbul Chamber of Commerce arbitration</div>'
-    + '<div>• This offer is valid for ' + (t.gecerlilikTarihi ? 'until '+t.gecerlilikTarihi : '5 working days') + '</div></div>'
+    + '<div>• This offer is valid: ' + esc(n.gecerlilik) + '</div></div>'
+    /* PDF-HARMONIZE-001: kullanıcı tanımlı şartlar listesi */
+    + (n.sartlar.length
+        ? '<div style="margin-top:14px;padding:10px 12px;background:#f8f9fc;border-left:3px solid #1a365d;border-radius:4px;"><div style="font-weight:600;font-size:11px;color:#1a365d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Teklif Şartları</div><ol style="margin:0;padding-left:20px;font-size:10.5px;line-height:1.6;color:#444">'
+          + n.sartlar.map(function(s){ return '<li>' + esc(String(s)) + '</li>'; }).join('')
+          + '</ol></div>'
+        : '')
     // Bank
     + '<div class="bank"><h4>BANKING DETAILS</h4>'
     + '<div style="font-size:10px;margin-bottom:4px"><b>Account Holder:</b> ' + esc(banka.hesapSahibi||'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.') + '</div>'
@@ -3110,6 +3128,9 @@ window._printSatisTeklifB = function(id) {
   var t = d.find(function(x){return String(x.id)===String(id);});
   /* BUG-02/03: silent fail yerine kullanıcıya bilgi ver */
   if (!t) { window.toast?.('Teklif bulunamadı (id: ' + id + ')', 'warn'); return; }
+  /* PDF-HARMONIZE-001: tek truth source — şema fallback + cari lookup */
+  var n = window._pdfTeklifNormalize(t);
+  if (!n) return;
   var esc = window._esc;
   var cur = t.paraBirimi||'USD';
   /* BUG-02: banka bilgisi B template'ine eklendi (A'dan port) */
@@ -3117,13 +3138,19 @@ window._printSatisTeklifB = function(id) {
   var banka = (bankalar && bankalar.length) ? bankalar[0] : { name:'Albaraka Türk', sube:'Alibeyköy-117', iban:'TR650020300008895310000001', ibanEur:'TR380020300008895310000002', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
   var w = window.open('','_blank');
   /* FEAT-07d: tarayıcı native header/footer gizle (@page margin 0) */
-  w.document.write('<!DOCTYPE html><html><head><title>'+esc(t.teklifNo)+'</title><style>@page { size: A4; margin: 0 }*{margin:0;box-sizing:border-box}body{font-family:system-ui;color:#1a1a1a;font-size:12px;padding:30px;max-width:800px;margin:0 auto}'
+  w.document.write('<!DOCTYPE html><html><head><title>'+esc(n.teklifNo)+'</title><style>@page { size: A4; margin: 0 }*{margin:0;box-sizing:border-box}body{font-family:system-ui;color:#1a1a1a;font-size:12px;padding:30px;max-width:800px;margin:0 auto}'
     +'table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#6366F1;color:#fff;padding:8px;font-size:10px;text-transform:uppercase}td{padding:8px;border-bottom:1px solid #eee}'
     +'.total{background:#f8fafc;font-weight:700;font-size:14px}.bank{margin-top:16px;padding:12px;border:1px solid #6366F1;border-radius:6px;font-size:11px}.bank h4{color:#6366F1;font-size:11px;margin-bottom:6px}@media print{button{display:none!important}}</style></head><body>'
     +'<div style="display:flex;justify-content:space-between;margin-bottom:24px"><div><div style="font-size:20px;font-weight:800;color:#6366F1">DUAY GLOBAL</div><div style="font-size:10px;color:#999">Istanbul, Turkey</div></div>'
-    +'<div style="text-align:right"><div style="font-size:14px;font-weight:700">PROFORMA INVOICE</div><div style="font-size:11px;color:#666">'+esc(t.teklifNo)+'</div><div style="font-size:11px;color:#666">'+(t.ts||'').slice(0,10)+'</div></div></div>'
+    /* PDF-HARMONIZE-001: teklifNo + revNo header */
+    +'<div style="text-align:right"><div style="font-size:14px;font-weight:700">PROFORMA INVOICE</div><div style="font-size:11px;color:#666">'+esc(n.teklifNo)+(n.revNo !== '01' ? ' · R'+esc(n.revNo) : '')+'</div><div style="font-size:11px;color:#666">'+(t.ts||'').slice(0,10)+'</div></div></div>'
+    /* PDF-HARMONIZE-001: müşteri detay — kod + adres + vergi no */
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px"><div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">From</div><div style="font-weight:600">DUAY GLOBAL LLC</div><div style="font-size:11px;color:#666">Istanbul, Turkey</div></div>'
-    +'<div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">To</div><div style="font-weight:600">'+esc(t.musteri||'')+'</div></div></div>'
+    +'<div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">To</div><div style="font-weight:600">'+esc(n.musteri||'')+'</div>'
+    +(n.musteriKod ? '<div style="font-size:9px;color:#888;margin-top:2px">Code: '+esc(n.musteriKod)+'</div>' : '')
+    +(n.musteriAdres ? '<div style="font-size:10px;color:#666;line-height:1.4;margin-top:3px">'+esc(n.musteriAdres)+'</div>' : '')
+    +(n.musteriVergiNo ? '<div style="font-size:10px;color:#666;margin-top:2px">Tax ID: '+esc(n.musteriVergiNo)+'</div>' : '')
+    +'</div></div>'
     +'<table><thead><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>'
     /* PDF-FORMAT: tr-TR sayı + kod arkada (B format) */
     +(t.urunler||[]).map(function(u,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(u.urunAdi||'')+'</td><td style="text-align:center">'+(u.miktar||0)+'</td><td style="text-align:right">'+window._pdfNum(u.satisFiyat, cur, false)+'</td><td style="text-align:right">'+window._pdfNum((u.satisFiyat||0)*(u.miktar||0), cur, false)+'</td></tr>';}).join('')
@@ -3135,9 +3162,25 @@ window._printSatisTeklifB = function(id) {
     +(cur==='EUR' ? '<div>EUR IBAN: ' + esc(banka.ibanEur||banka.iban||'') + '</div>' : '')
     +(cur!=='USD'&&cur!=='EUR' ? '<div>IBAN: ' + esc(banka.iban||'') + '</div>' : '')
     +'<div><b>SWIFT:</b> ' + esc(banka.swift||'') + '</div></div>'
-    +'<div style="font-size:10px;color:#666;margin-top:16px">Terms: '+(t.teslimSekli||'FOB')+' · Payment: '+(t.odemeKosulu||'Advance')+' · Valid: '+(t.gecerlilikTarihi||'30 days')+'</div>'
+    /* PDF-HARMONIZE-001: V2 form fallback (n.teslim/n.odeme/n.gecerlilik) */
+    +'<div style="font-size:10px;color:#666;margin-top:16px">Terms: '+esc(n.teslim)+' · Payment: '+esc(n.odeme)+' · Valid: '+esc(n.gecerlilik)+'</div>'
+    /* PDF-HARMONIZE-001: kullanıcı tanımlı şartlar listesi */
+    +(n.sartlar.length
+        ? '<div style="margin-top:14px;padding:10px 12px;background:#f8f9fc;border-left:3px solid #6366F1;border-radius:4px"><div style="font-weight:600;font-size:11px;color:#6366F1;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Teklif Şartları</div><ol style="margin:0;padding-left:20px;font-size:10.5px;line-height:1.6;color:#444">'
+          + n.sartlar.map(function(s){ return '<li>' + esc(String(s)) + '</li>'; }).join('')
+          + '</ol></div>'
+        : '')
     +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer;border:1px solid #6366F1;border-radius:6px;background:#fff;color:#6366F1;font-weight:600">Print</button></body></html>');
   w.document.close();
+  /* PDF-HARMONIZE-001: B format için Firebase Storage upload */
+  if (window._pdfProformaUpload) {
+    setTimeout(function(){
+      try {
+        var _pdfHtml = w.document.documentElement.outerHTML;
+        window._pdfProformaUpload(t, _pdfHtml, 'B');
+      } catch(e) { console.error('[PDF-HARMONIZE-B] PDF upload init hata:', e); }
+    }, 100);
+  }
 };
 
 /** Format C — Detaylı teknik (multi-page) */
@@ -3146,6 +3189,9 @@ window._printSatisTeklifC = function(id) {
   var t = d.find(function(x){return String(x.id)===String(id);});
   /* BUG-02/03: silent fail yerine kullanıcıya bilgi ver */
   if (!t) { window.toast?.('Teklif bulunamadı (id: ' + id + ')', 'warn'); return; }
+  /* PDF-HARMONIZE-001: tek truth source — şema fallback + cari lookup */
+  var n = window._pdfTeklifNormalize(t);
+  if (!n) return;
   var esc = window._esc;
   var cur = t.paraBirimi||'USD';
   /* BUG-02: banka bilgisi C template'ine eklendi (A'dan port) */
@@ -3153,15 +3199,20 @@ window._printSatisTeklifC = function(id) {
   var banka = (bankalar && bankalar.length) ? bankalar[0] : { name:'Albaraka Türk', sube:'Alibeyköy-117', iban:'TR650020300008895310000001', ibanEur:'TR380020300008895310000002', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
   var w = window.open('','_blank');
   /* FEAT-07d: tarayıcı native header/footer gizle (@page margin 0) */
-  w.document.write('<!DOCTYPE html><html><head><title>'+esc(t.teklifNo)+'</title><style>@page { size: A4; margin: 0 }*{margin:0;box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a1a;font-size:12px;padding:40px;max-width:700px;margin:0 auto}'
+  w.document.write('<!DOCTYPE html><html><head><title>'+esc(n.teklifNo)+'</title><style>@page { size: A4; margin: 0 }*{margin:0;box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a1a;font-size:12px;padding:40px;max-width:700px;margin:0 auto}'
     +'h1{font-size:24px;color:#1a365d;text-align:center;margin-bottom:4px}h2{font-size:14px;color:#666;text-align:center;margin-bottom:24px}'
     +'.page-break{page-break-before:always;margin-top:40px}'
     +'table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#f0f0f0;padding:8px;font-size:10px;border:1px solid #ddd}td{padding:8px;border:1px solid #ddd}'
     +'.bank{margin-top:20px;padding:14px;border:1px solid #1a365d;border-radius:4px;font-size:11px}.bank h4{color:#1a365d;font-size:11px;margin-bottom:6px}'
     +'@media print{button{display:none!important}}</style></head><body>'
     // Kapak
-    +'<div style="text-align:center;padding:60px 0"><h1>DUAY GLOBAL LLC</h1><h2>Commercial Proposal</h2><div style="margin:30px 0;font-size:16px;color:#1a365d">'+esc(t.teklifNo)+'</div>'
-    +'<div style="font-size:14px">Prepared for: <b>'+esc(t.musteri||'')+'</b></div><div style="font-size:12px;color:#666;margin-top:8px">Date: '+(t.ts||'').slice(0,10)+'</div></div>'
+    /* PDF-HARMONIZE-001: teklifNo + revNo header */
+    +'<div style="text-align:center;padding:60px 0"><h1>DUAY GLOBAL LLC</h1><h2>Commercial Proposal</h2><div style="margin:30px 0;font-size:16px;color:#1a365d">'+esc(n.teklifNo)+(n.revNo !== '01' ? ' · R'+esc(n.revNo) : '')+'</div>'
+    /* PDF-HARMONIZE-001: müşteri detay — kod + adres + vergi no */
+    +'<div style="font-size:14px">Prepared for: <b>'+esc(n.musteri||'')+'</b>'+(n.musteriKod ? ' <span style="font-size:11px;color:#888">['+esc(n.musteriKod)+']</span>' : '')+'</div>'
+    +(n.musteriAdres ? '<div style="font-size:11px;color:#666;line-height:1.5;margin-top:4px">'+esc(n.musteriAdres)+'</div>' : '')
+    +(n.musteriVergiNo ? '<div style="font-size:11px;color:#666;margin-top:2px">Tax ID: '+esc(n.musteriVergiNo)+'</div>' : '')
+    +'<div style="font-size:12px;color:#666;margin-top:8px">Date: '+(t.ts||'').slice(0,10)+'</div></div>'
     // Sayfa 2: Ürünler
     +'<div class="page-break"><h2 style="text-align:left;color:#1a365d">Product Details</h2>'
     +'<table><thead><tr><th>No</th><th>Product</th><th>Technical Specs</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead><tbody>'
@@ -3170,11 +3221,18 @@ window._printSatisTeklifC = function(id) {
     +'<tr style="background:#1a365d;color:#fff;font-weight:700"><td colspan="5" style="text-align:right;border:none">GRAND TOTAL</td><td style="text-align:right;border:none;font-size:14px">'+window._pdfNum(t.genelToplam, cur, false)+'</td></tr></tbody></table></div>'
     // Sayfa 3: Koşullar + İmza
     +'<div class="page-break"><h2 style="text-align:left;color:#1a365d">Terms & Conditions</h2>'
+    /* PDF-HARMONIZE-001: V2 form fallback (n.teslim/n.odeme/n.gecerlilik) */
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0">'
-    +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Delivery:</b> '+(t.teslimSekli||'FOB')+'</div>'
-    +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Payment:</b> '+(t.odemeKosulu||'Advance')+'</div>'
-    +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Validity:</b> '+(t.gecerlilikTarihi||'30 days')+'</div>'
+    +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Delivery:</b> '+esc(n.teslim)+'</div>'
+    +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Payment:</b> '+esc(n.odeme)+'</div>'
+    +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Validity:</b> '+esc(n.gecerlilik)+'</div>'
     +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Origin:</b> Turkey</div></div>'
+    /* PDF-HARMONIZE-001: kullanıcı tanımlı şartlar listesi */
+    +(n.sartlar.length
+        ? '<div style="margin:16px 0;padding:14px 16px;background:#f8f9fc;border-left:3px solid #1a365d;border-radius:4px"><div style="font-weight:700;font-size:12px;color:#1a365d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Teklif Şartları</div><ol style="margin:0;padding-left:20px;font-size:11px;line-height:1.7;color:#444">'
+          + n.sartlar.map(function(s){ return '<li>' + esc(String(s)) + '</li>'; }).join('')
+          + '</ol></div>'
+        : '')
     /* BUG-02: banka bilgisi C template'inde — Terms grid ile imza arasında */
     +'<div class="bank"><h4>BANKING DETAILS</h4>'
     +'<div><b>Account Holder:</b> ' + esc(banka.hesapSahibi||'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.') + '</div>'
@@ -3183,9 +3241,18 @@ window._printSatisTeklifC = function(id) {
     +(cur==='EUR' ? '<div>EUR IBAN: ' + esc(banka.ibanEur||banka.iban||'') + '</div>' : '')
     +(cur!=='USD'&&cur!=='EUR' ? '<div>IBAN: ' + esc(banka.iban||'') + '</div>' : '')
     +'<div><b>SWIFT:</b> ' + esc(banka.swift||'') + '</div></div>'
-    +'<div style="display:flex;justify-content:space-between;margin-top:60px"><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">DUAY GLOBAL LLC</div></div><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">'+esc(t.musteri||'Customer')+'</div></div></div></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:60px"><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">DUAY GLOBAL LLC</div></div><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">'+esc(n.musteri||'Customer')+'</div></div></div></div>'
     +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer">Print</button></body></html>');
   w.document.close();
+  /* PDF-HARMONIZE-001: C format için Firebase Storage upload */
+  if (window._pdfProformaUpload) {
+    setTimeout(function(){
+      try {
+        var _pdfHtml = w.document.documentElement.outerHTML;
+        window._pdfProformaUpload(t, _pdfHtml, 'C');
+      } catch(e) { console.error('[PDF-HARMONIZE-C] PDF upload init hata:', e); }
+    }, 100);
+  }
 };
 
 /** Format seçici butonlarını satış listesine ekle */
