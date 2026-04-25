@@ -2912,8 +2912,9 @@ window._printSatisTeklif = function(id) {
     // Header
     + '<div class="header"><h1>DUAY GLOBAL LLC</h1><h2>ISTANBUL &bull; T\u00dcRK\u0130YE</h2><h3>PROFORMA INVOICE</h3></div>'
     // Meta
-    /* PDF-HARMONIZE-001: REF + revNo · VALIDITY n.gecerlilik */
-    + '<div class="meta"><div class="meta-box"><b>REF:</b> ' + esc(n.teklifNo) + (n.revNo !== '01' ? ' · R' + esc(n.revNo) : '') + '</div><div class="meta-box"><b>DATE:</b> ' + (t.ts||'').slice(0,10) + '</div><div class="meta-box"><b>VALIDITY:</b> ' + esc(n.gecerlilik) + '</div></div>'
+    /* PDF-HARMONIZE-001: REF + revNo · VALIDITY n.gecerlilik
+       CLAUDE-KURAL-PI-001 madde 1: tarih DD MMM YYYY */
+    + '<div class="meta"><div class="meta-box"><b>REF:</b> ' + esc(n.teklifNo) + (n.revNo !== '01' ? ' · R' + esc(n.revNo) : '') + '</div><div class="meta-box"><b>DATE:</b> ' + (window._pdfTarihFormat ? window._pdfTarihFormat(t.ts) : (t.ts||'').slice(0,10)) + '</div><div class="meta-box"><b>VALIDITY:</b> ' + esc(n.gecerlilik) + '</div></div>'
     /* PDF-HARMONIZE-001: müşteri detay — kod + adres + vergi no */
     + '<div class="meta-box" style="margin-bottom:6px"><b>CUSTOMER:</b> ' + esc(n.musteri||'—') + (n.musteriKod ? ' <span style="font-size:9px;color:#888">[' + esc(n.musteriKod) + ']</span>' : '') + '</div>'
     + (n.musteriAdres ? '<div style="font-size:10px;color:#666;line-height:1.5;padding:0 12px;margin-bottom:4px">' + esc(n.musteriAdres) + '</div>' : '')
@@ -3155,8 +3156,9 @@ window._printSatisTeklifB = function(id) {
     +'table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#6366F1;color:#fff;padding:8px;font-size:10px;text-transform:uppercase}td{padding:8px;border-bottom:1px solid #eee}'
     +'.total{background:#f8fafc;font-weight:700;font-size:14px}.bank{margin-top:16px;padding:12px;border:1px solid #6366F1;border-radius:6px;font-size:11px}.bank h4{color:#6366F1;font-size:11px;margin-bottom:6px}@media print{button{display:none!important}}</style></head><body>'
     +'<div style="display:flex;justify-content:space-between;margin-bottom:24px"><div><div style="font-size:20px;font-weight:800;color:#6366F1">DUAY GLOBAL</div><div style="font-size:10px;color:#999">Istanbul, Turkey</div></div>'
-    /* PDF-HARMONIZE-001: teklifNo + revNo header */
-    +'<div style="text-align:right"><div style="font-size:14px;font-weight:700">PROFORMA INVOICE</div><div style="font-size:11px;color:#666">'+esc(n.teklifNo)+(n.revNo !== '01' ? ' · R'+esc(n.revNo) : '')+'</div><div style="font-size:11px;color:#666">'+(t.ts||'').slice(0,10)+'</div></div></div>'
+    /* PDF-HARMONIZE-001: teklifNo + revNo header
+       CLAUDE-KURAL-PI-001 madde 1: tarih DD MMM YYYY */
+    +'<div style="text-align:right"><div style="font-size:14px;font-weight:700">PROFORMA INVOICE</div><div style="font-size:11px;color:#666">'+esc(n.teklifNo)+(n.revNo !== '01' ? ' · R'+esc(n.revNo) : '')+'</div><div style="font-size:11px;color:#666">'+(window._pdfTarihFormat ? window._pdfTarihFormat(t.ts) : (t.ts||'').slice(0,10))+'</div></div></div>'
     /* PDF-HARMONIZE-001: müşteri detay — kod + adres + vergi no */
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px"><div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">From</div><div style="font-weight:600">DUAY GLOBAL LLC</div><div style="font-size:11px;color:#666">Istanbul, Turkey</div></div>'
     +'<div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">To</div><div style="font-weight:600">'+esc(n.musteri||'')+'</div>'
@@ -3224,7 +3226,8 @@ window._printSatisTeklifC = function(id) {
     +'<div style="font-size:14px">Prepared for: <b>'+esc(n.musteri||'')+'</b>'+(n.musteriKod ? ' <span style="font-size:11px;color:#888">['+esc(n.musteriKod)+']</span>' : '')+'</div>'
     +(n.musteriAdres ? '<div style="font-size:11px;color:#666;line-height:1.5;margin-top:4px">'+esc(n.musteriAdres)+'</div>' : '')
     +(n.musteriVergiNo ? '<div style="font-size:11px;color:#666;margin-top:2px">Tax ID: '+esc(n.musteriVergiNo)+'</div>' : '')
-    +'<div style="font-size:12px;color:#666;margin-top:8px">Date: '+(t.ts||'').slice(0,10)+'</div></div>'
+    /* CLAUDE-KURAL-PI-001 madde 1: tarih DD MMM YYYY */
+    +'<div style="font-size:12px;color:#666;margin-top:8px">Date: '+(window._pdfTarihFormat ? window._pdfTarihFormat(t.ts) : (t.ts||'').slice(0,10))+'</div></div>'
     // Sayfa 2: Ürünler
     +'<div class="page-break"><h2 style="text-align:left;color:#1a365d">Product Details</h2>'
     +'<table><thead><tr><th>No</th><th>Product</th><th>Technical Specs</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead><tbody>'
