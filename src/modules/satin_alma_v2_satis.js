@@ -71,7 +71,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<input type="date" id="st-gecerlilik" onchange="event.stopPropagation();window._saV2PIOnizlemeGuncelle()" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
   
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TESLİM KOŞULU <span style="color:#A32D2D">*</span></div>';
-  ic += '<select id="st-incoterm" onchange="event.stopPropagation();window._saV2PIOnizlemeGuncelle()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
+  ic += '<select id="st-incoterm" onchange="event.stopPropagation();window._saV2IncotermAutoSart(this.value);window._saV2PIOnizlemeGuncelle()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
   ['EXW','FCA','FAS','FOB','CFR','CIF','CPT','CIP','DAP','DPU','DDP'].forEach(function(inc){ic += '<option value="'+inc+'" '+(inc==='EXW'?'selected':'')+'>'+inc+'</option>';});
   ic += '</select></div>';
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">LİMAN / YER</div>';
@@ -795,6 +795,23 @@ window._saV2SartListeGuncelle = function() {
       + '<button onclick="event.stopPropagation();window._stSartlar.splice(' + i + ',1);window._saV2SartListeGuncelle()" style="font-size:9px;border:none;background:none;cursor:pointer;color:#A32D2D;padding:0 2px">\u2715</button></div>';
   }).join('');
 };
+window._saV2IncotermAutoSart = function(incoterm) {
+  if (!Array.isArray(window._stSartlar)) window._stSartlar = [];
+  var prefixes = ['Freight: Covered by seller', 'Freight & Insurance: Covered by seller', 'Carriage & Insurance: Covered by seller'];
+  window._stSartlar = window._stSartlar.filter(function(s) {
+    return !prefixes.some(function(p) { return s.indexOf(p) === 0; });
+  });
+  var msgs = {
+    CFR: 'Freight: Covered by seller as per CFR terms.',
+    CIF: 'Freight & Insurance: Covered by seller as per CIF terms.',
+    CIP: 'Carriage & Insurance: Covered by seller as per CIP terms.'
+  };
+  if (msgs[incoterm] && window._stSartlar.length < 10) {
+    window._stSartlar.push(msgs[incoterm]);
+  }
+  if (typeof window._saV2SartListeGuncelle === 'function') window._saV2SartListeGuncelle();
+};
+
 window._saV2SartEkle = function() {
   if (window._stSartlar.length >= 10) { window.toast?.('Maksimum 10 \u015fart', 'warn'); return; }
   window._stSartlar.push('Yeni \u015fart...');
