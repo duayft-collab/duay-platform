@@ -871,6 +871,7 @@ window._exportUrunXlsx = function() {
   window.toast?.('Excel indirildi ✓', 'ok');
 };
 
+// [ALIS-003 START] Excel import duplicate kontrol + 3-mod modal
 window._importUrunXlsx = function() {
   var inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.xls,.csv';
   inp.onchange = function() {
@@ -879,24 +880,76 @@ window._importUrunXlsx = function() {
     reader.onload = function(e) {
       var wb = XLSX.read(e.target.result, { type: 'binary' });
       var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-      var data = loadUrunDB(); var added = 0;
+      var data = loadUrunDB();
+
+      /* ALIS-003: 3 grup ayır — yeni / mevcut / hatalı */
+      var yeni = [], mevcut = [], hatali = [];
       rows.forEach(function(r) {
-        if (!r.duayName && !r['Duay Ürün Adı']) return;
-        data.unshift({ id: typeof generateNumericId === 'function' ? generateNumericId() : (typeof window.generateId === 'function' ? window.generateId() : Date.now() + added),
-          duayName: r.duayName || r['Duay Ürün Adı'] || '', duayKodu: r.duayKodu || r.duayCode || r['Duay Kodu'] || _generateDuayKodu(r.vendorName || '', r.vendorCode || ''),
-          vendorName: r.vendorName || r['Satıcı'] || '', vendorCode: r.vendorCode || r['Satıcı Kodu'] || '',
-          category: r.category || r['Kategori'] || '', origin: r.origin || r['Menşei'] || '',
-          gtip: r.gtip || r['GTİP'] || '', unit: r.unit || 'Adet',
-          createdAt: new Date().toISOString(), changeLog: [],
-        }); added++;
+        if (!r.duayName && !r['Duay Ürün Adı']) { hatali.push(r); return; }
+        var fields = window._udbExcelRowToUrun(r);
+        var existing = null;
+        /* PRIMARY: duayKodu match (duayCode legacy fallback dahil) */
+        if (fields.duayKodu) {
+          existing = data.find(function(d) {
+            return !d.isDeleted && ((d.duayKodu || '').trim() === fields.duayKodu || (d.duayCode || '').trim() === fields.duayKodu);
+          });
+        }
+        /* FALLBACK: vendorName + vendorCode match */
+        if (!existing && fields.vendorName && fields.vendorCode) {
+          existing = data.find(function(d) {
+            return !d.isDeleted
+                && (d.vendorName || '').trim() === fields.vendorName
+                && (d.vendorCode || '').trim() === fields.vendorCode;
+          });
+        }
+        if (existing) mevcut.push({ row: r, existing: existing, fields: fields });
+        else yeni.push({ row: r, fields: fields });
       });
-      storeUrunDB(data); renderUrunDB();
-      window.toast?.('📥 ' + added + ' ürün içe aktarıldı', 'ok');
+
+      window._udbImportModalAc(yeni, mevcut, hatali, function(mode) {
+        if (mode === 'cancel') { window.toast?.('İçe aktarma iptal', 'info'); return; }
+        var addedCount = 0, updatedCount = 0;
+        /* Yeni kayıtlar her zaman eklenir */
+        yeni.forEach(function(p) {
+          var f = p.fields;
+          data.unshift({
+            id: typeof generateNumericId === 'function' ? generateNumericId() : (typeof window.generateId === 'function' ? window.generateId() : Date.now() + addedCount),
+            duayName: f.duayName,
+            duayKodu: f.duayKodu || _generateDuayKodu(f.vendorName, f.vendorCode),
+            vendorName: f.vendorName,
+            vendorCode: f.vendorCode,
+            category: f.category,
+            origin: f.origin,
+            gtip: f.gtip,
+            unit: f.unit,
+            createdAt: new Date().toISOString(),
+            changeLog: []
+          });
+          addedCount++;
+        });
+        /* Mevcut: mode'a göre — skip (default) veya update */
+        if (mode === 'update') {
+          mevcut.forEach(function(p) {
+            Object.assign(p.existing, p.fields, { updatedAt: new Date().toISOString() });
+            updatedCount++;
+          });
+        }
+        storeUrunDB(data); renderUrunDB();
+        var msg = '📥 ' + addedCount + ' yeni';
+        if (updatedCount > 0) msg += ', ' + updatedCount + ' güncellendi';
+        if (mode === 'skip' && mevcut.length > 0) msg += ', ' + mevcut.length + ' atlandı';
+        if (hatali.length > 0) msg += ', ' + hatali.length + ' hatalı';
+        window.toast?.(msg, 'ok');
+        if (window.logActivity) {
+          window.logActivity('urun_db', 'Excel import: ' + addedCount + ' yeni, ' + updatedCount + ' güncellendi, ' + (mode === 'skip' ? mevcut.length : 0) + ' atlandı, ' + hatali.length + ' hatalı');
+        }
+      });
     };
     reader.readAsBinaryString(file);
   };
   inp.click();
 };
+// [ALIS-003 END]
 
 /* URUN-LISTE-QUICKACT-001: Peek — küçük toast ile ürün önizleme */
 window._udbPeek = function(id) {
@@ -1114,6 +1167,81 @@ window._udbDraftRestore = function(draftData) {
     if (window.toast) window.toast(draftData.urunler.length + ' ürün geri yüklendi', 'ok');
   }, 100);
 };
+
+// [ALIS-003 START] Helper'lar — Excel row → urun nesnesi (DRY) + import modal
+/**
+ * Excel satırını urun nesnesinin field eşleştirmesine çevir (TR/EN column key fallback).
+ * id, createdAt, changeLog hariç — caller (yeni/update) tarafında set edilir.
+ * @param {Object} r — Excel'den okunan ham satır
+ * @returns {{duayName, duayKodu, vendorName, vendorCode, category, origin, gtip, unit}}
+ */
+window._udbExcelRowToUrun = function(r) {
+  return {
+    duayName: String(r.duayName || r['Duay Ürün Adı'] || '').trim(),
+    duayKodu: String(r.duayKodu || r.duayCode || r['Duay Kodu'] || '').trim(),
+    vendorName: String(r.vendorName || r['Satıcı'] || '').trim(),
+    vendorCode: String(r.vendorCode || r['Satıcı Kodu'] || '').trim(),
+    category: String(r.category || r['Kategori'] || '').trim(),
+    origin: String(r.origin || r['Menşei'] || '').trim(),
+    gtip: String(r.gtip || r['GTİP'] || '').trim(),
+    unit: String(r.unit || r['Birim'] || 'Adet').trim()
+  };
+};
+
+/**
+ * Excel import sonrası 3-grup özet modal — kullanıcı skip/update/cancel seçer.
+ * @param {Array} yeni — yeni eklenecek satırlar
+ * @param {Array} mevcut — eşleşen mevcut kayıtlar (skip veya update)
+ * @param {Array} hatali — duayName eksik satırlar (atlanır)
+ * @param {Function} onConfirm — callback(mode): 'skip' | 'update' | 'new-only' | 'cancel'
+ */
+window._udbImportModalAc = function(yeni, mevcut, hatali, onConfirm) {
+  var esc = window._esc || function(s) { return String(s||''); };
+  var old = document.getElementById('mo-udb-import'); if (old) old.remove();
+  var mo = document.createElement('div');
+  mo.id = 'mo-udb-import';
+  mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+  mo.innerHTML = '<div style="background:var(--sf,#fff);border-radius:12px;padding:24px;max-width:440px;width:90%;font-family:-apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,0.2)">'
+    /* XSS-SAFE: statik başlık */
+    + '<div style="font-size:16px;font-weight:600;color:var(--t,#1d1d1f);margin-bottom:16px">📥 Excel İçe Aktarma</div>'
+    /* XSS-SAFE: sayım sayılar (number) */
+    + '<div style="font-size:13px;color:var(--t3,#86868b);margin-bottom:12px">Toplam ' + (yeni.length + mevcut.length + hatali.length) + ' satır okundu:</div>'
+    + '<ul style="font-size:13px;line-height:1.8;color:var(--t,#1d1d1f);margin:0 0 16px;padding:0;list-style:none">'
+    + '<li>✓ <b>' + yeni.length + '</b> yeni ürün</li>'
+    + '<li>↻ <b>' + mevcut.length + '</b> mevcut (eşleşen — duayKodu veya tedarikçi+kod)</li>'
+    + '<li>✗ <b>' + hatali.length + '</b> hatalı (duayName eksik — atlanır)</li>'
+    + '</ul>'
+    + (mevcut.length > 0
+      ? '<div style="border-top:0.5px solid var(--b,#e5e5e7);padding-top:14px;margin-bottom:14px">'
+        + '<div style="font-size:12px;color:var(--t3,#86868b);margin-bottom:8px">Mevcut ürünler için davranış:</div>'
+        + '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t,#1d1d1f);margin-bottom:6px;cursor:pointer">'
+        + '<input type="radio" name="udb-imp-mode" value="skip" checked style="cursor:pointer"> Atla — mevcutlar değişmez (önerilen)'
+        + '</label>'
+        + '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t,#1d1d1f);cursor:pointer">'
+        + '<input type="radio" name="udb-imp-mode" value="update" style="cursor:pointer"> Güncelle — Excel verisiyle değiştir'
+        + '</label>'
+        + '</div>'
+      : '')
+    + '<div style="display:flex;justify-content:flex-end;gap:8px">'
+    + '<button class="btn btns" onclick="event.stopPropagation();window._udbImportCancel?.()" style="font-size:13px;padding:8px 16px;cursor:pointer">İptal</button>'
+    + '<button class="btn btnp" onclick="event.stopPropagation();window._udbImportConfirm?.()" style="font-size:13px;padding:8px 16px;cursor:pointer">Devam et →</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(mo);
+  mo.addEventListener('click', function(e) { if (e.target === mo) window._udbImportCancel?.(); });
+
+  window._udbImportConfirm = function() {
+    var modeEl = document.querySelector('input[name="udb-imp-mode"]:checked');
+    var mode = modeEl ? modeEl.value : (mevcut.length > 0 ? 'skip' : 'new-only');
+    mo.remove();
+    onConfirm(mode);
+  };
+  window._udbImportCancel = function() {
+    mo.remove();
+    onConfirm('cancel');
+  };
+};
+// [ALIS-003 END]
 
 // Exports
 window.loadUrunDB    = loadUrunDB;
