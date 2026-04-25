@@ -2257,7 +2257,8 @@ window.renderSatisTeklifleri = function() {
       + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:14px;font-weight:700;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(_musteri) + '</div>'
       /* TASARIM-02: Alt meta'dan "· N ürün" kaldırıldı (ana satıra badge olarak taşındı) */
-      + '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace">' + esc(_teklifNo) + (t.revNo && t.revNo !== '01' ? ' <span style="font-size:8px;background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px;font-family:inherit">R' + esc(t.revNo) + '</span>' : '') + (t.jobId ? ' · <span style="color:var(--ac)">' + esc(t.jobId) + '</span>' : '') + '</div>'
+      /* FEAT-07e: ORD badge — sadece yönetici görür */
+      + '<div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace">' + esc(_teklifNo) + (t.revNo && t.revNo !== '01' ? ' <span style="font-size:8px;background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px;font-family:inherit">R' + esc(t.revNo) + '</span>' : '') + (t.jobId ? ' · <span style="color:var(--ac)">' + esc(t.jobId) + '</span>' : '') + (window._ordYoneticiMi && window._ordYoneticiMi() && t.ordNo ? ' <span style="margin-left:8px;color:#86868b;letter-spacing:0.3px;font-family:SF Mono,Monaco,monospace">🔒 ' + esc(t.ordNo) + '</span>' : '') + '</div>'
       + '</div>'
       /* TASARIM-02: Ürün sayısı badge — ana satır, tutar yanında */
       + '<span style="display:inline-block;padding:2px 8px;font-size:10px;background:var(--s2);color:var(--t2);border-radius:10px;font-weight:500;font-variant-numeric:tabular-nums;flex-shrink:0;white-space:nowrap">' + (t.urunler||[]).length + ' ürün</span>'
@@ -2442,6 +2443,16 @@ window._stPeekAc = function(id) {
   h += '<div style="background:var(--sf);border-radius:6px;padding:8px;border:0.5px solid var(--b)"><div style="font-size:8px;color:var(--t3)">M\u00dc\u015eTER\u0130</div><div style="font-size:12px;font-weight:500;color:var(--t)">' + esc(t.musteri || '\u2014') + '</div></div>';
   h += '<div style="background:var(--sf);border-radius:6px;padding:8px;border:0.5px solid var(--b)"><div style="font-size:8px;color:var(--t3)">TOPLAM</div><div style="font-size:12px;font-weight:500;color:#0F6E56">' + (t.genelToplam || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ' + esc(t.paraBirimi || 'USD') + '</div></div>';
   h += '</div>';
+  /* FEAT-07e: ORD bloğu — sadece yönetici görür */
+  if (window._ordYoneticiMi && window._ordYoneticiMi() && t.ordNo) {
+    h += '<div style="margin-top:10px;padding:10px 12px;background:#f5f5f7;border-left:3px solid #1d1d1f;border-radius:4px">';
+    h += '<div style="font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#86868b;margin-bottom:4px">🔒 İç Sipariş No</div>';
+    h += '<div style="font-size:13px;font-weight:600;font-family:SF Mono,Monaco,monospace;color:#1d1d1f;letter-spacing:0.5px">' + esc(t.ordNo) + '</div>';
+    if (t.ordCreatedAt) {
+      h += '<div style="font-size:10px;color:#86868b;margin-top:4px">Üretim: ' + new Date(t.ordCreatedAt).toLocaleString('tr-TR') + '</div>';
+    }
+    h += '</div>';
+  }
   if (t.urunler && t.urunler.length) {
     h += '<div style="font-size:9px;font-weight:500;color:var(--t3);margin-top:4px">\u00dcR\u00dcNLER (' + t.urunler.length + ')</div>';
     t.urunler.forEach(function(u, i) {
@@ -2827,7 +2838,10 @@ window._pdfProformaUpload = async function(t, html, fmt) {
     /* Dosya adı: Proforma-{teklifNo}-R{revNo}.pdf */
     var revStr = String(t.revNo || '01').padStart(2, '0');
     var name = 'Proforma-' + (t.teklifNo || t.teklifId || t.id) + '-R' + revStr + '.pdf';
-    var path = 'proformas/' + (t.musteriKod || '0000') + '/' + name;
+    /* FEAT-07e: ORD varsa orders/{ord}/ altına gizle, yoksa proformas/ */
+    var path = t.ordNo
+      ? 'orders/' + t.ordNo + '/' + name
+      : 'proformas/' + (t.musteriKod || '0000') + '/' + name;
     /* Upload */
     var result = await window.storageUpload(path, blob);
     /* Kayıt güncelle */

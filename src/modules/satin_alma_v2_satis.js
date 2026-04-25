@@ -445,6 +445,25 @@ window._saV2SatisKaydet = function(alisId) {
     createdBy: (window.Auth && window.Auth.getCU && window.Auth.getCU()?.name) || (window.CU && window.CU()?.name) || '',
     jobId: document.getElementById('st-job-id')?.value || ''
   };
+  /* FEAT-07e: Kabul durumunda ORD üret (defansif — tüm save akışlarını yakalar) */
+  if (kayit.durum === 'kabul' && !kayit.ordNo) {
+    if (window._ordKodUret) {
+      kayit.ordNo = window._ordKodUret();
+      kayit.ordCreatedAt = new Date().toISOString();
+      kayit.ordCreatedBy = (window.CU && window.CU() || {}).uid
+                        || (window.CU && window.CU() || {}).id
+                        || '';
+
+      if (window.logActivity) {
+        window.logActivity('ORDER_CREATE', {
+          ordNo: kayit.ordNo,
+          teklifId: kayit.id,
+          teklifNo: kayit.teklifNo || kayit.teklifId,
+          tarih: kayit.ordCreatedAt
+        });
+      }
+    }
+  }
   var teklifler = typeof window.loadSatisTeklifleri === 'function' ? window.loadSatisTeklifleri() : [];
   teklifler.unshift(kayit);
   if (typeof window.storeSatisTeklifleri === 'function') window.storeSatisTeklifleri(teklifler);

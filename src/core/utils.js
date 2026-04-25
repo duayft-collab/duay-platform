@@ -857,3 +857,36 @@ window._pdfTeklifNormalize = function(t) {
     saticiNotu: t.saticiNotu || ''
   };
 };
+
+/* FEAT-07e: Kripto sipariş numarası (ORD-XXXXXXXX) */
+window._ordKodUret = function() {
+  var chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // I, O, 0, 1 yok (görsel karışıklık)
+  var len = 8;
+  var attempts = 0;
+
+  while (attempts < 10) {
+    var buf = new Uint8Array(len);
+    crypto.getRandomValues(buf);
+    var code = '';
+    for (var i = 0; i < len; i++) {
+      code += chars[buf[i] % chars.length];
+    }
+    var ord = 'ORD-' + code;
+
+    /* Collision check (1 trilyon olasılık ama yine de) */
+    var teklifler = (window.loadSatisTeklifleri && window.loadSatisTeklifleri()) || [];
+    var collision = teklifler.some(function(t) { return t.ordNo === ord; });
+    if (!collision) return ord;
+    attempts++;
+  }
+
+  /* Fallback (asla buraya gelmez ama defensive) */
+  return 'ORD-' + Date.now().toString(36).toUpperCase().slice(-8);
+};
+
+/* FEAT-07e: Yönetici mi (admin + manager)? */
+window._ordYoneticiMi = function() {
+  var role = (window.Auth && window.Auth.getCU && window.Auth.getCU() || {}).role
+          || (window.CU && window.CU() || {}).role;
+  return role === 'admin' || role === 'manager';
+};
