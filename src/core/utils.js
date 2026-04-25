@@ -923,21 +923,22 @@ window._pdfBankaListesi = function(paraBirimi) {
   return sonuc.length ? sonuc : [fallback];
 };
 
-/* PI-BANKA-001: HTML üretici — kompakt liste (Format D D1+D2 için) */
+/* PI-BANKA-001: HTML üretici — Format D D1+D2 için
+   CLAUDE-KURAL-PI-001 madde 2: Tek banka (sadece para birimine ait) — çoklu banka liste YASAK */
 window._pdfBankaHtmlListe = function(paraBirimi) {
   var bankalar = window._pdfBankaListesi(paraBirimi);
+  if (!bankalar.length) return '<div style="font-size:10px;color:#86868b">Banking details unavailable</div>';
+  var b = bankalar[0]; /* Sadece ilk (ana) banka */
   var esc = window._esc || function(s){ return String(s||''); };
-  var html = '';
-  bankalar.forEach(function(b, i) {
-    html += '<div style="font-size:10px;color:#4a4a4f;line-height:1.6;'
-      + (i > 0 ? 'margin-top:8px;padding-top:8px;border-top:0.5px solid #e5e5e7;' : '')
-      + '">';
-    html += '<div style="font-weight:600;color:#1d1d1f;margin-bottom:2px">'
-      + esc(b.banka) + (b.sube ? ' — ' + esc(b.sube) : '') + '</div>';
-    html += '<div>IBAN: ' + esc(b.iban) + '</div>';
-    if (b.swift) html += '<div>SWIFT: ' + esc(b.swift) + '</div>';
-    html += '</div>';
-  });
+  var pb = String(paraBirimi || 'USD').toUpperCase();
+  if (pb === 'TRY') pb = 'TL';
+  var html = '<div style="font-size:10px;color:#4a4a4f;line-height:1.6">';
+  html += '<div style="font-weight:600;color:#1d1d1f;margin-bottom:3px">'
+    + esc(b.banka) + (b.sube ? ' — ' + esc(b.sube) : '') + '</div>';
+  html += '<div>Account Holder: ' + esc(b.hesapSahibi || '') + '</div>';
+  html += '<div>IBAN (' + esc(pb) + '): ' + esc(b.iban || '') + '</div>';
+  if (b.swift) html += '<div>SWIFT: ' + esc(b.swift) + '</div>';
+  html += '</div>';
   return html;
 };
 
