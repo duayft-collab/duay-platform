@@ -131,6 +131,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<button onclick="event.stopPropagation();window._saV2TopluMarjUygula()" style="font-size:10px;padding:4px 12px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t);font-family:inherit">T\u00fcm\u00fcne Uygula</button>';
   ic += '<span style="font-size:9px;color:var(--t3)">\u2014 sonra tek tek de\u011fi\u015ftirilebilir</span></div>';
   ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;margin-top:6px">';
+  ic += '<button onclick="event.stopPropagation();window._saV2UrunSecModal&&window._saV2UrunSecModal()" style="width:100%;padding:8px 12px;border:none;border-bottom:0.5px dashed var(--b);background:transparent;color:var(--t3);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;text-align:center" onmouseover="this.style.background=\'var(--s3)\'" onmouseout="this.style.background=\'var(--s2)\'">+ Ürün Ekle</button>';
   /* SATIS-URUN-TABLO-001: table-layout:fixed + colgroup ile kolon genişlikleri sabit */
   ic += '<table style="width:100%;border-collapse:collapse;table-layout:fixed">';
   /* SATIS-FORM-PARITE-001: 10 kolon — +BİRİM +MENŞEİ eklendi (satış/alış form parité) */
@@ -150,7 +151,6 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<thead><tr style="background:var(--s2);font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.04em">';
   ic += '<th style="padding:7px 10px"></th><th style="padding:7px 10px;text-align:left">KOD / ÜRÜN ADI</th><th style="padding:7px 10px">MİKTAR</th><th style="padding:7px 10px">BİRİM</th><th style="padding:7px 10px;text-align:right">ALIŞ</th><th style="padding:7px 10px">MARJ %</th><th style="padding:7px 10px;text-align:right">SATIŞ</th><th style="padding:7px 10px;text-align:right">TOPLAM</th><th style="padding:7px 10px;text-align:right">KAR</th><th style="padding:7px 10px">MENŞEİ</th><th style="padding:7px 10px"></th></tr></thead>';
   ic += '<tbody id="st-urun-tbody"></tbody></table>';
-  ic += '<div style="padding:6px 8px;border-top:0.5px solid var(--b)"><button onclick="event.stopPropagation();window._saV2UrunSecModal()" style="font-size:10px;padding:3px 10px;border:0.5px dashed var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);font-family:inherit">+ Ürün Ekle</button></div>';
   ic += '</div>';
 
   ic += '<div style="background:var(--s2);border-radius:6px;padding:10px 12px;border:0.5px solid var(--b)">';
