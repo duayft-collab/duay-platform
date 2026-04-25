@@ -2944,7 +2944,7 @@ window._printSatisTeklif = function(id) {
     + '<div>• This offer is valid: ' + esc(n.gecerlilik) + '</div></div>'
     /* PDF-HARMONIZE-001: kullanıcı tanımlı şartlar listesi */
     + (n.sartlar.length
-        ? '<div style="margin-top:14px;padding:10px 12px;background:#f8f9fc;border-left:3px solid #1a365d;border-radius:4px;"><div style="font-weight:600;font-size:11px;color:#1a365d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Teklif Şartları</div><ol style="margin:0;padding-left:20px;font-size:10.5px;line-height:1.6;color:#444">'
+        ? '<div style="margin-top:14px;padding:10px 12px;background:#f8f9fc;border-left:3px solid #1a365d;border-radius:4px;"><div style="font-weight:600;font-size:11px;color:#1a365d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Terms &amp; Conditions</div><ol style="margin:0;padding-left:20px;font-size:10.5px;line-height:1.6;color:#444">'
           + n.sartlar.map(function(s){ return '<li>' + esc(String(s)) + '</li>'; }).join('')
           + '</ol></div>'
         : '')
@@ -3180,7 +3180,7 @@ window._printSatisTeklifB = function(id) {
     +'<div style="font-size:10px;color:#666;margin-top:16px">Terms: '+esc(n.teslim)+' · Payment: '+esc(n.odeme)+' · Valid: '+esc(n.gecerlilik)+'</div>'
     /* PDF-HARMONIZE-001: kullanıcı tanımlı şartlar listesi */
     +(n.sartlar.length
-        ? '<div style="margin-top:14px;padding:10px 12px;background:#f8f9fc;border-left:3px solid #6366F1;border-radius:4px"><div style="font-weight:600;font-size:11px;color:#6366F1;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Teklif Şartları</div><ol style="margin:0;padding-left:20px;font-size:10.5px;line-height:1.6;color:#444">'
+        ? '<div style="margin-top:14px;padding:10px 12px;background:#f8f9fc;border-left:3px solid #6366F1;border-radius:4px"><div style="font-weight:600;font-size:11px;color:#6366F1;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Terms &amp; Conditions</div><ol style="margin:0;padding-left:20px;font-size:10.5px;line-height:1.6;color:#444">'
           + n.sartlar.map(function(s){ return '<li>' + esc(String(s)) + '</li>'; }).join('')
           + '</ol></div>'
         : '')
@@ -3246,7 +3246,7 @@ window._printSatisTeklifC = function(id) {
     +'<div style="padding:12px;border:1px solid #ddd;border-radius:4px"><b>Origin:</b> Turkey</div></div>'
     /* PDF-HARMONIZE-001: kullanıcı tanımlı şartlar listesi */
     +(n.sartlar.length
-        ? '<div style="margin:16px 0;padding:14px 16px;background:#f8f9fc;border-left:3px solid #1a365d;border-radius:4px"><div style="font-weight:700;font-size:12px;color:#1a365d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Teklif Şartları</div><ol style="margin:0;padding-left:20px;font-size:11px;line-height:1.7;color:#444">'
+        ? '<div style="margin:16px 0;padding:14px 16px;background:#f8f9fc;border-left:3px solid #1a365d;border-radius:4px"><div style="font-weight:700;font-size:12px;color:#1a365d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Terms &amp; Conditions</div><ol style="margin:0;padding-left:20px;font-size:11px;line-height:1.7;color:#444">'
           + n.sartlar.map(function(s){ return '<li>' + esc(String(s)) + '</li>'; }).join('')
           + '</ol></div>'
         : '')
