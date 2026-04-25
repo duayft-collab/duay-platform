@@ -1076,7 +1076,15 @@ function nav(id, el) {
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
 
   const target = _g('panel-' + id);
-  if (!target) { console.warn('[App.nav] Panel bulunamadı:', 'panel-' + id); return; }
+  if (!target) {
+    console.warn('[App.nav] Panel bulunamadı:', 'panel-' + id);
+    /* PUSULA-012: 404 toast + dashboard fallback (UX) */
+    toast('Sayfa bulunamadı: ' + id, 'err');
+    if (id !== 'dashboard') {
+      setTimeout(function() { nav('dashboard'); }, 800);
+    }
+    return;
+  }
   target.classList.add('on');
   if (el) el.classList.add('on');
 
