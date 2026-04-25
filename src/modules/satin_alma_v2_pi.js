@@ -55,11 +55,53 @@ window._piGizliKodUret = function() {
   return kod;
 };
 
-/* ── Çok Dilli PI Etiketleri ────────────────────────────────── */
+/* CLAUDE-KURAL-PI-001 madde 3+4: PI %100 İngilizce — AR/TR kaldırıldı, EN tamamlandı */
 var PI_DILLER = {
-  EN: { sirket:'DUAY GLOBAL LLC', piNo:'PI No', tarih:'Date', gecerli:'Valid until', revNo:'Rev', alici:'Bill To', kosullar:'Terms', incoterms:'Incoterms', odeme:'Payment', teslimat:'Delivery', urun:'Item Description', miktar:'Qty', birim:'Unit', birimFiyat:'Unit Price', tutar:'Amount', toplam:'TOTAL', imza:'Authorized Signature', not:'This is a Proforma Invoice only.', eskiKod:'Old Code' },
-  AR: { sirket:'DUAY GLOBAL LLC', piNo:'رقم الفاتورة المبدئية', tarih:'التاريخ', gecerli:'صالح حتى', revNo:'النسخة', alici:'المشتري', kosullar:'الشروط', incoterms:'شروط التسليم', odeme:'شروط الدفع', teslimat:'موعد التسليم', urun:'وصف البضاعة', miktar:'الكمية', birim:'الوحدة', birimFiyat:'سعر الوحدة', tutar:'المبلغ', toplam:'المجموع', imza:'التوقيع المعتمد', not:'هذه الوثيقة فاتورة مبدئية فقط.', eskiKod:'الرمز القديم', baslik:'عرض السعر المبدئي', teslim:'شروط التسليم', gecerlilik:'صالح حتى', para:'العملة', no:'#', sartlar:'الشروط والأحكام', gorselNot:'صور المنتجات للتوضيح فقط.', tarihMuhur:'التاريخ والختم' }
+  EN: {
+    sirket: 'DUAY GLOBAL LLC',
+    piNo: 'PI No',
+    tarih: 'Date',
+    gecerli: 'Valid until',
+    revNo: 'Rev',
+    alici: 'Bill To',
+    kosullar: 'Terms',
+    incoterms: 'Incoterms',
+    odeme: 'Payment',
+    teslimat: 'Delivery',
+    urun: 'Item Description',
+    miktar: 'Qty',
+    birim: 'Unit',
+    birimFiyat: 'Unit Price',
+    tutar: 'Amount',
+    toplam: 'TOTAL',
+    imza: 'Authorized Signature',
+    not: 'This is a Proforma Invoice only.',
+    eskiKod: 'Old Code',
+    /* PI_DILLER.EN tamamlama (önceden fallback ile basılan label'lar) */
+    proforma: 'Proforma Invoice',
+    araToplam: 'Subtotal',
+    banking: 'Banking Details',
+    tradeTerms: 'Trade Terms',
+    sartlar: 'Terms & Conditions',
+    delivery: 'Delivery',
+    payment: 'Payment',
+    validity: 'Validity',
+    notes: 'Notes',
+    total: 'Total',
+    quantity: 'Quantity',
+    unitPrice: 'Unit Price',
+    description: 'Description',
+    amount: 'Amount',
+    baslik: 'PROFORMA INVOICE',
+    teslim: 'Delivery Terms',
+    gecerlilik: 'Valid Until',
+    para: 'Currency',
+    no: '#',
+    gorselNot: 'Product images for illustrative purposes only.',
+    tarihMuhur: 'DATE / STAMP'
+  }
 };
+window.PI_DILLER = PI_DILLER;
 
 /* ── PI ana fonksiyon ───────────────────────────────────────── */
 window._piOlustur = function(teklif, tasarim, katman) {
@@ -80,7 +122,8 @@ window._piOlustur = function(teklif, tasarim, katman) {
     }
   }
   var gizliKod = window._piGizliKodUret();
-  var dil = teklif.dil || 'EN';
+  /* CLAUDE-KURAL-PI-001 madde 3: PI zorla %100 İngilizce — t.dil yoksay */
+  var dil = 'EN';
   var L = PI_DILLER[dil] || PI_DILLER.EN;
   /* CLAUDE-KURAL-PI-001 madde 1: tarih DD MMM YYYY (en short) — tek nokta düzeltme, tüm V2 PI tasarımlarını kapsar */
   var bugun = window._pdfTarihFormat ? window._pdfTarihFormat(new Date()) : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
