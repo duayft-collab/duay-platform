@@ -49,6 +49,22 @@ var PI_DILLER = {
 
 /* ── PI ana fonksiyon ───────────────────────────────────────── */
 window._piOlustur = function(teklif, tasarim, katman) {
+  /* PDF-HARMONIZE-001: V2 form (gecerlilik/teslim/odeme) ↔ inline (gecerlilikTarihi/teslimSekli/odemeKosulu)
+     şema fallback + cari lookup. _piTasarimA/B/C/I/L/O fonksiyonları teklif.* okuyor —
+     üst seviyede tek truth source ile zenginleştir. */
+  if (typeof window._pdfTeklifNormalize === 'function') {
+    var n = window._pdfTeklifNormalize(teklif);
+    if (n) {
+      teklif.gecerlilik     = n.gecerlilik;
+      teklif.teslim         = n.teslim;
+      teklif.odeme          = n.odeme;
+      teklif.sartlar        = n.sartlar;
+      teklif.musteriKod     = n.musteriKod || teklif.musteriKod;
+      teklif.musteriAdres   = n.musteriAdres || teklif.musteriAdres;
+      teklif.musteriVergiNo = n.musteriVergiNo || teklif.musteriVergiNo;
+      teklif.revNo          = n.revNo;
+    }
+  }
   var gizliKod = window._piGizliKodUret();
   var dil = teklif.dil || 'EN';
   var L = PI_DILLER[dil] || PI_DILLER.EN;

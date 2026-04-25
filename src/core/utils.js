@@ -823,3 +823,37 @@ window._btnGuard = function(btn, fn, ms) {
     }
   } catch(e) { _restore(); throw e; }
 };
+
+/* PDF-HARMONIZE-001: Tek truth source — V2 form (gecerlilik/teslim/odeme)
+   + inline form (gecerlilikTarihi/teslimSekli/odemeKosulu) şema fallback
+   + cari lookup. Paylaşımlı: app_patch.js + satin_alma_v2_pi.js kullanır. */
+window._pdfTeklifNormalize = function(t) {
+  if (!t) return null;
+  var cari = {};
+  if (window.loadCari) {
+    var cariler = window.loadCari() || [];
+    cari = cariler.find(function(c){
+      return String(c.kod || c.id) === String(t.musteriKod || t.musteriCid || '');
+    }) || cariler.find(function(c){
+      return (c.name || c.unvan) === (t.musteri || t.musteriAd);
+    }) || {};
+  }
+  return {
+    teklifNo: t.teklifNo || t.teklifId || t.id || '',
+    revNo: String(t.revNo || '01').padStart(2, '0'),
+    teklifTarih: t.createdAt || t.tarih || t.ts || '',
+    musteri: t.musteri || t.musteriAd || '',
+    musteriKod: t.musteriKod || cari.kod || '',
+    musteriAdres: cari.adres || cari.address || '',
+    musteriVergiNo: cari.vergiNo || cari.taxNo || '',
+    musteriTelefon: cari.telefon || cari.phone || '',
+    gecerlilik: t.gecerlilik || t.gecerlilikTarihi || '30 days',
+    teslim:     t.teslim     || t.teslimSekli     || 'FOB Istanbul',
+    odeme:      t.odeme      || t.odemeKosulu     || '35% advance, 65% before shipment',
+    sartlar: Array.isArray(t.sartlar) ? t.sartlar : [],
+    genelToplam: t.genelToplam || t.toplamSatis || 0,
+    paraBirimi:  t.paraBirimi  || 'USD',
+    urunler: t.urunler || [],
+    saticiNotu: t.saticiNotu || ''
+  };
+};
