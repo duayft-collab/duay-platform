@@ -1057,3 +1057,54 @@ window._migrateDuayCodeToDuayKodu = function() {
   return { migrated: migrated, skipped: skipped };
 };
 // [ALIS-001 END]
+
+/* CLAUDE-KURAL-PI-001 madde 7: PI ön kontrol — hata önleme sistemi
+   PI üretiminden önce 4 kontrol: eksik bilgi / yanlış para / Türkçe / Arapça */
+window._piOnKontrol = function(t) {
+  if (!t) return 'PI üretilemedi: teklif verisi yok';
+
+  /* 1. Eksik bilgi */
+  var musteri = t.musteri || t.musteriAd || '';
+  if (!musteri) return 'PI üretilemedi: müşteri eksik';
+  if (!t.urunler || !t.urunler.length) return 'PI üretilemedi: ürün eksik';
+  if (!t.gecerlilik && !t.gecerlilikTarihi) return 'PI üretilemedi: geçerlilik tarihi eksik';
+
+  /* 2. Para birimi */
+  var gecerli = ['USD','EUR','GBP','TRY','CNY'];
+  if (gecerli.indexOf(String(t.paraBirimi || '').toUpperCase()) === -1) {
+    return 'Para birimi geçersiz — USD/EUR/GBP/TRY/CNY olmalı';
+  }
+
+  /* 3+4. Test edilecek alanlar */
+  var alanlar = [
+    { ad: 'Müşteri adı', val: musteri },
+    { ad: 'Müşteri adresi', val: t.musteriAdres || '' },
+    { ad: 'Teslim', val: t.teslim || '' },
+    { ad: 'Ödeme', val: t.odeme || '' }
+  ];
+  (t.urunler || []).forEach(function(u, i) {
+    alanlar.push({ ad: 'Ürün #' + (i+1) + ' adı', val: u.urunAdi || u.ad || '' });
+    alanlar.push({ ad: 'Ürün #' + (i+1) + ' açıklama', val: u.aciklama || '' });
+  });
+  (t.sartlar || []).forEach(function(s, i) {
+    alanlar.push({ ad: 'Şart #' + (i+1), val: typeof s === 'string' ? s : (s.metin || '') });
+  });
+
+  /* 3. Türkçe karakter tespiti */
+  var trRegex = /[ğüşıöçĞÜŞİÖÇ]/;
+  for (var i = 0; i < alanlar.length; i++) {
+    if (trRegex.test(alanlar[i].val)) {
+      return 'PI %100 İngilizce olmalı — Türkçe karakter: ' + alanlar[i].ad;
+    }
+  }
+
+  /* 4. Arapça karakter tespiti (Unicode block U+0600-U+06FF) */
+  var arRegex = /[؀-ۿ]/;
+  for (var j = 0; j < alanlar.length; j++) {
+    if (arRegex.test(alanlar[j].val)) {
+      return 'PI %100 İngilizce olmalı — Arapça metin: ' + alanlar[j].ad;
+    }
+  }
+
+  return null; /* Geçti */
+};

@@ -105,6 +105,14 @@ window.PI_DILLER = PI_DILLER;
 
 /* ── PI ana fonksiyon ───────────────────────────────────────── */
 window._piOlustur = function(teklif, tasarim, katman) {
+  /* CLAUDE-KURAL-PI-001 madde 7: PI üretiminden önce 4 kontrol — hata önleme */
+  if (typeof window._piOnKontrol === 'function') {
+    var _onHata = window._piOnKontrol(teklif);
+    if (_onHata) {
+      window.toast?.(_onHata, 'err');
+      return;
+    }
+  }
   /* PDF-HARMONIZE-001: V2 form (gecerlilik/teslim/odeme) ↔ inline (gecerlilikTarihi/teslimSekli/odemeKosulu)
      şema fallback + cari lookup. _piTasarimA/B/C/I/L/O fonksiyonları teklif.* okuyor —
      üst seviyede tek truth source ile zenginleştir. */
