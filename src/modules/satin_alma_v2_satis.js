@@ -739,7 +739,21 @@ window._saV2PIOnizlemeGuncelle = function() {
       h += '</tr>';
     });
     h += '</tbody></table>';
-    h += '<div style="text-align:right;font-size:10px;font-weight:500;color:#0F6E56;border-top:0.5px solid var(--b);padding-top:4px">TOTAL: '+toplamSatis.toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+para+'</div>';
+    if (window._stFreightToggle && (incoterm === 'CFR' || incoterm === 'CIF' || incoterm === 'CIP')) {
+        var freight = parseFloat(window._stFreightAmount) || 0;
+        var insurance = (incoterm === 'CIF' || incoterm === 'CIP') ? (parseFloat(window._stInsuranceAmount) || 0) : 0;
+        var grandTotal = toplamSatis + freight + insurance;
+        h += '<div style="border-top:0.5px solid var(--b);padding-top:4px;margin-top:4px;text-align:right;font-size:9px;color:var(--t3)">';
+        h += '<div>Subtotal: '+toplamSatis.toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+para+'</div>';
+        h += '<div>Freight: '+freight.toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+para+'</div>';
+        if (incoterm === 'CIF' || incoterm === 'CIP') {
+          h += '<div>Insurance: '+insurance.toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+para+'</div>';
+        }
+        h += '<div style="font-size:10px;font-weight:500;color:#0F6E56;border-top:0.5px solid var(--b);padding-top:2px;margin-top:2px">TOTAL: '+grandTotal.toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+para+'</div>';
+        h += '</div>';
+      } else {
+        h += '<div style="text-align:right;font-size:10px;font-weight:500;color:#0F6E56;border-top:0.5px solid var(--b);padding-top:4px">TOTAL: '+toplamSatis.toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+para+'</div>';
+      }
   } else {
     h += '<div style="text-align:center;color:var(--t3);padding:16px;font-size:9px">Ürün ekleyince burada görünür</div>';
   }
