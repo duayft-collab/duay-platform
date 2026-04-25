@@ -260,99 +260,111 @@ window._saV2TeklifOlustur = function(id) {
       window._saV2SatisValidate?.();
     }, 120);
 
-    /* SATIS-V3-CUSTOMER-AUTOCOMPLETE-001 */
-    setTimeout(function(){
-      var input = document.getElementById('st-musteri-ac');
-      var sel = document.getElementById('st-musteri-sec');
-      var dd = document.getElementById('st-musteri-dd');
-      if (!input || !sel || !dd) return;
-
-      // Edit mode: select'te zaten secili musteri varsa input'u senkronize et
-      if (sel.value && sel.options[sel.selectedIndex]) {
-        input.value = sel.options[sel.selectedIndex].text;
-      }
-
-      // Son 5 musteri ID'si — loadSatisTeklifleri'nden
-      function _sonKullanilan() {
-        try {
-          var tk = (window.loadSatisTeklifleri && window.loadSatisTeklifleri() || []).filter(function(t){ return !t.isDeleted; });
-          tk.sort(function(a,b){ return (b.createdAt||0) - (a.createdAt||0); });
-          var ids = [];
-          for (var i=0; i<tk.length && ids.length<5; i++) {
-            var mid = tk[i].musteriId || tk[i].cariId;
-            if (mid && ids.indexOf(mid) === -1) ids.push(mid);
-          }
-          return ids;
-        } catch(e){ return []; }
-      }
-
-      function _trLower(s) {
-        try { return (s||'').toLocaleLowerCase('tr-TR'); }
-        catch(e) { return (s||'').toLowerCase(); }
-      }
-
-      function _renderDD(query) {
-        var q = _trLower((query||'').trim());
-        var opts = Array.from(sel.options).filter(function(o){ return o.value; });
-        var items = opts.map(function(o){
-          return { id: o.value, label: o.text, kod: o.dataset.kod || '' };
-        });
-
-        var sonIds = _sonKullanilan();
-        var sonItems = sonIds.map(function(id){
-          return items.find(function(it){ return it.id === id; });
-        }).filter(Boolean);
-
-        var filtered = q ? items.filter(function(it){
-          return _trLower(it.label).indexOf(q) !== -1 || _trLower(it.kod).indexOf(q) !== -1;
-        }) : items;
-
-        var html = '';
-        if (!q && sonItems.length) {
-          html += '<div style="padding:6px 12px;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;font-weight:500;background:rgba(0,0,0,0.02);border-bottom:0.5px solid var(--b)">Son Kullanilan</div>';
-          sonItems.forEach(function(it){
-            html += '<div class="st-mu-item" data-id="' + it.id + '" data-label="' + (it.label||'').replace(/"/g,'&quot;') + '" style="padding:8px 12px;cursor:pointer;border-bottom:0.5px solid var(--b);font-size:12px">' + it.label + '</div>';
-          });
-          html += '<div style="padding:6px 12px;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;font-weight:500;background:rgba(0,0,0,0.02);border-bottom:0.5px solid var(--b)">Tum Musteriler</div>';
-        }
-
-        if (filtered.length === 0) {
-          html += '<div style="padding:10px 12px;font-size:11px;color:var(--t3);font-style:italic">Sonuc bulunamadi</div>';
-        } else {
-          filtered.forEach(function(it){
-            html += '<div class="st-mu-item" data-id="' + it.id + '" data-label="' + (it.label||'').replace(/"/g,'&quot;') + '" style="padding:8px 12px;cursor:pointer;border-bottom:0.5px solid var(--b);font-size:12px">' + it.label + '</div>';
-          });
-        }
-
-        html += '<div style="padding:8px 12px;font-size:10px;color:var(--t3);background:rgba(0,0,0,0.02);font-style:italic">Musteri yoksa Musteri Iliskileri menusunden ekleyin</div>';
-
-        dd.innerHTML = html;
-        dd.style.display = 'block';
-
-        Array.from(dd.querySelectorAll('.st-mu-item')).forEach(function(el){
-          el.addEventListener('mouseenter', function(){ el.style.background = 'rgba(0,0,0,0.04)'; });
-          el.addEventListener('mouseleave', function(){ el.style.background = ''; });
-          el.addEventListener('click', function(){
-            var id = el.dataset.id;
-            var label = el.dataset.label;
-            sel.value = id;
-            sel.dispatchEvent(new Event('change'));
-            input.value = label;
-            dd.style.display = 'none';
-          });
-        });
-      }
-
-      input.addEventListener('focus', function(){ _renderDD(input.value); });
-      input.addEventListener('input', function(){ _renderDD(input.value); });
-      input.addEventListener('keydown', function(e){
-        if (e.key === 'Escape') dd.style.display = 'none';
-      });
-      document.addEventListener('click', function(e){
-        if (!dd.contains(e.target) && e.target !== input) dd.style.display = 'none';
-      });
-    }, 150);
   }
+  /* SATIS-V3-CUSTOMER-AUTOCOMPLETE-FIX-001 */
+  setTimeout(function(){
+    var input = document.getElementById('st-musteri-ac');
+    var sel = document.getElementById('st-musteri-sec');
+    var dd = document.getElementById('st-musteri-dd');
+    if (!input || !sel || !dd) return;
+
+    // FIX2: Dropdown konum — fixed + viewport koordinati
+    dd.style.position = 'fixed';
+
+    function _pozisyonla() {
+      var r = input.getBoundingClientRect();
+      dd.style.top = (r.bottom + 2) + 'px';
+      dd.style.left = r.left + 'px';
+      dd.style.minWidth = r.width + 'px';
+    }
+
+    if (sel.value && sel.options[sel.selectedIndex]) {
+      input.value = sel.options[sel.selectedIndex].text;
+    }
+
+    function _sonKullanilan() {
+      try {
+        var tk = (window.loadSatisTeklifleri && window.loadSatisTeklifleri() || []).filter(function(t){ return !t.isDeleted; });
+        tk.sort(function(a,b){ return (b.createdAt||0) - (a.createdAt||0); });
+        var ids = [];
+        for (var i=0; i<tk.length && ids.length<5; i++) {
+          var mid = tk[i].musteriId || tk[i].cariId;
+          if (mid && ids.indexOf(mid) === -1) ids.push(mid);
+        }
+        return ids;
+      } catch(e){ return []; }
+    }
+
+    function _trLower(s) {
+      try { return (s||'').toLocaleLowerCase('tr-TR'); }
+      catch(e) { return (s||'').toLowerCase(); }
+    }
+
+    function _renderDD(query) {
+      _pozisyonla();
+      var q = _trLower((query||'').trim());
+      var opts = Array.from(sel.options).filter(function(o){ return o.value; });
+      var items = opts.map(function(o){
+        return { id: o.value, label: o.text, kod: o.dataset.kod || '' };
+      });
+
+      var sonIds = _sonKullanilan();
+      var sonItems = sonIds.map(function(id){
+        return items.find(function(it){ return it.id === id; });
+      }).filter(Boolean);
+
+      var filtered = q ? items.filter(function(it){
+        return _trLower(it.label).indexOf(q) !== -1 || _trLower(it.kod).indexOf(q) !== -1;
+      }) : items;
+
+      var html = '';
+      if (!q && sonItems.length) {
+        html += '<div style="padding:6px 12px;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;font-weight:500;background:rgba(0,0,0,0.02);border-bottom:0.5px solid var(--b)">Son Kullanilan</div>';
+        sonItems.forEach(function(it){
+          html += '<div class="st-mu-item" data-id="' + it.id + '" data-label="' + (it.label||'').replace(/"/g,'&quot;') + '" style="padding:8px 12px;cursor:pointer;border-bottom:0.5px solid var(--b);font-size:12px">' + it.label + '</div>';
+        });
+        html += '<div style="padding:6px 12px;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:0.05em;font-weight:500;background:rgba(0,0,0,0.02);border-bottom:0.5px solid var(--b)">Tum Musteriler</div>';
+      }
+
+      if (filtered.length === 0) {
+        html += '<div style="padding:10px 12px;font-size:11px;color:var(--t3);font-style:italic">Sonuc bulunamadi</div>';
+      } else {
+        filtered.forEach(function(it){
+          html += '<div class="st-mu-item" data-id="' + it.id + '" data-label="' + (it.label||'').replace(/"/g,'&quot;') + '" style="padding:8px 12px;cursor:pointer;border-bottom:0.5px solid var(--b);font-size:12px">' + it.label + '</div>';
+        });
+      }
+
+      html += '<div style="padding:8px 12px;font-size:10px;color:var(--t3);background:rgba(0,0,0,0.02);font-style:italic">Musteri yoksa Musteri Iliskileri menusunden ekleyin</div>';
+
+      dd.innerHTML = html;
+      dd.style.display = 'block';
+
+      Array.from(dd.querySelectorAll('.st-mu-item')).forEach(function(el){
+        el.addEventListener('mouseenter', function(){ el.style.background = 'rgba(0,0,0,0.04)'; });
+        el.addEventListener('mouseleave', function(){ el.style.background = ''; });
+        el.addEventListener('click', function(){
+          var id = el.dataset.id;
+          var label = el.dataset.label;
+          sel.value = id;
+          sel.dispatchEvent(new Event('change'));
+          input.value = label;
+          dd.style.display = 'none';
+        });
+      });
+    }
+
+    input.addEventListener('focus', function(){ _renderDD(input.value); });
+    input.addEventListener('input', function(){ _renderDD(input.value); });
+    input.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') dd.style.display = 'none';
+    });
+    document.addEventListener('click', function(e){
+      if (!dd.contains(e.target) && e.target !== input) dd.style.display = 'none';
+    });
+    window.addEventListener('scroll', _pozisyonla, true);
+    window.addEventListener('resize', _pozisyonla);
+  }, 200);
+
 };
 
 /**
