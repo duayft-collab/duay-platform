@@ -3825,6 +3825,14 @@ window.saveProfile      = saveProfile;
 // DOM zaten hazırdır (index.html'de body sonunda yüklenir).
 App.init();
 
+// [ALIS-001 START] Migration tetikleyici — auth user ready sonrası bir kez çalışır
+setTimeout(function() {
+  if (typeof window._migrateDuayCodeToDuayKodu === 'function') {
+    try { window._migrateDuayCodeToDuayKodu(); } catch (e) { console.warn('[ALIS-001] Migration hata:', e && e.message); }
+  }
+}, 5000);
+// [ALIS-001 END]
+
 // ════════════════════════════════════════════════════════════════
 // ADMIN vs USER UI AYRIMI
 // ════════════════════════════════════════════════════════════════

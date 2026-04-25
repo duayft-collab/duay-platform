@@ -995,3 +995,65 @@ window._pdfTarihFormat = function(d) {
   });
   /* Çıktı: "25 Apr 2026" */
 };
+
+// [ALIS-001 START]
+/**
+ * ALIS-001: Tek seferlik migration — duayCode → duayKodu hizala.
+ * urun_db.js eski form'undan duayCode olarak kaydedilen ürünleri duayKodu'ya kopyalar.
+ * Diğer modüller (urunler.js, render.js, satis.js, app_patch.js) sadece duayKodu okuduğu
+ * için bu kayıtlar listelerinde boş görünüyordu.
+ *
+ * Idempotent — localStorage flag (ak_migration_alis_001_done) ile bir kez çalışır.
+ * @returns {{migrated:number, skipped:number, skippedReason?:string}}
+ */
+window._migrateDuayCodeToDuayKodu = function() {
+  var migrationKey = 'ak_migration_alis_001_done';
+  if (localStorage.getItem(migrationKey) === '1') {
+    console.log('[ALIS-001] Migration zaten tamamlanmış');
+    return { migrated: 0, skipped: 0, skippedReason: 'already-done' };
+  }
+
+  /* Auth user ready değilse Firestore yazısı yapamayız — flag SET ETME, tekrar tetiklenecek */
+  var _cu = (typeof window.CU === 'function') ? window.CU() : null;
+  if (!_cu || !_cu.id) {
+    console.log('[ALIS-001] Auth user henüz yok, migration ertelendi');
+    return { migrated: 0, skipped: 0, skippedReason: 'no-auth' };
+  }
+
+  var urunler = (typeof window.loadUrunler === 'function')
+    ? window.loadUrunler({ tumKullanicilar: true, _dahilSilinenler: true })
+    : [];
+
+  if (!urunler || !urunler.length) {
+    console.log('[ALIS-001] Hiç ürün yok, migration atlanıyor');
+    localStorage.setItem(migrationKey, '1');
+    return { migrated: 0, skipped: 0, skippedReason: 'empty' };
+  }
+
+  var migrated = 0;
+  var skipped = 0;
+
+  urunler.forEach(function(u) {
+    if (u && u.duayCode && !u.duayKodu) {
+      u.duayKodu = u.duayCode;
+      migrated++;
+    } else {
+      skipped++;
+    }
+  });
+
+  if (migrated > 0 && typeof window.storeUrunler === 'function') {
+    window.storeUrunler(urunler);
+  }
+
+  localStorage.setItem(migrationKey, '1');
+
+  console.log('[ALIS-001] Migration tamam: ' + migrated + ' kayıt güncellendi, ' + skipped + ' atlandı');
+
+  if (typeof window.logActivity === 'function') {
+    window.logActivity('migration', 'ALIS-001 duayCode → duayKodu: ' + migrated + ' kayıt');
+  }
+
+  return { migrated: migrated, skipped: skipped };
+};
+// [ALIS-001 END]
