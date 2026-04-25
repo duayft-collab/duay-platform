@@ -2960,8 +2960,8 @@ window._printSatisTeklif = function(id) {
     // Signature
     + '<div class="sig"><div><div class="sig-line">DUAY GLOBAL LLC</div></div><div><div class="sig-line">' + esc(t.musteri||'Customer') + '</div></div></div>'
     // Footer
-    /* FEAT-07d: kişisel email kaldırıldı — sadece kurumsal bilgi */
-    + '<div class="footer">Duay Global LLC · www.duaycor.com<br>Karadolap Mh. Neşeli Sk. 1-5 Eyüp İstanbul TÜRKİYE · +90 532 270 5 113 · +90 212 625 5 444</div>'
+    /* CLAUDE-KURAL-PI-001 madde 5: kurumsal ortak footer (PI_ADRES) */
+    + (window._pdfOrtakFooter ? window._pdfOrtakFooter('tam') : '<div class="footer">Duay International Trading Ltd. · www.duaycor.com</div>')
     + '<button onclick="window.print()" style="margin-top:15px;padding:8px 20px;cursor:pointer;border:1px solid #1a365d;border-radius:4px;background:#fff;color:#1a365d;font-weight:600">🖨 Print / PDF</button>'
     + '</body></html>');
   w.document.close();
@@ -3184,6 +3184,8 @@ window._printSatisTeklifB = function(id) {
           + n.sartlar.map(function(s){ return '<li>' + esc(String(s)) + '</li>'; }).join('')
           + '</ol></div>'
         : '')
+    /* CLAUDE-KURAL-PI-001 madde 5: kurumsal ortak footer (sade) */
+    + (window._pdfOrtakFooter ? '<div style="margin-top:20px;padding-top:12px;border-top:0.5px solid #e5e5e7">' + window._pdfOrtakFooter('sade') + '</div>' : '')
     +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer;border:1px solid #6366F1;border-radius:6px;background:#fff;color:#6366F1;font-weight:600">Print</button></body></html>');
   w.document.close();
   /* PDF-HARMONIZE-001: B format için Firebase Storage upload */
@@ -3255,6 +3257,8 @@ window._printSatisTeklifC = function(id) {
     +'<div>' + esc(cur) + ' IBAN: ' + esc(banka.iban||'') + '</div>'
     +'<div><b>SWIFT:</b> ' + esc(banka.swift||'BTFHTRIS') + '</div></div>'
     +'<div style="display:flex;justify-content:space-between;margin-top:60px"><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">DUAY GLOBAL LLC</div></div><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">'+esc(n.musteri||'Customer')+'</div></div></div></div>'
+    /* CLAUDE-KURAL-PI-001 madde 5: kurumsal ortak footer (sade) */
+    + (window._pdfOrtakFooter ? '<div style="margin-top:20px">' + window._pdfOrtakFooter('sade') + '</div>' : '')
     +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer">Print</button></body></html>');
   w.document.close();
   /* PDF-HARMONIZE-001: C format için Firebase Storage upload */
