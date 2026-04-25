@@ -890,3 +890,63 @@ window._ordYoneticiMi = function() {
           || (window.CU && window.CU() || {}).role;
   return role === 'admin' || role === 'manager';
 };
+
+/* PI-BANKA-001: Para birimi → banka listesi
+   Source: window.IBAN_DATA (platform_standartlari.js).
+   Yapı: [{ banka, sube, TL, USD, EUR }] → flat [{ banka, sube, iban, swift, hesapSahibi, paraBirimi }] */
+window._pdfBankaListesi = function(paraBirimi) {
+  var pb = String(paraBirimi || 'USD').toUpperCase();
+  if (pb === 'TRY') pb = 'TL';
+  if (pb === 'GBP' || pb === 'CNY') pb = 'USD'; /* fallback */
+  var IBAN_DATA = window.IBAN_DATA || [];
+  var fallback = {
+    banka: 'Albaraka Türk',
+    sube: 'Alibeyköy/117',
+    iban: pb === 'TL'  ? 'TR54 0020 3000 0889 5310 0000 05'
+        : pb === 'EUR' ? 'TR97 0020 3000 0889 5310 0000 07'
+        :                'TR27 0020 3000 0889 5310 0000 06',
+    swift: 'BTFHTRIS',
+    hesapSahibi: 'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.',
+    paraBirimi: pb
+  };
+  if (!IBAN_DATA.length) return [fallback];
+  var sonuc = IBAN_DATA.map(function(item) {
+    return {
+      banka: item.banka || '',
+      sube: item.sube || '',
+      iban: item[pb] || item.USD || '',
+      swift: item.swift || 'BTFHTRIS',
+      hesapSahibi: item.hesapSahibi || 'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.',
+      paraBirimi: pb
+    };
+  }).filter(function(b){ return b.iban; });
+  return sonuc.length ? sonuc : [fallback];
+};
+
+/* PI-BANKA-001: HTML üretici — kompakt liste (Format D D1+D2 için) */
+window._pdfBankaHtmlListe = function(paraBirimi) {
+  var bankalar = window._pdfBankaListesi(paraBirimi);
+  var esc = window._esc || function(s){ return String(s||''); };
+  var html = '';
+  bankalar.forEach(function(b, i) {
+    html += '<div style="font-size:10px;color:#4a4a4f;line-height:1.6;'
+      + (i > 0 ? 'margin-top:8px;padding-top:8px;border-top:0.5px solid #e5e5e7;' : '')
+      + '">';
+    html += '<div style="font-weight:600;color:#1d1d1f;margin-bottom:2px">'
+      + esc(b.banka) + (b.sube ? ' — ' + esc(b.sube) : '') + '</div>';
+    html += '<div>IBAN: ' + esc(b.iban) + '</div>';
+    if (b.swift) html += '<div>SWIFT: ' + esc(b.swift) + '</div>';
+    html += '</div>';
+  });
+  return html;
+};
+
+/* PI-BANKA-001: Tek banka tek satır (Format A/B/C eski pattern uyumlu) */
+window._pdfBankaTekSatir = function(paraBirimi) {
+  var bankalar = window._pdfBankaListesi(paraBirimi);
+  if (!bankalar.length) return '';
+  var b = bankalar[0];
+  return b.banka + (b.sube ? ' (' + b.sube + ')' : '')
+    + ' · IBAN: ' + b.iban
+    + (b.swift ? ' · SWIFT: ' + b.swift : '');
+};

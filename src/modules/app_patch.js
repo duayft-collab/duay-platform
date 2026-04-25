@@ -2882,9 +2882,9 @@ window._printSatisTeklif = function(id) {
   var curSym = cur==='USD'?'$':cur==='EUR'?'€':cur==='TRY'?'₺':cur;
   /* PDF-FORMAT: tr-TR format + sembol önce */
   var totalAmt = window._pdfNum(t.genelToplam, cur, true);
-  // Banka bilgileri
-  var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
-  var banka = bankalar.length ? bankalar[0] : { name:'Albaraka Türk', sube:'Alibeyköy-117', iban:'TR650020300008895310000001', ibanEur:'TR380020300008895310000002', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
+  /* PI-BANKA-001: Para birimi → banka helper (platform_standartlari.js IBAN_DATA) */
+  var bankaList = window._pdfBankaListesi ? window._pdfBankaListesi(n.paraBirimi || cur) : [];
+  var banka = bankaList[0] || { banka:'Albaraka Türk', sube:'Alibeyköy/117', iban:'', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>PI ' + esc(t.teklifNo) + '</title>'
     /* FEAT-07d: tarayıcı native header/footer gizle (@page margin 0) */
@@ -2948,13 +2948,12 @@ window._printSatisTeklif = function(id) {
           + '</ol></div>'
         : '')
     // Bank
+    /* PI-BANKA-001: helper'dan tek banka — para birimi'ne göre IBAN otomatik */
     + '<div class="bank"><h4>BANKING DETAILS</h4>'
-    + '<div style="font-size:10px;margin-bottom:4px"><b>Account Holder:</b> ' + esc(banka.hesapSahibi||'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.') + '</div>'
-    + '<div><b>' + esc(banka.name||'Albaraka Türk') + '</b> — ' + esc(banka.sube||'') + '</div>'
-    + (cur==='USD'||!cur||cur==='USD' ? '<div>USD IBAN: ' + esc(banka.iban||'') + '</div>' : '')
-    + (cur==='EUR' ? '<div>EUR IBAN: ' + esc(banka.ibanEur||banka.iban||'') + '</div>' : '')
-    + (cur!=='USD'&&cur!=='EUR' ? '<div>IBAN: ' + esc(banka.iban||'') + '</div>' + (banka.ibanEur?'<div>EUR IBAN: '+esc(banka.ibanEur)+'</div>':'') : '')
-    + '<div>SWIFT: ' + esc(banka.swift||'') + '</div></div>'
+    + '<div style="font-size:10px;margin-bottom:4px"><b>Account Holder:</b> ' + esc(banka.hesapSahibi||'') + '</div>'
+    + '<div><b>' + esc(banka.banka||'Albaraka Türk') + '</b> — ' + esc(banka.sube||'') + '</div>'
+    + '<div>' + esc(cur) + ' IBAN: ' + esc(banka.iban||'') + '</div>'
+    + '<div>SWIFT: ' + esc(banka.swift||'BTFHTRIS') + '</div></div>'
     // Satıcı notu (opsiyonel)
     + (function(){var sn=t.saticiNotu;if(!sn||!sn.pdfEkle)return '';var html='<div style="margin-top:15px;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:4px;font-size:9px;color:#0c4a6e"><h4 style="color:#0c4a6e;font-size:10px;margin-bottom:6px">SELLER\'S NOTES</h4>';if(sn.urunKarsilastir)html+='<div style="margin-bottom:4px">'+esc(sn.urunKarsilastir)+'</div>';if(sn.ozelHusus)html+='<div>'+esc(sn.ozelHusus)+'</div>';return html+'</div>';})()
     // Signature
@@ -3147,9 +3146,9 @@ window._printSatisTeklifB = function(id) {
   if (!n) return;
   var esc = window._esc;
   var cur = t.paraBirimi||'USD';
-  /* BUG-02: banka bilgisi B template'ine eklendi (A'dan port) */
-  var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
-  var banka = (bankalar && bankalar.length) ? bankalar[0] : { name:'Albaraka Türk', sube:'Alibeyköy-117', iban:'TR650020300008895310000001', ibanEur:'TR380020300008895310000002', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
+  /* PI-BANKA-001: Para birimi → banka helper (Format B) */
+  var bankaList = window._pdfBankaListesi ? window._pdfBankaListesi(n.paraBirimi || cur) : [];
+  var banka = bankaList[0] || { banka:'Albaraka Türk', sube:'Alibeyköy/117', iban:'', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
   var w = window.open('','_blank');
   /* FEAT-07d: tarayıcı native header/footer gizle (@page margin 0) */
   w.document.write('<!DOCTYPE html><html><head><title>'+esc(n.teklifNo)+'</title><style>@page { size: A4; margin: 0 }*{margin:0;box-sizing:border-box}body{font-family:system-ui;color:#1a1a1a;font-size:12px;padding:30px;max-width:800px;margin:0 auto}'
@@ -3169,13 +3168,12 @@ window._printSatisTeklifB = function(id) {
     /* PDF-FORMAT: tr-TR sayı + kod arkada (B format) */
     +(t.urunler||[]).map(function(u,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(u.urunAdi||'')+'</td><td style="text-align:center">'+(u.miktar||0)+'</td><td style="text-align:right">'+window._pdfNum(u.satisFiyat, cur, false)+'</td><td style="text-align:right">'+window._pdfNum((u.satisFiyat||0)*(u.miktar||0), cur, false)+'</td></tr>';}).join('')
     +'<tr class="total"><td colspan="4" style="text-align:right">TOTAL</td><td style="text-align:right;font-size:16px">'+window._pdfNum(t.genelToplam, cur, false)+'</td></tr></tbody></table>'
+    /* PI-BANKA-001: helper'dan tek banka — para birimi'ne göre IBAN otomatik (Format B) */
     +'<div class="bank"><h4>BANKING DETAILS</h4>'
-    +'<div><b>Account Holder:</b> ' + esc(banka.hesapSahibi||'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.') + '</div>'
-    +'<div><b>' + esc(banka.name||'Albaraka Türk') + '</b> — ' + esc(banka.sube||'') + '</div>'
-    +(cur==='USD' ? '<div>USD IBAN: ' + esc(banka.iban||'') + '</div>' : '')
-    +(cur==='EUR' ? '<div>EUR IBAN: ' + esc(banka.ibanEur||banka.iban||'') + '</div>' : '')
-    +(cur!=='USD'&&cur!=='EUR' ? '<div>IBAN: ' + esc(banka.iban||'') + '</div>' : '')
-    +'<div><b>SWIFT:</b> ' + esc(banka.swift||'') + '</div></div>'
+    +'<div><b>Account Holder:</b> ' + esc(banka.hesapSahibi||'') + '</div>'
+    +'<div><b>' + esc(banka.banka||'Albaraka Türk') + '</b> — ' + esc(banka.sube||'') + '</div>'
+    +'<div>' + esc(cur) + ' IBAN: ' + esc(banka.iban||'') + '</div>'
+    +'<div><b>SWIFT:</b> ' + esc(banka.swift||'BTFHTRIS') + '</div></div>'
     /* PDF-HARMONIZE-001: V2 form fallback (n.teslim/n.odeme/n.gecerlilik) */
     +'<div style="font-size:10px;color:#666;margin-top:16px">Terms: '+esc(n.teslim)+' · Payment: '+esc(n.odeme)+' · Valid: '+esc(n.gecerlilik)+'</div>'
     /* PDF-HARMONIZE-001: kullanıcı tanımlı şartlar listesi */
@@ -3208,9 +3206,9 @@ window._printSatisTeklifC = function(id) {
   if (!n) return;
   var esc = window._esc;
   var cur = t.paraBirimi||'USD';
-  /* BUG-02: banka bilgisi C template'ine eklendi (A'dan port) */
-  var bankalar = typeof loadBankalar === 'function' ? loadBankalar() : [];
-  var banka = (bankalar && bankalar.length) ? bankalar[0] : { name:'Albaraka Türk', sube:'Alibeyköy-117', iban:'TR650020300008895310000001', ibanEur:'TR380020300008895310000002', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
+  /* PI-BANKA-001: Para birimi → banka helper (Format C) */
+  var bankaList = window._pdfBankaListesi ? window._pdfBankaListesi(n.paraBirimi || cur) : [];
+  var banka = bankaList[0] || { banka:'Albaraka Türk', sube:'Alibeyköy/117', iban:'', swift:'BTFHTRIS', hesapSahibi:'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.' };
   var w = window.open('','_blank');
   /* FEAT-07d: tarayıcı native header/footer gizle (@page margin 0) */
   w.document.write('<!DOCTYPE html><html><head><title>'+esc(n.teklifNo)+'</title><style>@page { size: A4; margin: 0 }*{margin:0;box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a1a;font-size:12px;padding:40px;max-width:700px;margin:0 auto}'
@@ -3247,14 +3245,12 @@ window._printSatisTeklifC = function(id) {
           + n.sartlar.map(function(s){ return '<li>' + esc(String(s)) + '</li>'; }).join('')
           + '</ol></div>'
         : '')
-    /* BUG-02: banka bilgisi C template'inde — Terms grid ile imza arasında */
+    /* PI-BANKA-001: helper'dan tek banka — para birimi'ne göre IBAN otomatik (Format C) */
     +'<div class="bank"><h4>BANKING DETAILS</h4>'
-    +'<div><b>Account Holder:</b> ' + esc(banka.hesapSahibi||'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.') + '</div>'
-    +'<div><b>' + esc(banka.name||'Albaraka Türk') + '</b> — ' + esc(banka.sube||'') + '</div>'
-    +(cur==='USD' ? '<div>USD IBAN: ' + esc(banka.iban||'') + '</div>' : '')
-    +(cur==='EUR' ? '<div>EUR IBAN: ' + esc(banka.ibanEur||banka.iban||'') + '</div>' : '')
-    +(cur!=='USD'&&cur!=='EUR' ? '<div>IBAN: ' + esc(banka.iban||'') + '</div>' : '')
-    +'<div><b>SWIFT:</b> ' + esc(banka.swift||'') + '</div></div>'
+    +'<div><b>Account Holder:</b> ' + esc(banka.hesapSahibi||'') + '</div>'
+    +'<div><b>' + esc(banka.banka||'Albaraka Türk') + '</b> — ' + esc(banka.sube||'') + '</div>'
+    +'<div>' + esc(cur) + ' IBAN: ' + esc(banka.iban||'') + '</div>'
+    +'<div><b>SWIFT:</b> ' + esc(banka.swift||'BTFHTRIS') + '</div></div>'
     +'<div style="display:flex;justify-content:space-between;margin-top:60px"><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">DUAY GLOBAL LLC</div></div><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">'+esc(n.musteri||'Customer')+'</div></div></div></div>'
     +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer">Print</button></body></html>');
   w.document.close();

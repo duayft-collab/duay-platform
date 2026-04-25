@@ -3,23 +3,25 @@
 (function() {
   'use strict';
 
+/* PI-BANKA-001: IBAN_DATA module-level — PDF helper'ları (utils.js) okuyabilsin */
+var IBAN_DATA = [
+  { banka:'Garanti Bankası', sube:'Yeşilpınar/1181',
+    TL:'TR24 0006 2001 1810 0006 2960 86',
+    USD:'TR39 0006 2001 1810 0009 0812 68',
+    EUR:'TR66 0006 2001 1810 0009 0812 67' },
+  { banka:'Albaraka Türk', sube:'Alibeyköy/117',
+    TL:'TR54 0020 3000 0889 5310 0000 05',
+    USD:'TR27 0020 3000 0889 5310 0000 06',
+    EUR:'TR97 0020 3000 0889 5310 0000 07' },
+  { banka:'Kuveyt Türk', sube:'Yeşilpınar/267',
+    TL:'TR06 0020 5000 0956 8147 5000 01',
+    USD:'TR22 0020 5000 0956 8147 5000 01',
+    EUR:'TR92 0020 5000 0956 8147 5000 02' },
+];
+window.IBAN_DATA = IBAN_DATA;
+
 window.renderPlatformStandartlari = function() {
   var p = document.getElementById('panel-platform-standartlari'); if(!p) return;
-
-  var IBAN_DATA = [
-    { banka:'Garanti Bankası', sube:'Yeşilpınar/1181',
-      TL:'TR24 0006 2001 1810 0006 2960 86',
-      USD:'TR39 0006 2001 1810 0009 0812 68',
-      EUR:'TR66 0006 2001 1810 0009 0812 67' },
-    { banka:'Albaraka Türk', sube:'Alibeyköy/117',
-      TL:'TR54 0020 3000 0889 5310 0000 05',
-      USD:'TR27 0020 3000 0889 5310 0000 06',
-      EUR:'TR97 0020 3000 0889 5310 0000 07' },
-    { banka:'Kuveyt Türk', sube:'Yeşilpınar/267',
-      TL:'TR06 0020 5000 0956 8147 5000 01',
-      USD:'TR22 0020 5000 0956 8147 5000 01',
-      EUR:'TR92 0020 5000 0956 8147 5000 02' },
-  ];
 
   var ibanHTML = IBAN_DATA.map(function(b) {
     return '<div style="border:0.5px solid var(--b);border-radius:8px;padding:14px 16px;margin-bottom:10px;background:var(--sf)">'
