@@ -906,7 +906,7 @@ window._pdfBankaListesi = function(paraBirimi) {
         : pb === 'EUR' ? 'TR97 0020 3000 0889 5310 0000 07'
         :                'TR27 0020 3000 0889 5310 0000 06',
     swift: 'BTFHTRIS',
-    hesapSahibi: 'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.',
+    hesapSahibi: (window.PI_ADRES?.sirket || 'Duay International Trading Ltd.'),
     paraBirimi: pb
   };
   if (!IBAN_DATA.length) return [fallback];
@@ -916,7 +916,7 @@ window._pdfBankaListesi = function(paraBirimi) {
       sube: item.sube || '',
       iban: item[pb] || item.USD || '',
       swift: item.swift || 'BTFHTRIS',
-      hesapSahibi: item.hesapSahibi || 'DUAY ULUSLARARASI TİCARET LTD. ŞTİ.',
+      hesapSahibi: item.hesapSahibi || (window.PI_ADRES?.sirket || 'Duay International Trading Ltd.'),
       paraBirimi: pb
     };
   }).filter(function(b){ return b.iban; });
