@@ -78,7 +78,16 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<input id="st-liman" value="Turkey" oninput="event.stopPropagation();window._saV2PIOnizlemeGuncelle()" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">PARA BİRİMİ</div>';
   ic += '<select id="st-para-birimi" onchange="event.stopPropagation();window._saV2SatisTabloyuGuncelle?.();window._saV2PIOnizlemeGuncelle();window._saV2BankaGuncelle(this.value);var _kEl=document.getElementById(\'st-kur-mini\');if(_kEl){var _k=window._saKur&&window._saKur[this.value];if(_k){_kEl.style.display=\'block\';_kEl.textContent=\'1 \'+this.value+\' = \'+_k.toFixed(2)+\' TRY\';}else{_kEl.style.display=\'none\';}}" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option>USD</option><option>EUR</option><option>GBP</option><option>TRY</option><option>CNY</option></select></div>';
-  ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">KUR</div><div id="st-kur-mini" style="font-size:10px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t3);font-family:monospace">1 USD = '+(window._saKur?.USD||44.55).toFixed(2)+' TRY</div></div>'
+  ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">KUR</div><div id="st-kur-mini" style="font-size:10px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t3);font-family:monospace">1 USD = '+(window._saKur?.USD||44.55).toFixed(2)+' TRY</div></div>';
+  ic += '<div id="st-freight-row" style="display:none;padding:8px 16px 0;align-items:center;flex-wrap:wrap;gap:10px">';
+  ic += '<button type="button" id="st-freight-toggle" onclick="event.stopPropagation();window._saV2FreightToggle&&window._saV2FreightToggle()" style="height:26px;padding:0 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);font-size:11px;cursor:pointer;font-family:inherit;color:var(--t2)"><span id="st-freight-toggle-icon">○</span> Freight/Ins. ayri satir</button>';
+  ic += '<div id="st-freight-inputs" style="display:none;gap:8px;align-items:center">';
+  ic += '<label style="font-size:9px;color:var(--t3);letter-spacing:.06em">FREIGHT</label>';
+  ic += '<input type="number" id="st-freight-amount" min="0" step="0.01" placeholder="0.00" style="width:90px;height:26px;padding:0 8px;border:0.5px solid var(--b);border-radius:5px;font-size:11px;text-align:right;font-family:monospace" oninput="event.stopPropagation();window._saV2FreightChange&&window._saV2FreightChange(this.value,&#39;freight&#39;)">';
+  ic += '<label id="st-insurance-label" style="font-size:9px;color:var(--t3);letter-spacing:.06em;margin-left:8px">INSURANCE</label>';
+  ic += '<input type="number" id="st-insurance-amount" min="0" step="0.01" placeholder="0.00" style="width:90px;height:26px;padding:0 8px;border:0.5px solid var(--b);border-radius:5px;font-size:11px;text-align:right;font-family:monospace" oninput="event.stopPropagation();window._saV2FreightChange&&window._saV2FreightChange(this.value,&#39;insurance&#39;)">';
+  ic += '</div>';
+  ic += '</div>'
   ic += '</div>';
   ic += '<div style="display:none"><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">ÖDEME KOŞULU</div>';
   ic += '<select id="st-odeme" onchange="event.stopPropagation();window._saV2PIOnizlemeGuncelle()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
@@ -795,8 +804,29 @@ window._saV2SartListeGuncelle = function() {
       + '<button onclick="event.stopPropagation();window._stSartlar.splice(' + i + ',1);window._saV2SartListeGuncelle()" style="font-size:9px;border:none;background:none;cursor:pointer;color:#A32D2D;padding:0 2px">\u2715</button></div>';
   }).join('');
 };
+window._saV2FreightToggle = function() {
+  window._stFreightToggle = !window._stFreightToggle;
+  var icon = document.getElementById('st-freight-toggle-icon');
+  var inputs = document.getElementById('st-freight-inputs');
+  var btn = document.getElementById('st-freight-toggle');
+  if (icon) icon.textContent = window._stFreightToggle ? '●' : '○';
+  if (inputs) inputs.style.display = window._stFreightToggle ? 'flex' : 'none';
+  if (btn) btn.style.background = window._stFreightToggle ? 'var(--s3)' : 'var(--s2)';
+  if (typeof window._saV2PIOnizlemeGuncelle === 'function') window._saV2PIOnizlemeGuncelle();
+};
+
+window._saV2FreightChange = function(val, key) {
+  var n = parseFloat(val) || 0;
+  if (key === 'freight') window._stFreightAmount = n;
+  else if (key === 'insurance') window._stInsuranceAmount = n;
+  if (typeof window._saV2PIOnizlemeGuncelle === 'function') window._saV2PIOnizlemeGuncelle();
+};
+
 window._saV2IncotermAutoSart = function(incoterm) {
   if (!Array.isArray(window._stSartlar)) window._stSartlar = [];
+  if (typeof window._stFreightToggle !== 'boolean') window._stFreightToggle = false;
+  if (typeof window._stFreightAmount !== 'number') window._stFreightAmount = 0;
+  if (typeof window._stInsuranceAmount !== 'number') window._stInsuranceAmount = 0;
   var prefixes = ['Freight: Covered by seller', 'Freight & Insurance: Covered by seller', 'Carriage & Insurance: Covered by seller'];
   window._stSartlar = window._stSartlar.filter(function(s) {
     return !prefixes.some(function(p) { return s.indexOf(p) === 0; });
@@ -810,6 +840,28 @@ window._saV2IncotermAutoSart = function(incoterm) {
     window._stSartlar.push(msgs[incoterm]);
   }
   if (typeof window._saV2SartListeGuncelle === 'function') window._saV2SartListeGuncelle();
+  var row = document.getElementById('st-freight-row');
+  var insLabel = document.getElementById('st-insurance-label');
+  var insInp = document.getElementById('st-insurance-amount');
+  var showRow = (incoterm === 'CFR' || incoterm === 'CIF' || incoterm === 'CIP');
+  if (row) row.style.display = showRow ? 'flex' : 'none';
+  if (!showRow) {
+    window._stFreightToggle = false;
+    window._stFreightAmount = 0;
+    window._stInsuranceAmount = 0;
+    var inputs = document.getElementById('st-freight-inputs');
+    var icon = document.getElementById('st-freight-toggle-icon');
+    var btn = document.getElementById('st-freight-toggle');
+    var freightInp = document.getElementById('st-freight-amount');
+    if (inputs) inputs.style.display = 'none';
+    if (icon) icon.textContent = '○';
+    if (btn) btn.style.background = 'var(--s2)';
+    if (freightInp) freightInp.value = '';
+    if (insInp) insInp.value = '';
+  }
+  var showIns = (incoterm === 'CIF' || incoterm === 'CIP');
+  if (insLabel) insLabel.style.display = showIns ? '' : 'none';
+  if (insInp) insInp.style.display = showIns ? '' : 'none';
 };
 
 window._saV2SartEkle = function() {
