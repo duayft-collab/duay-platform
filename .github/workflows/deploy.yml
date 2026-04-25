@@ -25,6 +25,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ── Pre-deploy Verification (PUSULA-017) ──────────────────────
+      # syntax + marker bütünlüğü + baseline (duplicate / dangling / innerHTML+=)
+      # FAIL → tüm deploy iptal, canlı eski sürümde kalır.
+      - name: Run verify.sh (syntax + marker + baseline)
+        run: |
+          chmod +x scripts/verify.sh
+          bash scripts/verify.sh
+
       # ── ENV Injection ─────────────────────────────────────────────
       # GitHub Secrets → window.__ENV__ olarak index.html'e inject eder.
       # API key'ler asla repo'ya commit edilmez.
