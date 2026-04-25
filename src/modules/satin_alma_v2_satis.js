@@ -57,7 +57,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div style="flex:1;min-width:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;border-right:0.5px solid var(--b)">';
   // MUSTERI-ONCEKI-SATIS-002: önceki teklif uyarı banner placeholder
   ic += '<div id="sav2-prev-warn" style="display:none"></div>';
-  ic += '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1fr;gap:10px">';
+  ic += '<div style="display:grid;grid-template-columns:2fr 1.5fr 1.2fr 1.1fr 1.3fr 1.1fr 1.4fr;gap:10px">';
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">MÜŞTERİ <span style="color:#A32D2D">*</span></div>';
   ic += '<input type="text" id="st-musteri-ac" placeholder="Musteri ara..." autocomplete="off" style="width:100%;padding:8px 10px;border:0.5px solid var(--b);border-radius:8px;font-size:13px;background:var(--sf)">';
       ic += '<div id="st-musteri-dd" style="display:none;position:absolute;background:var(--bg);border:0.5px solid var(--b);border-radius:8px;max-height:280px;overflow-y:auto;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,0.06);min-width:300px"></div>';
