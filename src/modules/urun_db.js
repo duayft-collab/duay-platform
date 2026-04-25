@@ -914,20 +914,26 @@ window._udbKopyala = function(id) {
   var data = loadUrunDB() || [];
   var u = data.find(function(x){ return String(x.id) === String(id); });
   if (!u) { window.toast?.('Ürün bulunamadı','err'); return; }
-  if (!confirm('Bu ürünü kopyalamak istediğinize emin misiniz?\n\n"' + (u.duayName || u.urunAdi || '—') + '" yeni bir kayıt olarak eklenecek.')) return;
-  var kopya = Object.assign({}, u, {
-    id: (typeof _genDuayKodu === 'function' ? 'DY-' + Date.now().toString(36) : Date.now()),
-    duayKodu: (typeof _genDuayKodu === 'function' ? _genDuayKodu(data.map(function(d){ return d.duayKodu || d.duayCode; })) : null),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    yukleyen_id: window.Auth?.getCU?.()?.id || null
+  /* PUSULA-002: native confirm → confirmModal (K06) */
+  window.confirmModal('Bu ürünü kopyalamak istediğinize emin misiniz?\n\n"' + (u.duayName || u.urunAdi || '—') + '" yeni bir kayıt olarak eklenecek.', {
+    title: 'Ürün Kopyala',
+    confirmText: 'Evet, Kopyala',
+    onConfirm: function() {
+      var kopya = Object.assign({}, u, {
+        id: (typeof _genDuayKodu === 'function' ? 'DY-' + Date.now().toString(36) : Date.now()),
+        duayKodu: (typeof _genDuayKodu === 'function' ? _genDuayKodu(data.map(function(d){ return d.duayKodu || d.duayCode; })) : null),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        yukleyen_id: window.Auth?.getCU?.()?.id || null
+      });
+      delete kopya.deletedAt;
+      kopya.isDeleted = false;
+      data.push(kopya);
+      storeUrunDB(data);
+      window.toast?.('✓ Ürün kopyalandı','success');
+      if (typeof renderUrunDB === 'function') renderUrunDB();
+    }
   });
-  delete kopya.deletedAt;
-  kopya.isDeleted = false;
-  data.push(kopya);
-  storeUrunDB(data);
-  window.toast?.('✓ Ürün kopyalandı','success');
-  if (typeof renderUrunDB === 'function') renderUrunDB();
 };
 
 /* URUN-FORM-KART-LAYOUT-001-ADIM-B: Görsel yükleme + preview (Canvas compress URUN-GORSEL-COMPRESS-001 ile uyumlu) */

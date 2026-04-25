@@ -3451,16 +3451,23 @@ window._ppTopluTamamla = function() {
 window._ppTopluSil = function() {
   var ids = Object.keys(window._ppSeciliGorevler||{}).filter(function(k){return window._ppSeciliGorevler[k];});
   if (!ids.length) return;
-  if (!confirm(ids.length + ' görevi silmek istediğinize emin misiniz?')) return;
-  var tasks = _ppLoad();
-  ids.forEach(function(id) {
-    var t = tasks.find(function(x){return String(x.id)===id;});
-    if (t) { t.isDeleted = true; t.updatedAt = _ppNow(); }
+  /* PUSULA-002: native confirm → confirmModal (K06) */
+  window.confirmModal(ids.length + ' görevi silmek istediğinize emin misiniz?', {
+    title: 'Toplu Görev Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: function() {
+      var tasks = _ppLoad();
+      ids.forEach(function(id) {
+        var t = tasks.find(function(x){return String(x.id)===id;});
+        if (t) { t.isDeleted = true; t.updatedAt = _ppNow(); }
+      });
+      _ppStore(tasks);
+      window._ppSeciliGorevler = {};
+      window._ppModRender?.();
+      window.toast?.(ids.length + ' görev silindi', 'warn');
+    }
   });
-  _ppStore(tasks);
-  window._ppSeciliGorevler = {};
-  window._ppModRender?.();
-  window.toast?.(ids.length + ' görev silindi', 'warn');
 };
 
 /**
