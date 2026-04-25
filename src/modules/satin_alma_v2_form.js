@@ -793,11 +793,6 @@ window._saV2SatisTabloyuGuncelle = function() {
       + (sayfa < toplamSayfa ? '<button onclick="event.stopPropagation();window._stUrunSayfa=' + (sayfa + 1) + ';window._saV2SatisTabloyuGuncelle()" style="font-size:9px;padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;font-family:inherit">\u2192</button>' : '')
       + '</div></div>';
   } else { spEl.innerHTML = ''; }
-  /* Kur bilgisi */
-  var kurBilgi = document.getElementById('st-kur-bilgi');
-  var bankaEl = document.getElementById('st-banka-bilgi');
-  if (!kurBilgi && bankaEl) { kurBilgi = document.createElement('div'); kurBilgi.id = 'st-kur-bilgi'; kurBilgi.style.cssText = 'font-size:8px;color:var(--t3);margin-top:3px;font-family:monospace;padding:0 2px'; bankaEl.parentNode.insertBefore(kurBilgi, bankaEl.nextSibling); }
-  if (kurBilgi) { var kb = kurlar[hedefPara]; kurBilgi.textContent = hedefPara === 'TRY' ? '' : ('1 ' + hedefPara + ' = ' + (kb ? kb.toFixed(2) : '?') + ' TRY'); }
   window._saV2SatisOzetGuncelle();
 };
 
