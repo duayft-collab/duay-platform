@@ -199,7 +199,8 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:0.5px solid var(--b);flex-shrink:0;background:var(--sf)">';
   ic += '<button onclick="event.stopPropagation();document.getElementById(\'sav2-satis-modal\')?.remove();window._saV2AktifDuzenlemeTeklif=null" style="font-size:11px;padding:7px 16px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">\u0130ptal</button>';
   ic += '<div style="display:flex;gap:6px">';
-  ic += '<button onclick="event.stopPropagation();window._saV2TamOnIzle()" style="font-size:11px;padding:7px 14px;border:0.5px solid #185FA5;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:#185FA5;font-weight:500">\u{1F441} Tam \u00d6n \u0130zle</button>';
+  /* SATIS-008: _btnGuard ile \u00e7ift basma engeli + spinner */
+  ic += '<button onclick="event.stopPropagation();window._btnGuard?.(this, function(){window._saV2TamOnIzle();}, 3000)" style="font-size:11px;padding:7px 14px;border:0.5px solid #185FA5;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:#185FA5;font-weight:500">\u{1F441} Tam \u00d6n \u0130zle</button>';
   ic += '<button onclick="event.stopPropagation();window._saV2SatisKaydet(\''+t.id+'\')" style="font-size:11px;padding:7px 14px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Taslak Kaydet</button>';
   ic += '<button onclick="event.stopPropagation();window._saV2SatisKaydetVeGit(\''+t.id+'\')" style="font-size:11px;padding:7px 20px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-weight:500;font-family:inherit">Teklifi Oluştur →</button>';
   ic += '</div></div></div>';

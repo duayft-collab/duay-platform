@@ -2273,7 +2273,8 @@ window.renderSatisTeklifleri = function() {
       + '</div>'
       // PDF + 📎 (kayıtlı) + ···
       + '<div style="display:flex;gap:4px;flex-shrink:0">'
-      + '<button onclick="event.stopPropagation();window._printSatisTeklif?.(\'' + t.id + '\')" style="font-size:9px;padding:5px 14px;border-radius:5px;border:none;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">PDF</button>'
+      /* SATIS-008: _btnGuard ile çift basma engeli + spinner */
+      + '<button onclick="event.stopPropagation();window._btnGuard?.(this, function(){window._printSatisTeklif?.(\'' + t.id + '\');}, 3000)" style="font-size:9px;padding:5px 14px;border-radius:5px;border:none;background:#185FA5;color:#fff;cursor:pointer;font-family:inherit;font-weight:600">PDF</button>'
       /* YENİ-1: Kayıtlı PDF linki — son rev (hover tooltip) */
       + (t.pdfUrls && t.pdfUrls.length
           ? '<a href="' + esc(t.pdfUrls[t.pdfUrls.length-1].url) + '" target="_blank" onclick="event.stopPropagation()" title="Kayıtlı PDF R' + esc(t.pdfUrls[t.pdfUrls.length-1].revNo) + ' — indir" style="font-size:12px;padding:4px 8px;border-radius:5px;border:0.5px solid var(--b);background:transparent;color:var(--t2);text-decoration:none;line-height:1;cursor:pointer">📎</a>'
@@ -2461,7 +2462,8 @@ window._stPeekAc = function(id) {
   }
   h += '<div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">';
   h += '<button onclick="event.stopPropagation();window._stDuzenle?.(' + t.id + ')" style="font-size:10px;padding:6px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">\u270f D\u00fczenle</button>';
-  h += '<button onclick="event.stopPropagation();window._printSatisTeklif?.(' + t.id + ')" style="font-size:10px;padding:6px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">PDF</button>';
+  /* SATIS-008: _btnGuard ile çift basma engeli + spinner */
+  h += '<button onclick="event.stopPropagation();window._btnGuard?.(this, function(){window._printSatisTeklif?.(' + t.id + ');}, 3000)" style="font-size:10px;padding:6px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit">PDF</button>';
   h += '</div>';
   peek.innerHTML = h;
   document.body.appendChild(peek);
@@ -2757,7 +2759,12 @@ window._saveSatisTeklif = function() {
   // Teklif No: [MüşteriID]-[YYMMDDHHMMM]
   var musteriSel = document.getElementById('st-musteri');
   var musteriCid = musteriSel?.options[musteriSel.selectedIndex]?.getAttribute('data-cid') || '';
-  var cariKod = musteriCid ? String(musteriCid).slice(-4) : '1018';
+  /* SATIS-006: Önce gerçek cari.kod, yoksa id slice fallback (V2 form ile tutarlı) */
+  var _selCari = (typeof loadCari === 'function')
+    ? (loadCari() || []).find(function(c){ return String(c.id) === String(musteriCid); })
+    : null;
+  var cariKod = (_selCari && _selCari.kod)
+    || (musteriCid ? String(musteriCid).slice(-4) : '1018');
   var n2 = new Date();
   var teklifNo = cariKod + '-' + String(n2.getFullYear()).slice(2) + String(n2.getMonth()+1).padStart(2,'0') + String(n2.getDate()).padStart(2,'0') + String(n2.getHours()).padStart(2,'0') + String(n2.getMinutes()).padStart(2,'0');
   var jobId = document.getElementById('st-job')?.value || '';
@@ -2825,6 +2832,9 @@ window._pdfProformaUpload = async function(t, html, fmt) {
     window.toast?.('Storage bağlantısı yok', 'warn');
     return null;
   }
+  /* SATIS-008: Upload sırasında loading overlay (2-5 sn donma feedback) */
+  var _loadingTarget = document.getElementById('sav2-satis-modal') || document.body;
+  if (window._loadingOverlay) window._loadingOverlay(_loadingTarget, true);
   try {
     /* HTML → PDF blob */
     var blob = await window.html2pdf()
@@ -2866,6 +2876,9 @@ window._pdfProformaUpload = async function(t, html, fmt) {
     console.error('PDF upload hata:', e);
     window.toast?.('PDF yüklenemedi: ' + (e.message || 'bilinmeyen hata'), 'err');
     return null;
+  } finally {
+    /* SATIS-008: Loading overlay'i her durumda temizle */
+    if (window._loadingOverlay) window._loadingOverlay(_loadingTarget, false);
   }
 };
 
