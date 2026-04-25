@@ -521,7 +521,7 @@ function openUrunForm(editId) {
     + '</div>'
     + '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2)">'
     + '<div style="font-size:9px;color:var(--t3);margin-right:auto">'
-    + (editId&&u.createdBy?'Kaydeden: '+_esc(u.createdBy)+' · '+_esc(u.createdAt||''):'Yeni kayıt — '+(_cu()?.displayName||''))
+    + (editId&&u.createdBy?'Kaydeden: '+_esc(u.createdByName || u.createdBy)+' · '+_esc(u.createdAt||''):'Yeni kayıt — '+(_cu()?.displayName||''))
     + '</div>'
     + '<div style="display:flex;align-items:center;gap:8px">'
     + '<div style="font-size:9px;color:var(--t3)">GİZLİLİK:</div>'
@@ -732,7 +732,10 @@ window._uf2PotTedKaydet = function() {
     nasil: nasil,
     onayDurum: 'bekliyor',
     createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-    createdBy: window.CU?.()?.displayName || ''
+    /* ALIS-002: createdBy standardize — id (filtre) + name (UI) + uid geriye uyumlu */
+    createdById: window.CU?.()?.uid || window.CU?.()?.id || '',
+    createdByName: window.CU?.()?.displayName || window.CU?.()?.email || 'Bilinmiyor',
+    createdBy: window.CU?.()?.uid || window.CU?.()?.id || ''
   };
   var cariler = typeof window.loadCari === 'function' ? window.loadCari() : [];
   cariler.push(kayit);
@@ -804,7 +807,8 @@ window._uf2TaslakKaydet = function() {
   let existing = data.find(x => String(x.id) === _aktifSekme);
   if (existing) { Object.assign(existing, vals, { updatedAt: new Date().toISOString() });
   } else {
-    existing = { id: _aktifSekme, createdAt: new Date().toISOString(), createdBy: _cu()?.id, ...vals };
+    /* ALIS-002: createdBy standardize — id (filtre) + name (UI) + uid geriye uyumlu */
+    existing = { id: _aktifSekme, createdAt: new Date().toISOString(), createdById: _cu()?.uid || _cu()?.id || '', createdByName: _cu()?.displayName || _cu()?.email || 'Bilinmiyor', createdBy: _cu()?.uid || _cu()?.id || '', ...vals };
     data.push(existing);
   }
   _storeU(data);
@@ -915,7 +919,10 @@ window._uf2KaydetYeni = function() {
     existing.alisF = g('alisF');
     existing.para = g('para')||'USD';
     existing.updatedAt = new Date().toISOString();
-    existing.updatedBy = window.CU?.()?.displayName||'';
+    /* ALIS-002: updatedBy standardize — uid + name ayrı */
+    existing.updatedById = window.CU?.()?.uid||window.CU?.()?.id||'';
+    existing.updatedByName = window.CU?.()?.displayName||window.CU?.()?.email||'Bilinmiyor';
+    existing.updatedBy = window.CU?.()?.uid||window.CU?.()?.id||'';
   } else {
     const yeni = {
       id: _genId(), duayKodu: duayKodu, urunAdi: g('urunAdi'), ingAd: g('ingAd'), standartAdi: g('ingAd'),
@@ -928,10 +935,14 @@ window._uf2KaydetYeni = function() {
       marka: g('marka'), netAgirlik: g('netAgirlik'), brutAgirlik: g('brutAgirlik'), alisF: g('alisF'), para: g('para')||'USD',
       status: 'aktif',
       createdAt: new Date().toISOString(),
+      /* ALIS-002: createdBy standardize — createdBy artık uid (sistem konvansiyonu), createdByName displayName tutar */
       createdById: window.CU?.()?.uid||window.CU?.()?.id||'',
-      createdBy: window.CU?.()?.displayName||window.CU?.()?.email||'Bilinmiyor',
+      createdByName: window.CU?.()?.displayName||window.CU?.()?.email||'Bilinmiyor',
+      createdBy: window.CU?.()?.uid||window.CU?.()?.id||'',
       updatedAt: new Date().toISOString(),
-      updatedBy: window.CU?.()?.displayName||''
+      updatedById: window.CU?.()?.uid||window.CU?.()?.id||'',
+      updatedByName: window.CU?.()?.displayName||window.CU?.()?.email||'Bilinmiyor',
+      updatedBy: window.CU?.()?.uid||window.CU?.()?.id||''
     };
     data.push(yeni);
   }

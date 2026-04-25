@@ -1058,6 +1058,89 @@ window._migrateDuayCodeToDuayKodu = function() {
 };
 // [ALIS-001 END]
 
+// [ALIS-002 START]
+/**
+ * ALIS-002: Tek seferlik migration — urunler.createdBy displayName → uid standardize.
+ * Eski kayıtlarda createdBy = displayName olarak yazılmıştı (P1 cari + P3 ürün).
+ * loadUsers() lookup ile displayName/email → uid eşleştirir, kayda createdById/createdByName/createdBy
+ * 3'lü standart pattern uygular.
+ *
+ * Idempotent — localStorage flag (ak_migration_alis_002_done) ile bir kez çalışır.
+ * Auth-guard — user yoksa flag SET ETMEZ, ertelenir.
+ * @returns {{migrated:number, skipped:number, skippedReason?:string}}
+ */
+window._migrateUrunlerCreatedBy = function() {
+  var migrationKey = 'ak_migration_alis_002_done';
+  if (localStorage.getItem(migrationKey) === '1') {
+    console.log('[ALIS-002] Migration zaten tamamlanmış');
+    return { migrated: 0, skipped: 0, skippedReason: 'already-done' };
+  }
+
+  var _cu = (typeof window.CU === 'function') ? window.CU() : null;
+  if (!_cu || !_cu.id) {
+    console.log('[ALIS-002] Auth user henüz yok, migration ertelendi');
+    return { migrated: 0, skipped: 0, skippedReason: 'no-auth' };
+  }
+
+  /* loadUsers lookup tablosu — displayName/email → uid */
+  var users = (typeof window.loadUsers === 'function') ? (window.loadUsers() || []) : [];
+  var nameToUid = {};
+  users.forEach(function(u) {
+    var uid = u.uid || u.id || '';
+    if (!uid) return;
+    if (u.displayName) nameToUid[u.displayName] = uid;
+    if (u.name) nameToUid[u.name] = uid;
+    if (u.email) nameToUid[u.email] = uid;
+  });
+
+  var urunler = (typeof window.loadUrunler === 'function')
+    ? window.loadUrunler({ tumKullanicilar: true, _dahilSilinenler: true })
+    : [];
+
+  if (!urunler || !urunler.length) {
+    console.log('[ALIS-002] Hiç ürün yok, migration atlanıyor');
+    localStorage.setItem(migrationKey, '1');
+    return { migrated: 0, skipped: 0, skippedReason: 'empty' };
+  }
+
+  var migrated = 0;
+  var skipped = 0;
+
+  urunler.forEach(function(u) {
+    if (!u) { skipped++; return; }
+    /* createdById zaten varsa standart yapıda — atla */
+    if (u.createdById) { skipped++; return; }
+    /* createdBy yoksa — eski/anonim kayıt, atla */
+    if (!u.createdBy) { skipped++; return; }
+    /* createdBy displayName/email görünüyorsa lookup ile uid'a çevir */
+    var uidMaybe = nameToUid[u.createdBy];
+    if (uidMaybe) {
+      u.createdByName = u.createdBy;
+      u.createdById = uidMaybe;
+      u.createdBy = uidMaybe;
+      migrated++;
+    } else {
+      /* lookup başarısız — uid olabilir veya silinmiş user. Dokunma */
+      skipped++;
+    }
+  });
+
+  if (migrated > 0 && typeof window.storeUrunler === 'function') {
+    window.storeUrunler(urunler);
+  }
+
+  localStorage.setItem(migrationKey, '1');
+
+  console.log('[ALIS-002] Migration tamam: ' + migrated + ' kayıt güncellendi, ' + skipped + ' atlandı');
+
+  if (typeof window.logActivity === 'function') {
+    window.logActivity('migration', 'ALIS-002 createdBy standardize: ' + migrated + ' kayıt');
+  }
+
+  return { migrated: migrated, skipped: skipped };
+};
+// [ALIS-002 END]
+
 /* CLAUDE-KURAL-PI-001 madde 7: PI ön kontrol — hata önleme sistemi
    PI üretiminden önce 4 kontrol: eksik bilgi / yanlış para / Türkçe / Arapça */
 window._piOnKontrol = function(t) {

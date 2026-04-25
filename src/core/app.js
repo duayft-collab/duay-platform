@@ -3833,6 +3833,14 @@ setTimeout(function() {
 }, 5000);
 // [ALIS-001 END]
 
+// [ALIS-002 START] createdBy standardize migration — ALIS-001'den 2sn sonra
+setTimeout(function() {
+  if (typeof window._migrateUrunlerCreatedBy === 'function') {
+    try { window._migrateUrunlerCreatedBy(); } catch (e) { console.warn('[ALIS-002] Migration hata:', e && e.message); }
+  }
+}, 7000);
+// [ALIS-002 END]
+
 // ════════════════════════════════════════════════════════════════
 // ADMIN vs USER UI AYRIMI
 // ════════════════════════════════════════════════════════════════
