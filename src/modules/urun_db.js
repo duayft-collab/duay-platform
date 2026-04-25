@@ -21,7 +21,7 @@ function storeUrunDB(d) {
 /**
  * Duay Ürün Kodu otomatik üretir: SatıcıKodu-ÜrünKodu
  */
-function _generateDuayCode(vendorName, vendorCode) {
+function _generateDuayKodu(vendorName, vendorCode) {
   var prefix = (vendorName || 'XX').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
   var code = (vendorCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
   return 'DY-' + prefix + '-' + (code || '') + '-' + Date.now().toString(36).slice(-6);
@@ -161,8 +161,8 @@ function openUrunModal(id) {
     var _autoCode = function() {
       var v = document.getElementById('ud-vendor')?.value || '';
       var c = document.getElementById('ud-vendorCode')?.value || '';
-      var el = document.getElementById('ud-duayCode');
-      if (el) el.value = _generateDuayCode(v, c);
+      var el = document.getElementById('ud-duayKodu');
+      if (el) el.value = _generateDuayKodu(v, c);
     };
     document.getElementById('ud-vendor')?.addEventListener('change', _autoCode);
     document.getElementById('ud-vendorCode')?.addEventListener('input', _autoCode);
@@ -315,7 +315,7 @@ function openUrunModal(id) {
     var imgPreview = imgData
       ? '<img src="' + esc(imgData) + '" style="width:100%;height:100%;object-fit:cover" alt="">'
       : '<span style="font-size:11px;color:var(--t3,#8a8a8a);text-align:center;line-height:1.3">📷<br>Görsel<br>Ekle</span>';
-    var mevcutKod = u.duayCode || u.duayKodu || '';
+    var mevcutKod = u.duayKodu || u.duayCode || '';
     var kodRozeti = mevcutKod
       ? '<span style="margin-left:10px;font-size:10px;padding:3px 8px;border-radius:6px;background:#E1F5EE;color:#1A8D6F;font-weight:600;letter-spacing:.03em">' + esc(mevcutKod) + '</span>'
       : '<span style="margin-left:10px;font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(0,0,0,0.04);color:var(--t3,#8a8a8a);font-weight:500">Kod otomatik</span>';
@@ -416,7 +416,7 @@ window._saveUrunDB = function() {
   var hatalar = [];
   var yeniKayitlar = [];
   /* URUN-DUAY-KODU-AUTO-001: mevcut kodlarla collision kontrolü için toplama */
-  var _mevcutKodlar = data.map(function(d) { return d.duayCode || d.duayKodu; }).filter(Boolean);
+  var _mevcutKodlar = data.map(function(d) { return d.duayKodu || d.duayCode; }).filter(Boolean);
 
   satirlar.forEach(function(tr) {
     var n = tr.id.replace('udb-row-', '');
@@ -461,8 +461,8 @@ window._saveUrunDB = function() {
     var _yeniDuayKodu = _genDuayKodu(_mevcutKodlar);
     _mevcutKodlar.push(_yeniDuayKodu);
     var kayit = {
-      id: _generateDuayCode(vendorId, vendorCode) || (typeof window.generateId==='function' ? window.generateId() : Date.now()),
-      duayCode: _yeniDuayKodu,
+      id: _generateDuayKodu(vendorId, vendorCode) || (typeof window.generateId==='function' ? window.generateId() : Date.now()),
+      duayKodu: _yeniDuayKodu,
       duayName: duayName,
       origName: origName,
       /* URUN-DB-VENDOR-LOOKUP-FIX-001: izolasyonlu loadCari */
@@ -513,14 +513,14 @@ window._saveUrunDB = function() {
       var idx = data.findIndex(function(d){ return String(d.id) === String(eid); });
       if (idx > -1) {
         /* URUN-DUAY-KODU-AUTO-001: edit'te mevcut duayCode/duayKodu korunur, yeni kod atlanır */
-        var _koruDuayKodu = data[idx].duayCode || data[idx].duayKodu;
+        var _koruDuayKodu = data[idx].duayKodu || data[idx].duayCode;
         /* URUN-LISTE-META-001: createdById/createdByName preserve — edit'te sahibi değişmez */
         data[idx] = Object.assign(data[idx], k, {
           id: data[idx].id,
           createdAt: data[idx].createdAt,
           createdById: data[idx].createdById || k.createdById,
           createdByName: data[idx].createdByName || k.createdByName,
-          duayCode: _koruDuayKodu || k.duayCode
+          duayKodu: _koruDuayKodu || k.duayKodu || k.duayCode
         });
       }
       else { data.push(k); }
@@ -629,7 +629,7 @@ function renderUrunDB() {
   var fl = data.filter(function(u) {
     if (aktifKat && (u.category || u.kategori || '') !== aktifKat) return false;
     if (!search) return true;
-    return (u.duayName || u.urunAdi || u.standartAdi || '').toLowerCase().includes(search) || (u.duayCode || u.duayKodu || '').toLowerCase().includes(search) || (u.vendorCode || u.saticiKodu || '').toLowerCase().includes(search) || (u.category || u.kategori || '').toLowerCase().includes(search) || (u.vendorName || u.tedarikci || '').toLowerCase().includes(search);
+    return (u.duayName || u.urunAdi || u.standartAdi || '').toLowerCase().includes(search) || (u.duayKodu || u.duayCode || '').toLowerCase().includes(search) || (u.vendorCode || u.saticiKodu || '').toLowerCase().includes(search) || (u.category || u.kategori || '').toLowerCase().includes(search) || (u.vendorName || u.tedarikci || '').toLowerCase().includes(search);
   });
 
   var cont = document.getElementById('udb-list');
@@ -658,7 +658,7 @@ function renderUrunDB() {
     html += '<div style="display:grid;grid-template-columns:24px 24px 100px 120px 1fr 80px 80px 80px 90px;padding:6px 14px;border-bottom:0.5px solid var(--b);align-items:center;font-size:11.5px;line-height:1.3;min-height:32px;min-width:850px;cursor:pointer;transition:background .1s" onmouseenter="this.style.background=\'rgba(0,0,0,0.02)\';var _a=this.querySelector(\'.udb-row-actions\');if(_a){_a.style.opacity=\'1\';_a.style.pointerEvents=\'auto\'}" onmouseleave="this.style.background=\'\';var _a=this.querySelector(\'.udb-row-actions\');if(_a){_a.style.opacity=\'0\';_a.style.pointerEvents=\'none\'}">'
       + '<div><input type="checkbox" class="udb-bulk-chk" data-id="' + esc(uid) + '" onclick="event.stopPropagation();window._urunDBBulkCheck()" style="width:14px;height:14px;cursor:pointer;accent-color:var(--ac)"></div>'
       + '<div>' + ((u.image || u.gorsel) ? '<img src="' + (u.image || u.gorsel) + '" style="width:28px;height:28px;object-fit:cover;border-radius:4px">' : u._hasImage ? '<div style="width:28px;height:28px;background:var(--s2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px" title="Görsel yüklü (Firestore)">\ud83d\udcf7</div>' : '<div style="width:28px;height:28px;background:var(--s2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">\ud83d\udce6</div>') + '</div>'
-      + '<div style="font-family:monospace;font-weight:600;color:var(--ac)">' + esc(u.duayCode || u.duayKodu || '\u2014') + '</div>'
+      + '<div style="font-family:monospace;font-weight:600;color:var(--ac)">' + esc(u.duayKodu || u.duayCode || '\u2014') + '</div>'
       + '<div style="font-family:monospace;color:var(--t3)">' + esc(u.vendorCode || u.saticiKodu || '\u2014') + '</div>'
       /* URUN-LISTE-META-FIX3-001: TESHIS-001 inline ellipsis ile meta kırpılıyordu — ayrı block-level alt satıra taşındı (clipping yok) */
       + '<div style="min-width:0">'
@@ -756,7 +756,7 @@ window._deleteUrun = function(id) {
   var dataPre = loadUrunDB();
   var itemPre = dataPre.find(function(x) { return String(x.id) === String(id); });
   if (itemPre) {
-    var kod = itemPre.duayCode || itemPre.duayKodu || '';
+    var kod = itemPre.duayKodu || itemPre.duayCode || '';
     /* FIX: urunId da geçir — inline form `urunId` field'ı ile eşleşme için */
     var ref = window._urunTeklifReferansi(kod, itemPre.id);
     var toplam = ref.alis.length + ref.satis.length;
@@ -787,7 +787,7 @@ window._deleteUrun = function(id) {
         item.deletedAt = new Date().toISOString();
         item.deletedBy = window.Auth?.getCU?.()?.id || '';
         storeUrunDB(data);
-        window.logActivity?.('urun_db', 'Urun silindi: ' + (item.duayName || item.duayCode || id));
+        window.logActivity?.('urun_db', 'Urun silindi: ' + (item.duayName || item.duayKodu || item.duayCode || id));
         renderUrunDB();
         window.toast?.('Silindi', 'ok');
       } else {
@@ -836,7 +836,7 @@ window._urunDBTopluSil = function() {
       ids.forEach(function(id) {
         var item = data.find(function(x) { return String(x.id) === String(id); });
         if (!item) return;
-        var kod = item.duayCode || item.duayKodu || '';
+        var kod = item.duayKodu || item.duayCode || '';
         /* FIX: urunId da geçir — inline form şeması için */
         var ref = window._urunTeklifReferansi(kod, item.id);
         if (ref.alis.length + ref.satis.length > 0) {
@@ -883,7 +883,7 @@ window._importUrunXlsx = function() {
       rows.forEach(function(r) {
         if (!r.duayName && !r['Duay Ürün Adı']) return;
         data.unshift({ id: typeof generateNumericId === 'function' ? generateNumericId() : (typeof window.generateId === 'function' ? window.generateId() : Date.now() + added),
-          duayName: r.duayName || r['Duay Ürün Adı'] || '', duayCode: r.duayCode || r['Duay Kodu'] || _generateDuayCode(r.vendorName || '', r.vendorCode || ''),
+          duayName: r.duayName || r['Duay Ürün Adı'] || '', duayKodu: r.duayKodu || r.duayCode || r['Duay Kodu'] || _generateDuayKodu(r.vendorName || '', r.vendorCode || ''),
           vendorName: r.vendorName || r['Satıcı'] || '', vendorCode: r.vendorCode || r['Satıcı Kodu'] || '',
           category: r.category || r['Kategori'] || '', origin: r.origin || r['Menşei'] || '',
           gtip: r.gtip || r['GTİP'] || '', unit: r.unit || 'Adet',
@@ -905,7 +905,7 @@ window._udbPeek = function(id) {
   var nm = u.duayName || u.urunAdi || '—';
   var cat = u.category || u.kategori || '—';
   var ted = u.vendorName || u.tedarikci || '—';
-  var kod = u.duayCode || u.duayKodu || '—';
+  var kod = u.duayKodu || u.duayCode || '—';
   window.toast?.('📦 ' + nm + ' · ' + cat + ' · ' + ted + ' · Kod: ' + kod, 'info', 4000);
 };
 
@@ -917,8 +917,7 @@ window._udbKopyala = function(id) {
   if (!confirm('Bu ürünü kopyalamak istediğinize emin misiniz?\n\n"' + (u.duayName || u.urunAdi || '—') + '" yeni bir kayıt olarak eklenecek.')) return;
   var kopya = Object.assign({}, u, {
     id: (typeof _genDuayKodu === 'function' ? 'DY-' + Date.now().toString(36) : Date.now()),
-    duayCode: (typeof _genDuayKodu === 'function' ? _genDuayKodu(data.map(function(d){ return d.duayCode || d.duayKodu; })) : null),
-    duayKodu: null,
+    duayKodu: (typeof _genDuayKodu === 'function' ? _genDuayKodu(data.map(function(d){ return d.duayKodu || d.duayCode; })) : null),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     yukleyen_id: window.Auth?.getCU?.()?.id || null
