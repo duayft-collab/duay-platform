@@ -3662,11 +3662,8 @@ window.asistanModulOnarim = function() {
       window.toast?.(adaylar.length + ' asistan kullanıcı onarıldı ✓', 'ok');
       window.renderUsers?.();
     };
-    if (typeof window.confirmModal === 'function') {
-      window.confirmModal(msg, { title: '🛠️ Asistan Modül Onarımı', confirmText: 'Evet Onar', onConfirm: _onOnay });
-    } else {
-      if (confirm(msg)) _onOnay();
-    }
+    /* PUSULA-002: native confirm fallback kaldırıldı (K06) */
+    window.confirmModal(msg, { title: '🛠️ Asistan Modül Onarımı', confirmText: 'Evet Onar', onConfirm: _onOnay });
   } catch(e) {
     console.error('[asistanModulOnarim]', e);
     window.toast?.('Onarım sırasında hata: ' + e.message, 'err');

@@ -298,12 +298,18 @@
   };
 
   window._usOturumuKapat = function() {
-    if (!confirm('Oturumu kapatmak istediğinize emin misiniz?')) return;
-    try {
-      if (typeof window.logout === 'function') window.logout();
-      else if (typeof window.Auth?.logout === 'function') window.Auth.logout();
-      else { localStorage.removeItem('ak_session'); location.reload(); }
-    } catch(e) { console.warn('[user_settings] logout hata:', e); }
+    /* PUSULA-002: native confirm → confirmModal (K06) */
+    window.confirmModal('Oturumu kapatmak istediğinize emin misiniz?', {
+      title: 'Oturumu Kapat',
+      confirmText: 'Evet, Çıkış',
+      onConfirm: function() {
+        try {
+          if (typeof window.logout === 'function') window.logout();
+          else if (typeof window.Auth?.logout === 'function') window.Auth.logout();
+          else { localStorage.removeItem('ak_session'); location.reload(); }
+        } catch(e) { console.warn('[user_settings] logout hata:', e); }
+      }
+    });
   };
 
   /* USER-SETTINGS-BILDIRIM-001: bildirim tercih ctx yardımcıları */

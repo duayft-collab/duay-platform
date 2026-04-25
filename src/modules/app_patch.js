@@ -5815,16 +5815,23 @@ window._ayarLogoYukle = function(input) {
 };
 
 window._ayarLogoSil = function() {
-  if (!confirm('Logo silinsin mi?')) return;
-  try { localStorage.removeItem('ak_company_logo'); } catch(e) {}
-  var oniz = document.getElementById('ayar-logo-onizleme');
-  if (oniz) oniz.innerHTML = '<span style="font-size:9px;color:var(--t3);text-align:center">Logo\nyok</span>';
-  var durum = document.getElementById('ayar-logo-durum');
-  if (durum) { durum.textContent = 'Logo y\u00fcklenmedi'; durum.style.color = '#D97706'; }
-  var inp = document.getElementById('ayar-logo-input');
-  if (inp) inp.value = '';
-  window.toast?.('Logo silindi', 'ok');
-  window.logActivity?.('delete', '\u015eirket logosu silindi');
+  /* PUSULA-002: native confirm \u2192 confirmModal (K06) */
+  window.confirmModal('Logo silinsin mi?', {
+    title: 'Logo Sil',
+    danger: true,
+    confirmText: 'Evet, Sil',
+    onConfirm: function() {
+      try { localStorage.removeItem('ak_company_logo'); } catch(e) {}
+      var oniz = document.getElementById('ayar-logo-onizleme');
+      if (oniz) oniz.innerHTML = '<span style="font-size:9px;color:var(--t3);text-align:center">Logo\nyok</span>';
+      var durum = document.getElementById('ayar-logo-durum');
+      if (durum) { durum.textContent = 'Logo y\u00fcklenmedi'; durum.style.color = '#D97706'; }
+      var inp = document.getElementById('ayar-logo-input');
+      if (inp) inp.value = '';
+      window.toast?.('Logo silindi', 'ok');
+      window.logActivity?.('delete', '\u015eirket logosu silindi');
+    }
+  });
 };
 
 window._loadLogo = function() {
