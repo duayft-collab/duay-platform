@@ -952,6 +952,34 @@ window._pdfBankaTekSatir = function(paraBirimi) {
     + (b.swift ? ' · SWIFT: ' + b.swift : '');
 };
 
+/* CLAUDE-KURAL-PI-001 madde 5: PDF ortak footer (kurumsal bilgi) — tüm formatlarda tek truth source */
+window._pdfOrtakFooter = function(stil) {
+  /* stil: 'kompakt' (Format B), 'tam' (Format A), 'sade' (Format C, D) */
+  var p = window.PI_ADRES || {};
+  var sirket = p.sirket || 'Duay International Trading Ltd.';
+  var adres = p.adres || ((p.adres1 || '') + (p.adres2 ? ', ' + p.adres2 : ''));
+  var tel = p.tel || '';
+  var mail = p.mail || '';
+  var web = p.web || 'www.duaycor.com';
+  if (stil === 'kompakt') {
+    return sirket + ' · ' + adres + ' · ' + tel + ' · ' + mail + ' · ' + web;
+  }
+  if (stil === 'sade') {
+    return '<div style="font-size:9px;color:#86868b;text-align:center;line-height:1.5">'
+      + sirket + ' · ' + adres + '<br/>'
+      + tel + ' · ' + mail + ' · ' + web
+      + '</div>';
+  }
+  /* tam (Format A varsayılan) */
+  return '<div style="font-size:10px;color:#666;text-align:center;line-height:1.6;padding:12px;border-top:1px solid #e5e5e7;margin-top:20px">'
+    + '<div style="font-weight:600;color:#1d1d1f">' + sirket + '</div>'
+    + '<div>' + adres + '</div>'
+    + '<div>Tel: ' + tel + ' · Email: ' + mail + '</div>'
+    + '<div>Web: ' + web + '</div>'
+    + '<div style="margin-top:8px;font-size:8px;color:#86868b;font-style:italic">This is a Proforma Invoice only — not a tax invoice.</div>'
+    + '</div>';
+};
+
 /* CLAUDE-KURAL-PI-001 madde 1: Tarih DD MMM YYYY (en short) — tüm PDF formatlarında zorunlu */
 window._pdfTarihFormat = function(d) {
   if (!d) return '';

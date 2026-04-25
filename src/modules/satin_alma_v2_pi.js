@@ -7,14 +7,28 @@
    Adres: K. Dolap Mh. Neşeli Sk. 1/5 Eyüpsultan İSTANBUL
 ════════════════════════════════════════════════════════════════ */
 
+/* CLAUDE-KURAL-PI-001 madde 5: Kurumsal bilgi tek truth source
+   PI'da görünen alanlar: sirket, adres, tel, mail, web */
 var PI_ADRES = {
-  sirket: 'DUAY GLOBAL LLC',
-  adres1: 'K. Dolap Mh. Neşeli Sk. 1/5',
-  adres2: 'Eyüpsultan İSTANBUL TÜRKİYE',
+  /* PI'da görünen alanlar */
+  sirket: 'Duay International Trading Ltd.',
+  adres: 'Karadolap District, Neseli St. 1/5, Eyupsultan, Istanbul, TÜRKİYE',
   tel: '+90 212 625 5 444',
-  wp: '+90 532 270 5113',
-  mail: 'brn.simsek@gmail.com'
+  mobil: '+90 532 270 5113',
+  mail: 'brn.simsek@gmail.com',
+  web: 'www.duaycor.com',
+  /* PI'da görünmeyen — gelecek raporlar/dokümanlar için */
+  unvanTR: 'Duay Uluslararası Ticaret Ltd. Şti.',
+  vergiDairesi: 'GOP',
+  vergiNo: '3131095135',
+  mersisNo: '0313 1095 1350 0001',
+  ticaretSicilNo: '189629-1',
+  /* Geriye uyumlu fallback (eski kullananlar için) */
+  adres1: 'Karadolap District, Neseli St. 1/5',
+  adres2: 'Eyupsultan, Istanbul, TÜRKİYE',
+  wp: '+90 532 270 5113'
 };
+window.PI_ADRES = PI_ADRES;
 
 var PI_KOSULLAR = [
   'FOB Istanbul','CIF Destination','EXW Istanbul','CFR Destination',
@@ -803,8 +817,11 @@ window._piTasarimD1 = function(t, bugun, satirlar, katman, gizliKod, L) {
   }
 
   /* Footer */
+  /* CLAUDE-KURAL-PI-001 madde 5: footer'a kurumsal bilgi (PI_ADRES) */
   html += '<div class="pi-d-footer">';
   html += '<div class="pi-d-sign">' + esc(L.imza || 'Authorized Signature') + '</div>';
+  html += '<div style="font-size:9px;color:#86868b;text-align:right;line-height:1.5">'
+    + esc(sirket) + '<br/>' + esc(((window.PI_ADRES || {}).web) || 'www.duaycor.com') + '</div>';
   html += '<div class="pi-d-page-no">Page 1 / 1</div>';
   html += '</div></div>';
 
@@ -906,8 +923,11 @@ window._piTasarimD2 = function(t, bugun, satirlar, katman, gizliKod, L) {
     html += '</ol></div>';
   }
 
+  /* CLAUDE-KURAL-PI-001 madde 5: footer'a kurumsal bilgi (PI_ADRES) */
   html += '<div class="pi-d-footer">';
   html += '<div class="pi-d-sign">' + esc(L.imza || 'Authorized Signature') + '</div>';
+  html += '<div style="font-size:9px;color:#86868b;text-align:right;line-height:1.5">'
+    + esc(sirket) + '<br/>' + esc(((window.PI_ADRES || {}).web) || 'www.duaycor.com') + '</div>';
   html += '<div class="pi-d-page-no">Page 1 / 1</div>';
   html += '</div></div>';
 
