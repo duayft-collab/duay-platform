@@ -739,7 +739,8 @@ window._piTasarimD1 = function(t, bugun, satirlar, katman, gizliKod, L) {
   html += '<div class="pi-d-party-label">' + esc(L.kosullar || 'Terms') + '</div>';
   html += '<div class="pi-d-party-line"><strong>' + esc(L.teslim || 'Delivery') + ':</strong> ' + esc(t.teslim || '') + '</div>';
   html += '<div class="pi-d-party-line"><strong>' + esc(L.odeme || 'Payment') + ':</strong> ' + esc(t.odeme || '') + '</div>';
-  html += '<div class="pi-d-party-line"><strong>Currency:</strong> ' + esc(t.dil === 'TR' ? 'TL' : 'USD') + '</div>';
+  /* PI-BANKA-001: paraBirimi bug fix — t.dil yerine t.paraBirimi (5 para birimi: USD/EUR/GBP/TRY/CNY) */
+  html += '<div class="pi-d-party-line"><strong>Currency:</strong> ' + esc(t.paraBirimi || 'USD') + '</div>';
   html += '</div></div>';
 
   /* Products — GÖRSELLİ */
@@ -772,7 +773,8 @@ window._piTasarimD1 = function(t, bugun, satirlar, katman, gizliKod, L) {
   html += '</tbody></table>';
 
   /* Totals */
-  var birim = t.dil === 'TR' ? 'TL' : 'USD';
+  /* PI-BANKA-001: paraBirimi bug fix — t.dil yerine t.paraBirimi */
+  var birim = t.paraBirimi || 'USD';
   html += '<div class="pi-d-totals"><div class="pi-d-totals-block">';
   html += '<div class="pi-d-totals-row"><span>' + esc(L.araToplam || 'Subtotal') + '</span><span>' + birim + ' ' + araToplam.toFixed(2) + '</span></div>';
   html += '<div class="pi-d-totals-row grand"><span>' + esc(L.toplam || 'Total') + '</span><span>' + birim + ' ' + araToplam.toFixed(2) + '</span></div>';
@@ -780,7 +782,10 @@ window._piTasarimD1 = function(t, bugun, satirlar, katman, gizliKod, L) {
 
   /* Info grid */
   html += '<div class="pi-d-info-grid">';
-  html += '<div><div class="pi-d-info-label">' + esc(L.banking || 'Banking') + '</div><div class="pi-d-info-line">Bank Name · IBAN · SWIFT</div><div class="pi-d-info-line">(Banking details)</div></div>';
+  /* PI-BANKA-001: Banking — placeholder yerine helper'dan kompakt liste (3 banka × paraBirimi) */
+  html += '<div><div class="pi-d-info-label">' + esc(L.banking || 'Banking') + '</div>'
+    + (window._pdfBankaHtmlListe ? window._pdfBankaHtmlListe(t.paraBirimi || 'USD') : '<div class="pi-d-info-line">Banking details unavailable</div>')
+    + '</div>';
   html += '<div><div class="pi-d-info-label">' + esc(L.tradeTerms || 'Trade Terms') + '</div>';
   html += '<div class="pi-d-info-line"><strong>' + esc(L.teslim || 'Delivery') + ':</strong> ' + esc(t.teslim || '') + '</div>';
   html += '<div class="pi-d-info-line"><strong>' + esc(L.odeme || 'Payment') + ':</strong> ' + esc(t.odeme || '') + '</div>';
@@ -844,7 +849,8 @@ window._piTasarimD2 = function(t, bugun, satirlar, katman, gizliKod, L) {
   html += '<div class="pi-d-party-label">' + esc(L.kosullar || 'Terms') + '</div>';
   html += '<div class="pi-d-party-line"><strong>' + esc(L.teslim || 'Delivery') + ':</strong> ' + esc(t.teslim || '') + '</div>';
   html += '<div class="pi-d-party-line"><strong>' + esc(L.odeme || 'Payment') + ':</strong> ' + esc(t.odeme || '') + '</div>';
-  html += '<div class="pi-d-party-line"><strong>Currency:</strong> ' + esc(t.dil === 'TR' ? 'TL' : 'USD') + '</div>';
+  /* PI-BANKA-001: paraBirimi bug fix — t.dil yerine t.paraBirimi (5 para birimi: USD/EUR/GBP/TRY/CNY) */
+  html += '<div class="pi-d-party-line"><strong>Currency:</strong> ' + esc(t.paraBirimi || 'USD') + '</div>';
   html += '</div></div>';
 
   /* Products — GÖRSELSİZ */
@@ -873,14 +879,18 @@ window._piTasarimD2 = function(t, bugun, satirlar, katman, gizliKod, L) {
   });
   html += '</tbody></table>';
 
-  var birim = t.dil === 'TR' ? 'TL' : 'USD';
+  /* PI-BANKA-001: paraBirimi bug fix — t.dil yerine t.paraBirimi */
+  var birim = t.paraBirimi || 'USD';
   html += '<div class="pi-d-totals"><div class="pi-d-totals-block">';
   html += '<div class="pi-d-totals-row"><span>' + esc(L.araToplam || 'Subtotal') + '</span><span>' + birim + ' ' + araToplam.toFixed(2) + '</span></div>';
   html += '<div class="pi-d-totals-row grand"><span>' + esc(L.toplam || 'Total') + '</span><span>' + birim + ' ' + araToplam.toFixed(2) + '</span></div>';
   html += '</div></div>';
 
   html += '<div class="pi-d-info-grid">';
-  html += '<div><div class="pi-d-info-label">' + esc(L.banking || 'Banking') + '</div><div class="pi-d-info-line">Bank Name · IBAN · SWIFT</div><div class="pi-d-info-line">(Banking details)</div></div>';
+  /* PI-BANKA-001: Banking — placeholder yerine helper'dan kompakt liste (3 banka × paraBirimi) */
+  html += '<div><div class="pi-d-info-label">' + esc(L.banking || 'Banking') + '</div>'
+    + (window._pdfBankaHtmlListe ? window._pdfBankaHtmlListe(t.paraBirimi || 'USD') : '<div class="pi-d-info-line">Banking details unavailable</div>')
+    + '</div>';
   html += '<div><div class="pi-d-info-label">' + esc(L.tradeTerms || 'Trade Terms') + '</div>';
   html += '<div class="pi-d-info-line"><strong>' + esc(L.teslim || 'Delivery') + ':</strong> ' + esc(t.teslim || '') + '</div>';
   html += '<div class="pi-d-info-line"><strong>' + esc(L.odeme || 'Payment') + ':</strong> ' + esc(t.odeme || '') + '</div>';
