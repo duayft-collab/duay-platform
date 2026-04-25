@@ -901,4 +901,4 @@ window._saV2RowMenu = function(id) {
   if (typeof window.renderSatinAlmaV2 === 'function') window.renderSatinAlmaV2();
 };
 
-console.log('[SAV2-RENDER] v2.0 y\u00fcklendi');
+/* SATIS-009: production console.log temizli\u011fi \u2014 load mesaj\u0131 kald\u0131r\u0131ld\u0131 */

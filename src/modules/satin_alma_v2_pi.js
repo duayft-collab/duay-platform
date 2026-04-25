@@ -986,4 +986,4 @@ window._piTasarimD2 = function(t, bugun, satirlar, katman, gizliKod, L) {
   return html;
 };
 
-console.log('[PI] v1.2 yüklendi — 8 tasarim hazir (A B C I L O D1 D2)');
+/* SATIS-009: production console.log temizliği — load mesajı kaldırıldı */

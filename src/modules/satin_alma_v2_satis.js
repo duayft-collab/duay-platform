@@ -529,7 +529,7 @@ window._saV2TakipGorevOlustur = function(teklif) {
     var teklifler = window._saTeklifLoad?.() || [];
     var tk = teklifler.find(function(x){return x.teklifId===(teklif.teklifId||'');});
     if(tk){ tk.takipTarih = takipStr; window._saTeklifStore?.(teklifler); }
-    console.log('[SA-V2] Takip görevi oluşturuldu:', gorev.baslik);
+    /* SATIS-009: production console.log temizliği — debug mesajı kaldırıldı */
   } catch(e) { console.error('[SA-V2] Takip görevi hatası:', e); }
 };
 
@@ -772,25 +772,40 @@ window._saV2JobUrunYukle = function(jobId) {
 
   var mevcut = window._saV2SatisUrunler || [];
 
-  if (mevcut.length >= 2) {
-    var ok = confirm('Formda ' + mevcut.length + ' ürün var.\nJOB ürünleri üzerine YAZILSIN mı?\n\nTamam = üzerine yaz\nİptal = mevcut kalsın');
-    if (!ok) return;
+  /* SATIS-002: Üzerine yazma akışı — confirm onayı sonrası ortak yükleme */
+  function _yukleUrunler() {
+    window._saV2SatisUrunler = [];
+    urunler.forEach(function(u){
+      window._saV2SatisUrunEkle && window._saV2SatisUrunEkle(u);
+    });
+    // T03-10 miktar fix: _saV2SatisUrunEkle hardcode miktar:1 ile push
+    // eder — alış teklifindeki gerçek miktarı geri yaz
+    (window._saV2SatisUrunler || []).forEach(function(satis, i){
+      if (urunler[i] && urunler[i].miktar) satis.miktar = urunler[i].miktar;
+    });
+    window._saV2SatisTabloyuGuncelle?.();
+    window._saV2PIOnizlemeGuncelle?.();
+    window.toast?.(urunler.length + ' ürün JOB\'tan yüklendi', 'ok');
   }
 
-  window._saV2SatisUrunler = [];
-  urunler.forEach(function(u){
-    window._saV2SatisUrunEkle && window._saV2SatisUrunEkle(u);
-  });
-  // T03-10 miktar fix: _saV2SatisUrunEkle hardcode miktar:1 ile push
-  // eder — alış teklifindeki gerçek miktarı geri yaz
-  (window._saV2SatisUrunler || []).forEach(function(satis, i){
-    if (urunler[i] && urunler[i].miktar) satis.miktar = urunler[i].miktar;
-  });
+  if (mevcut.length >= 2) {
+    /* SATIS-002: native confirm → confirmModal (K06 uyumu) */
+    if (typeof window.confirmModal === 'function') {
+      window.confirmModal('Formda ' + mevcut.length + ' ürün var. JOB ürünleri üzerine yazılsın mı?', {
+        title: 'JOB Ürün Yazma',
+        danger: true,
+        confirmText: 'Evet, yaz',
+        cancelText: 'İptal — mevcut kalsın',
+        onConfirm: _yukleUrunler
+      });
+      return; /* callback bekliyor */
+    }
+    /* confirmModal yüklenmediyse fallback yok — toast uyar */
+    window.toast?.('Onay modali yüklenemedi, işlem iptal', 'err');
+    return;
+  }
 
-  window._saV2SatisTabloyuGuncelle?.();
-  window._saV2PIOnizlemeGuncelle?.();
-
-  window.toast?.(urunler.length + ' ürün JOB\'tan yüklendi', 'ok');
+  _yukleUrunler();
 };
 
 /* SATIS-JOBID-001 + SATIS-FORM-FIX-001: Job ID'ye göre ürün bazlı tedarikçi karşılaştırma modalı */

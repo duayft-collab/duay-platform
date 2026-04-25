@@ -63,6 +63,17 @@ function _saTeklifLoad() {
   try { var r=localStorage.getItem(SAV2_TEKLIF_KEY); return r?JSON.parse(r):[]; } catch(e){ return []; }
 }
 function _saTeklifStore(d) {
+  /* SATIS-001: ORD üretim guard — kabul durumunda ordNo zorunlu
+     CSV import / state mutation / başka modülden bypass'ı yakalar */
+  if (Array.isArray(d) && window._ordKodUret) {
+    d.forEach(function(k) {
+      if (k && k.durum === 'kabul' && !k.ordNo) {
+        k.ordNo = window._ordKodUret();
+        k.ordNoUretimZamani = new Date().toISOString();
+        console.log('[SATIS-001] Eksik ordNo otomatik üretildi:', k.ordNo);
+      }
+    });
+  }
   if (typeof window.storeSatisTeklifleri === 'function') { window.storeSatisTeklifleri(d); return; }
   try { localStorage.setItem(SAV2_TEKLIF_KEY,JSON.stringify(d)); } catch(e){}
 }
