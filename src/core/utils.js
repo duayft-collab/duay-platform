@@ -951,3 +951,19 @@ window._pdfBankaTekSatir = function(paraBirimi) {
     + ' · IBAN: ' + b.iban
     + (b.swift ? ' · SWIFT: ' + b.swift : '');
 };
+
+/* CLAUDE-KURAL-PI-001 madde 1: Tarih DD MMM YYYY (en short) — tüm PDF formatlarında zorunlu */
+window._pdfTarihFormat = function(d) {
+  if (!d) return '';
+  var date = d instanceof Date ? d : new Date(d);
+  if (isNaN(date.getTime())) {
+    /* Geçersiz tarih → ilk 10 karakter ISO fallback */
+    return String(d).slice(0, 10);
+  }
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+  /* Çıktı: "25 Apr 2026" */
+};

@@ -68,7 +68,8 @@ window._piOlustur = function(teklif, tasarim, katman) {
   var gizliKod = window._piGizliKodUret();
   var dil = teklif.dil || 'EN';
   var L = PI_DILLER[dil] || PI_DILLER.EN;
-  var bugun = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+  /* CLAUDE-KURAL-PI-001 madde 1: tarih DD MMM YYYY (en short) — tek nokta düzeltme, tüm V2 PI tasarımlarını kapsar */
+  var bugun = window._pdfTarihFormat ? window._pdfTarihFormat(new Date()) : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   var win = window.open('', '_blank', 'width=960,height=800') || (function(){ var f=document.getElementById('_piFrame'); if(!f){f=document.createElement('iframe');f.id='_piFrame';f.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:none;z-index:9999;background:#fff';document.body.appendChild(f);} return f.contentWindow; })();
   if (!win) { window.toast?.('Popup engellendi', 'warn'); return; }
   var satirlar = window._piUrunSatirlari(teklif, katman);
