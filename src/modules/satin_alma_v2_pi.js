@@ -146,7 +146,224 @@ window._piCSS = function(tasarim) {
     + (tasarim === 'C' ? '.accent{color:#1D9E75}.top-bar{height:6px;background:#1D9E75;margin:-32px -32px 24px}' : '')
     + (tasarim === 'I' ? '.accent{color:#7C3AED}.top-bar{height:4px;background:#7C3AED;margin:-32px -32px 24px}.total-box{background:#7C3AED;color:#fff;padding:8px 16px}' : '')
     + (tasarim === 'L' ? '.accent{color:#DC2626}.header-line{border-bottom:3px double #DC2626!important}.total-box{border:2px solid #DC2626;padding:8px 16px}' : '')
-    + (tasarim === 'O' ? 'body{background:#FFFBEB}.accent{color:#D97706}.top-bar{height:8px;background:#D97706;margin:-32px -32px 24px}.total-box{background:#D97706;color:#fff;padding:8px 16px}' : '');
+    + (tasarim === 'O' ? 'body{background:#FFFBEB}.accent{color:#D97706}.top-bar{height:8px;background:#D97706;margin:-32px -32px 24px}.total-box{background:#D97706;color:#fff;padding:8px 16px}' : '')
+    + (tasarim === 'D1' || tasarim === 'D2' ? `
+    /* PI-D-001: alt2-v3 Apple/Corporate stili */
+    body {
+      font-family: 'Inter', -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+      font-feature-settings: 'tnum' 1, 'cv11' 1;
+      color: #1d1d1f;
+      padding: 0;
+    }
+    .pi-d-page {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 56px 48px 40px;
+    }
+    .pi-d-banner {
+      height: 4px;
+      background: #1d1d1f;
+      margin: -56px -48px 40px;
+    }
+    .pi-d-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #d2d2d7;
+    }
+    .pi-d-brand {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1d1d1f;
+      letter-spacing: 0.5px;
+    }
+    .pi-d-brand-sub {
+      font-size: 10px;
+      font-weight: 500;
+      color: #6e6e73;
+      margin-top: 4px;
+      letter-spacing: 0.3px;
+    }
+    .pi-d-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #6e6e73;
+      text-align: right;
+    }
+    .pi-d-pino {
+      font-size: 17px;
+      font-weight: 600;
+      color: #1d1d1f;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.3px;
+      margin-top: 4px;
+      text-align: right;
+    }
+    .pi-d-pino-meta {
+      font-size: 10px;
+      color: #86868b;
+      margin-top: 4px;
+      text-align: right;
+    }
+    .pi-d-parties {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 32px;
+    }
+    .pi-d-party-label {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #86868b;
+      margin-bottom: 10px;
+    }
+    .pi-d-party-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1d1d1f;
+      margin-bottom: 4px;
+    }
+    .pi-d-party-line {
+      font-size: 10.5px;
+      color: #4a4a4f;
+      line-height: 1.6;
+    }
+    .pi-d-products {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+    }
+    .pi-d-products thead th {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #86868b;
+      padding: 12px 8px;
+      text-align: left;
+      border-bottom: 1px solid #d2d2d7;
+    }
+    .pi-d-products thead th.num { text-align: right; }
+    .pi-d-products tbody td {
+      font-size: 10.5px;
+      color: #1d1d1f;
+      padding: 14px 8px;
+      border-bottom: 0.5px solid #e5e5e7;
+      vertical-align: top;
+    }
+    .pi-d-products tbody td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .pi-d-prod-name { font-weight: 600; margin-bottom: 3px; }
+    .pi-d-prod-sub {
+      font-size: 9.5px;
+      color: #6e6e73;
+      line-height: 1.5;
+    }
+    .pi-d-prod-image {
+      width: 56px;
+      height: 56px;
+      border-radius: 4px;
+      background: #f5f5f7;
+      object-fit: cover;
+      border: 0.5px solid #e5e5e7;
+    }
+    .pi-d-totals {
+      margin-top: 8px;
+      padding-top: 16px;
+      border-top: 2px solid #1d1d1f;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .pi-d-totals-block { min-width: 240px; }
+    .pi-d-totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 11px;
+      color: #4a4a4f;
+    }
+    .pi-d-totals-row.grand {
+      border-top: 1px solid #d2d2d7;
+      padding-top: 10px;
+      margin-top: 6px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1d1d1f;
+    }
+    .pi-d-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid #d2d2d7;
+    }
+    .pi-d-info-label {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #86868b;
+      margin-bottom: 8px;
+    }
+    .pi-d-info-line {
+      font-size: 10px;
+      color: #4a4a4f;
+      line-height: 1.7;
+    }
+    .pi-d-terms {
+      margin-top: 24px;
+      padding: 16px 18px;
+      background: #fafafa;
+      border-left: 3px solid #1d1d1f;
+      border-radius: 2px;
+    }
+    .pi-d-terms-label {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #86868b;
+      margin-bottom: 8px;
+    }
+    .pi-d-terms-list {
+      margin: 0;
+      padding-left: 20px;
+      font-size: 10px;
+      color: #4a4a4f;
+      line-height: 1.7;
+    }
+    .pi-d-terms-list li { padding: 2px 0; }
+    .pi-d-footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e5e7;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .pi-d-sign {
+      width: 180px;
+      border-top: 0.5px solid #4a4a4f;
+      padding-top: 6px;
+      font-size: 9px;
+      color: #6e6e73;
+      letter-spacing: 0.3px;
+    }
+    .pi-d-page-no {
+      font-size: 9px;
+      color: #86868b;
+      letter-spacing: 0.3px;
+    }
+  ` : '');
 };
 
 /* ── Tasarım A — Corporate (siyah-beyaz klasik) ────────────── */
@@ -482,4 +699,209 @@ window._piTasarimO = function(t, bugun, satirlar, katman, gizliKod, L) {
   return h;
 };
 
-console.log('[PI] v1.1 yüklendi — 6 tasarim hazir (A B C I L O)');
+/* ── Tasarım D1 — alt2-v3 Apple/Corporate (GÖRSELLİ) ─────────── PI-D-001 */
+window._piTasarimD1 = function(t, bugun, satirlar, katman, gizliKod, L) {
+  L = L || PI_DILLER.EN;
+  var sirket = (window.PI_ADRES && window.PI_ADRES.sirket) || 'DUAY GLOBAL';
+  var adres1 = (window.PI_ADRES && window.PI_ADRES.adres1) || '';
+  var adres2 = (window.PI_ADRES && window.PI_ADRES.adres2) || '';
+  var tel    = (window.PI_ADRES && window.PI_ADRES.tel) || '';
+  var mail   = (window.PI_ADRES && window.PI_ADRES.mail) || '';
+  var esc = window._esc || function(s){return String(s||'');};
+
+  var html = '<div class="pi-d-page">';
+  html += '<div class="pi-d-banner"></div>';
+
+  /* Meta header */
+  html += '<div class="pi-d-meta">';
+  html += '<div>';
+  html += '<div class="pi-d-brand">' + esc(sirket) + '</div>';
+  html += '<div class="pi-d-brand-sub">' + esc(adres1) + (adres2 ? ' · ' + esc(adres2) : '') + '</div>';
+  if (tel || mail) html += '<div class="pi-d-brand-sub">' + esc(tel) + (mail ? ' · ' + esc(mail) : '') + '</div>';
+  html += '</div>';
+  html += '<div>';
+  html += '<div class="pi-d-title">' + esc(L.proforma || 'Proforma Invoice') + '</div>';
+  html += '<div class="pi-d-pino">' + esc(t.teklifId || t.teklifNo || '') + '</div>';
+  html += '<div class="pi-d-pino-meta">' + esc(L.tarih || 'Date') + ': ' + esc(bugun) + ' · Rev ' + esc(t.revNo || '01') + '</div>';
+  html += '<div class="pi-d-pino-meta">' + esc(L.gecerli || 'Valid') + ': ' + esc(t.gecerlilik || '30 days') + '</div>';
+  html += '</div></div>';
+
+  /* Parties */
+  html += '<div class="pi-d-parties">';
+  html += '<div>';
+  html += '<div class="pi-d-party-label">' + esc(L.alici || 'Bill To') + '</div>';
+  html += '<div class="pi-d-party-name">' + esc(t.musteriAd || t.musteri || '') + '</div>';
+  if (t.musteriKod) html += '<div class="pi-d-party-line">Code: ' + esc(t.musteriKod) + '</div>';
+  if (t.musteriAdres) html += '<div class="pi-d-party-line">' + esc(t.musteriAdres) + '</div>';
+  if (t.musteriVergiNo) html += '<div class="pi-d-party-line">Tax ID: ' + esc(t.musteriVergiNo) + '</div>';
+  html += '</div>';
+  html += '<div>';
+  html += '<div class="pi-d-party-label">' + esc(L.kosullar || 'Terms') + '</div>';
+  html += '<div class="pi-d-party-line"><strong>' + esc(L.teslim || 'Delivery') + ':</strong> ' + esc(t.teslim || '') + '</div>';
+  html += '<div class="pi-d-party-line"><strong>' + esc(L.odeme || 'Payment') + ':</strong> ' + esc(t.odeme || '') + '</div>';
+  html += '<div class="pi-d-party-line"><strong>Currency:</strong> ' + esc(t.dil === 'TR' ? 'TL' : 'USD') + '</div>';
+  html += '</div></div>';
+
+  /* Products — GÖRSELLİ */
+  html += '<table class="pi-d-products">';
+  html += '<thead><tr><th style="width:40px;">#</th><th>' + esc(L.urun || 'Product') + '</th><th class="num">' + esc(L.miktar || 'Qty') + '</th><th class="num">' + esc(L.birimFiyat || 'Unit') + '</th><th class="num">' + esc(L.tutar || 'Total') + '</th></tr></thead><tbody>';
+
+  var araToplam = 0;
+  satirlar.forEach(function(s) {
+    araToplam += Number(s.toplam || 0);
+    html += '<tr>';
+    html += '<td>' + esc(String(s.no || '')) + '</td>';
+    html += '<td><div style="display:flex;gap:14px;align-items:flex-start;">';
+    if (s.gorsel) html += '<img class="pi-d-prod-image" src="' + esc(s.gorsel) + '" alt="" />';
+    else html += '<div class="pi-d-prod-image"></div>';
+    html += '<div style="flex:1;">';
+    html += '<div class="pi-d-prod-name">' + esc(s.ad || '') + '</div>';
+    var subParts = [];
+    if (s.kod) subParts.push('Code: ' + s.kod);
+    if (s.eskiKod && s.eskiKod !== s.kod) subParts.push('Old: ' + s.eskiKod);
+    if (s.gtipNo) subParts.push('HS: ' + s.gtipNo);
+    if (s.mensei) subParts.push('Origin: ' + s.mensei);
+    if (subParts.length) html += '<div class="pi-d-prod-sub">' + esc(subParts.join(' · ')) + '</div>';
+    if (s.aciklama) html += '<div class="pi-d-prod-sub">' + esc(s.aciklama) + '</div>';
+    html += '</div></div></td>';
+    html += '<td class="num">' + esc(String(s.miktar || 0)) + ' ' + esc(s.birim || '') + '</td>';
+    html += '<td class="num">' + Number(s.satisF || 0).toFixed(2) + '</td>';
+    html += '<td class="num">' + Number(s.toplam || 0).toFixed(2) + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+
+  /* Totals */
+  var birim = t.dil === 'TR' ? 'TL' : 'USD';
+  html += '<div class="pi-d-totals"><div class="pi-d-totals-block">';
+  html += '<div class="pi-d-totals-row"><span>' + esc(L.araToplam || 'Subtotal') + '</span><span>' + birim + ' ' + araToplam.toFixed(2) + '</span></div>';
+  html += '<div class="pi-d-totals-row grand"><span>' + esc(L.toplam || 'Total') + '</span><span>' + birim + ' ' + araToplam.toFixed(2) + '</span></div>';
+  html += '</div></div>';
+
+  /* Info grid */
+  html += '<div class="pi-d-info-grid">';
+  html += '<div><div class="pi-d-info-label">' + esc(L.banking || 'Banking') + '</div><div class="pi-d-info-line">Bank Name · IBAN · SWIFT</div><div class="pi-d-info-line">(Banking details)</div></div>';
+  html += '<div><div class="pi-d-info-label">' + esc(L.tradeTerms || 'Trade Terms') + '</div>';
+  html += '<div class="pi-d-info-line"><strong>' + esc(L.teslim || 'Delivery') + ':</strong> ' + esc(t.teslim || '') + '</div>';
+  html += '<div class="pi-d-info-line"><strong>' + esc(L.odeme || 'Payment') + ':</strong> ' + esc(t.odeme || '') + '</div>';
+  html += '<div class="pi-d-info-line"><strong>' + esc(L.gecerli || 'Valid') + ':</strong> ' + esc(t.gecerlilik || '30 days') + '</div>';
+  html += '</div></div>';
+
+  /* Şartlar */
+  if (Array.isArray(t.sartlar) && t.sartlar.length) {
+    html += '<div class="pi-d-terms">';
+    html += '<div class="pi-d-terms-label">' + esc(L.sartlar || 'Terms & Conditions') + '</div>';
+    html += '<ol class="pi-d-terms-list">';
+    t.sartlar.forEach(function(s) { html += '<li>' + esc(String(s)) + '</li>'; });
+    html += '</ol></div>';
+  }
+
+  /* Footer */
+  html += '<div class="pi-d-footer">';
+  html += '<div class="pi-d-sign">' + esc(L.imza || 'Authorized Signature') + '</div>';
+  html += '<div class="pi-d-page-no">Page 1 / 1</div>';
+  html += '</div></div>';
+
+  if (gizliKod) html += '<div class="gizli-kod">' + esc(gizliKod) + '</div>';
+  return html;
+};
+
+/* ── Tasarım D2 — alt2-v3 Apple/Corporate (GÖRSELSİZ) ────────── PI-D-001 */
+window._piTasarimD2 = function(t, bugun, satirlar, katman, gizliKod, L) {
+  L = L || PI_DILLER.EN;
+  var sirket = (window.PI_ADRES && window.PI_ADRES.sirket) || 'DUAY GLOBAL';
+  var adres1 = (window.PI_ADRES && window.PI_ADRES.adres1) || '';
+  var adres2 = (window.PI_ADRES && window.PI_ADRES.adres2) || '';
+  var tel    = (window.PI_ADRES && window.PI_ADRES.tel) || '';
+  var mail   = (window.PI_ADRES && window.PI_ADRES.mail) || '';
+  var esc = window._esc || function(s){return String(s||'');};
+
+  var html = '<div class="pi-d-page">';
+  html += '<div class="pi-d-banner"></div>';
+
+  html += '<div class="pi-d-meta">';
+  html += '<div>';
+  html += '<div class="pi-d-brand">' + esc(sirket) + '</div>';
+  html += '<div class="pi-d-brand-sub">' + esc(adres1) + (adres2 ? ' · ' + esc(adres2) : '') + '</div>';
+  if (tel || mail) html += '<div class="pi-d-brand-sub">' + esc(tel) + (mail ? ' · ' + esc(mail) : '') + '</div>';
+  html += '</div>';
+  html += '<div>';
+  html += '<div class="pi-d-title">' + esc(L.proforma || 'Proforma Invoice') + '</div>';
+  html += '<div class="pi-d-pino">' + esc(t.teklifId || t.teklifNo || '') + '</div>';
+  html += '<div class="pi-d-pino-meta">' + esc(L.tarih || 'Date') + ': ' + esc(bugun) + ' · Rev ' + esc(t.revNo || '01') + '</div>';
+  html += '<div class="pi-d-pino-meta">' + esc(L.gecerli || 'Valid') + ': ' + esc(t.gecerlilik || '30 days') + '</div>';
+  html += '</div></div>';
+
+  html += '<div class="pi-d-parties">';
+  html += '<div>';
+  html += '<div class="pi-d-party-label">' + esc(L.alici || 'Bill To') + '</div>';
+  html += '<div class="pi-d-party-name">' + esc(t.musteriAd || t.musteri || '') + '</div>';
+  if (t.musteriKod) html += '<div class="pi-d-party-line">Code: ' + esc(t.musteriKod) + '</div>';
+  if (t.musteriAdres) html += '<div class="pi-d-party-line">' + esc(t.musteriAdres) + '</div>';
+  if (t.musteriVergiNo) html += '<div class="pi-d-party-line">Tax ID: ' + esc(t.musteriVergiNo) + '</div>';
+  html += '</div>';
+  html += '<div>';
+  html += '<div class="pi-d-party-label">' + esc(L.kosullar || 'Terms') + '</div>';
+  html += '<div class="pi-d-party-line"><strong>' + esc(L.teslim || 'Delivery') + ':</strong> ' + esc(t.teslim || '') + '</div>';
+  html += '<div class="pi-d-party-line"><strong>' + esc(L.odeme || 'Payment') + ':</strong> ' + esc(t.odeme || '') + '</div>';
+  html += '<div class="pi-d-party-line"><strong>Currency:</strong> ' + esc(t.dil === 'TR' ? 'TL' : 'USD') + '</div>';
+  html += '</div></div>';
+
+  /* Products — GÖRSELSİZ */
+  html += '<table class="pi-d-products">';
+  html += '<thead><tr><th style="width:40px;">#</th><th>' + esc(L.urun || 'Product') + '</th><th class="num">' + esc(L.miktar || 'Qty') + '</th><th class="num">' + esc(L.birimFiyat || 'Unit') + '</th><th class="num">' + esc(L.tutar || 'Total') + '</th></tr></thead><tbody>';
+
+  var araToplam = 0;
+  satirlar.forEach(function(s) {
+    araToplam += Number(s.toplam || 0);
+    html += '<tr>';
+    html += '<td>' + esc(String(s.no || '')) + '</td>';
+    html += '<td>';
+    html += '<div class="pi-d-prod-name">' + esc(s.ad || '') + '</div>';
+    var subParts = [];
+    if (s.kod) subParts.push('Code: ' + s.kod);
+    if (s.eskiKod && s.eskiKod !== s.kod) subParts.push('Old: ' + s.eskiKod);
+    if (s.gtipNo) subParts.push('HS: ' + s.gtipNo);
+    if (s.mensei) subParts.push('Origin: ' + s.mensei);
+    if (subParts.length) html += '<div class="pi-d-prod-sub">' + esc(subParts.join(' · ')) + '</div>';
+    if (s.aciklama) html += '<div class="pi-d-prod-sub">' + esc(s.aciklama) + '</div>';
+    html += '</td>';
+    html += '<td class="num">' + esc(String(s.miktar || 0)) + ' ' + esc(s.birim || '') + '</td>';
+    html += '<td class="num">' + Number(s.satisF || 0).toFixed(2) + '</td>';
+    html += '<td class="num">' + Number(s.toplam || 0).toFixed(2) + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+
+  var birim = t.dil === 'TR' ? 'TL' : 'USD';
+  html += '<div class="pi-d-totals"><div class="pi-d-totals-block">';
+  html += '<div class="pi-d-totals-row"><span>' + esc(L.araToplam || 'Subtotal') + '</span><span>' + birim + ' ' + araToplam.toFixed(2) + '</span></div>';
+  html += '<div class="pi-d-totals-row grand"><span>' + esc(L.toplam || 'Total') + '</span><span>' + birim + ' ' + araToplam.toFixed(2) + '</span></div>';
+  html += '</div></div>';
+
+  html += '<div class="pi-d-info-grid">';
+  html += '<div><div class="pi-d-info-label">' + esc(L.banking || 'Banking') + '</div><div class="pi-d-info-line">Bank Name · IBAN · SWIFT</div><div class="pi-d-info-line">(Banking details)</div></div>';
+  html += '<div><div class="pi-d-info-label">' + esc(L.tradeTerms || 'Trade Terms') + '</div>';
+  html += '<div class="pi-d-info-line"><strong>' + esc(L.teslim || 'Delivery') + ':</strong> ' + esc(t.teslim || '') + '</div>';
+  html += '<div class="pi-d-info-line"><strong>' + esc(L.odeme || 'Payment') + ':</strong> ' + esc(t.odeme || '') + '</div>';
+  html += '<div class="pi-d-info-line"><strong>' + esc(L.gecerli || 'Valid') + ':</strong> ' + esc(t.gecerlilik || '30 days') + '</div>';
+  html += '</div></div>';
+
+  if (Array.isArray(t.sartlar) && t.sartlar.length) {
+    html += '<div class="pi-d-terms">';
+    html += '<div class="pi-d-terms-label">' + esc(L.sartlar || 'Terms & Conditions') + '</div>';
+    html += '<ol class="pi-d-terms-list">';
+    t.sartlar.forEach(function(s) { html += '<li>' + esc(String(s)) + '</li>'; });
+    html += '</ol></div>';
+  }
+
+  html += '<div class="pi-d-footer">';
+  html += '<div class="pi-d-sign">' + esc(L.imza || 'Authorized Signature') + '</div>';
+  html += '<div class="pi-d-page-no">Page 1 / 1</div>';
+  html += '</div></div>';
+
+  if (gizliKod) html += '<div class="gizli-kod">' + esc(gizliKod) + '</div>';
+  return html;
+};
+
+console.log('[PI] v1.2 yüklendi — 8 tasarim hazir (A B C I L O D1 D2)');
