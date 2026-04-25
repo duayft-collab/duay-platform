@@ -130,7 +130,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<input type="number" id="sav2-toplu-marj" min="0" max="500" step="0.5" placeholder="%" onclick="event.stopPropagation()" oninput="event.stopPropagation()" style="width:70px;font-size:10px;padding:4px 6px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf);color:var(--t);font-family:inherit">';
   ic += '<button onclick="event.stopPropagation();window._saV2TopluMarjUygula()" style="font-size:10px;padding:4px 12px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t);font-family:inherit">T\u00fcm\u00fcne Uygula</button>';
   ic += '<span style="font-size:9px;color:var(--t3)">\u2014 sonra tek tek de\u011fi\u015ftirilebilir</span></div>';
-  ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;margin-top:6px">';
+  ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;margin-top:6px;min-height:280px">';
   ic += '<button onclick="event.stopPropagation();window._saV2UrunSecModal&&window._saV2UrunSecModal()" style="width:100%;padding:8px 12px;border:none;border-bottom:0.5px dashed var(--b);background:transparent;color:var(--t3);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;text-align:center" onmouseover="this.style.background=\'var(--s3)\'" onmouseout="this.style.background=\'var(--s2)\'">+ Ürün Ekle</button>';
   /* SATIS-URUN-TABLO-001: table-layout:fixed + colgroup ile kolon genişlikleri sabit */
   ic += '<table style="width:100%;border-collapse:collapse;table-layout:fixed">';
