@@ -501,6 +501,11 @@ async function changePassword(oldPwd, newPwd) {
 // ════════════════════════════════════════════════════════════════
 
 function isAdmin()           { return CU?.role === 'admin'; }
+/* ALIS-004: Yönetici rol kontrolü (super_admin/admin/manager/lead) — sistem geneli RBAC */
+function isYonetici() {
+  var rol = (window.CU?.()?.role) || (window.CU?.()?.rol) || (CU?.role) || (CU?.rol) || '';
+  return ['super_admin','admin','manager','lead'].indexOf(rol) !== -1;
+}
 function canAccess(moduleId) {
   if (!CU) return false;
   if (isAdmin()) return true;
@@ -733,7 +738,7 @@ window._saveIpWl = function() {
 const Auth = {
   initFirebase, listenAuthState,
   login, loginWithGoogle, logout, resolveCurrentUser, restoreSession, changePassword,
-  isAdmin, canAccess, checkFirebaseStatus, checkIpAccess,
+  isAdmin, isYonetici, canAccess, checkFirebaseStatus, checkIpAccess,
   getCU:       () => CU,
   getFBAuth:   () => FB_AUTH,
   getFBDB:     () => FB_DB,
@@ -749,9 +754,10 @@ initFirebase();
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = Auth;
 } else {
-  window.Auth      = Auth;
-  window.isAdmin   = isAdmin;
-  window.canAccess = canAccess;
+  window.Auth       = Auth;
+  window.isAdmin    = isAdmin;
+  window.isYonetici = isYonetici;
+  window.canAccess  = canAccess;
   // NOT: Object.defineProperty KULLANILMIYOR — crash'e yol açıyordu.
   // FB_AUTH ve FB_DB artık Auth.getFBAuth() / Auth.getFBDB() ile alınır.
 }
