@@ -6366,9 +6366,8 @@ function saveCari(entry) {
           return _cAd === _adNorm && (!_emailNorm || _cEmail === _emailNorm);
         });
         if (_similar) {
-          if (!confirm('Benzer cari zaten var:\n"' + (_similar.name || '—') + '"' + (_similar.kod ? ' (' + _similar.kod + ')' : '') + '\n\nYine de kaydedilsin mi?')) {
-            return null;
-          }
+          /* PUSULA-002: native confirm → toast warn (soft duplicate auto-accept, K06) */
+          window.toast?.('Benzer cari kaydı tespit edildi (ad/email): "' + (_similar.name || '—') + '"', 'warn');
         }
       }
     } catch(_dge) { console.warn('[CARI-DUP-GUARD]', _dge.message); }
@@ -6983,9 +6982,8 @@ function deleteCari(id) {
   if (toplamHareket === 0) {
     // Hareket yok — direkt sil confirm'le
     var msg1 = '"' + cariAd + '" cari kaydını silmek istediğinden emin misin?';
-    if (typeof window.confirmModal === 'function') {
-      window.confirmModal(msg1, { title: 'Cari Sil', danger: true, confirmText: 'Evet, Sil', onConfirm: silFunc });
-    } else if (confirm(msg1)) { silFunc(); }
+    /* PUSULA-002: native confirm fallback kaldırıldı (K06) */
+    window.confirmModal(msg1, { title: 'Cari Sil', danger: true, confirmText: 'Evet, Sil', onConfirm: silFunc });
     return;
   }
 
@@ -7006,9 +7004,8 @@ function deleteCari(id) {
   if (tahBagli) msg2 += (odmBagli ? ', ' : ' (') + tahBagli + ' tahsilat';
   if (satBagli) msg2 += ((odmBagli || tahBagli) ? ', ' : ' (') + satBagli + ' satınalma';
   msg2 += '). Silindiğinde bu kayıtlar "Silinmiş Cari" olarak işaretlenecek. Devam edilsin mi?';
-  if (typeof window.confirmModal === 'function') {
-    window.confirmModal(msg2, { title: 'Cari Sil (Hareketli)', danger: true, confirmText: 'Evet, Arşivle', onConfirm: silFunc });
-  } else if (confirm(msg2)) { silFunc(); }
+  /* PUSULA-002: native confirm fallback kaldırıldı (K06) */
+  window.confirmModal(msg2, { title: 'Cari Sil (Hareketli)', danger: true, confirmText: 'Evet, Arşivle', onConfirm: silFunc });
 }
 
 /**
@@ -7878,7 +7875,8 @@ function _renderCariDetail(id) {
         + '<button class="btn btns" onclick="openCariStatement(' + c.id + ',\'user\')" style="font-size:11px">📊 Özet</button>'
         + ((c.cariType === 'potansiyel' || !c.cariType) ? '<button class="btn btns" onclick="window._upgradeCariToActive(' + c.id + ')" style="font-size:11px;color:#F59E0B">⬆ Aktif Yap</button>' : '')
         /* [CARI-UX-COKLU-FIX-001] Reddedilmiş cari → tekrar değerlendirme: status=rejected temizle, cariType='potansiyel' yap */
-        + (c.status === 'rejected' && _isManagerO() ? '<button class="btn btns" onclick="event.stopPropagation();if(confirm(\'Reddedilmiş cari tekrar potansiyel aşamasına alınsın mı?\')){var cs=loadCari();var idx=cs.findIndex(function(x){return String(x.id)===String(' + c.id + ');});if(idx>=0){cs[idx].status=null;cs[idx].cariType=\'potansiyel\';cs[idx].updatedAt=Date.now();storeCari(cs);window.toast?.(\'Cari tekrar potansiyel\',\'ok\');renderCari();}}" style="font-size:11px;color:#16A34A">↻ Tekrar Aç</button>' : '')
+        /* PUSULA-002: inline confirm → window._cariReaktifEt extraction (K06) */
+        + (c.status === 'rejected' && _isManagerO() ? '<button class="btn btns" onclick="event.stopPropagation();window._cariReaktifEt(\'' + c.id + '\')" style="font-size:11px;color:#16A34A">↻ Tekrar Aç</button>' : '')
         + (c.cariType === 'aktif' && _isManagerO() ? '<button class="btn btns" onclick="window._approveCariUpgrade(' + c.id + ')" style="font-size:11px;color:#16A34A">✓ Onayla</button>' : '')
         + (_isManagerO() ? '<button class="btn btns" onclick="window._assignCariReview(' + c.id + ')" style="font-size:11px;color:#6366F1">👁 İncelet</button>' : '')
         + '<button class="btn btns" onclick="window._openQuickCari?.(' + c.id + ')" style="font-size:11px">✏️</button>'
@@ -9074,29 +9072,55 @@ window._cariBulkClear = function() {
 /** Toplu cari silme (soft delete) */
 /* [CARI-ORPHAN-BACKFILL-001] Yetim ödeme/tahsilat migration — cariId boş + note cari adını içeriyorsa eşleştir */
 window._cariOrphanBackfill = function() {
-  if (!confirm('Yetim ödeme/tahsilat kayıtları taranacak. note alanında cari adı geçen ve cariId boş olanlar ilgili cari\'ye bağlanır. Devam edilsin mi?')) return;
-  var cariler = (typeof loadCari === 'function' ? loadCari() : []).filter(function(c){ return !c.isDeleted; });
-  if (!cariler.length) { alert('Hiç cari bulunamadı.'); return; }
-  var isimHarita = {};
-  cariler.forEach(function(c){ if (c.name) isimHarita[c.name.toLowerCase()] = c.id; });
-  var odm = (typeof window.loadOdm === 'function' ? window.loadOdm() : []) || [];
-  var tah = (typeof window.loadTahsilat === 'function' ? window.loadTahsilat() : []) || [];
-  var duzelti = 0, belirsiz = 0;
-  var kontrol = function(arr) {
-    arr.forEach(function(r){
-      if (r.cariId || !r.note) return;
-      var note = String(r.note).toLowerCase();
-      var match = null;
-      Object.keys(isimHarita).forEach(function(ad){ if (note.includes(ad) && (!match || ad.length > match.length)) match = ad; });
-      if (match) { r.cariId = isimHarita[match]; r.updatedAt = Date.now(); duzelti++; }
-      else { belirsiz++; }
-    });
-  };
-  kontrol(odm); kontrol(tah);
-  if (typeof window.storeOdm === 'function') window.storeOdm(odm);
-  if (typeof window.storeTahsilat === 'function') window.storeTahsilat(tah);
-  alert('Migration tamamlandı.\n\nDüzeltilen: ' + duzelti + ' kayıt\nBelirsiz: ' + belirsiz + ' kayıt (cari adı note\'ta geçmiyor, el ile kontrol gerekebilir)');
-  if (typeof renderCari === 'function') renderCari();
+  /* PUSULA-002: native confirm/alert → confirmModal/toast (K06) */
+  window.confirmModal('Yetim ödeme/tahsilat kayıtları taranacak. note alanında cari adı geçen ve cariId boş olanlar ilgili cari\'ye bağlanır. Devam edilsin mi?', {
+    title: 'Migration — Yetim Kayıt Eşleme',
+    confirmText: 'Devam Et',
+    onConfirm: function() {
+      var cariler = (typeof loadCari === 'function' ? loadCari() : []).filter(function(c){ return !c.isDeleted; });
+      if (!cariler.length) { window.toast?.('Hiç cari bulunamadı', 'info'); return; }
+      var isimHarita = {};
+      cariler.forEach(function(c){ if (c.name) isimHarita[c.name.toLowerCase()] = c.id; });
+      var odm = (typeof window.loadOdm === 'function' ? window.loadOdm() : []) || [];
+      var tah = (typeof window.loadTahsilat === 'function' ? window.loadTahsilat() : []) || [];
+      var duzelti = 0, belirsiz = 0;
+      var kontrol = function(arr) {
+        arr.forEach(function(r){
+          if (r.cariId || !r.note) return;
+          var note = String(r.note).toLowerCase();
+          var match = null;
+          Object.keys(isimHarita).forEach(function(ad){ if (note.includes(ad) && (!match || ad.length > match.length)) match = ad; });
+          if (match) { r.cariId = isimHarita[match]; r.updatedAt = Date.now(); duzelti++; }
+          else { belirsiz++; }
+        });
+      };
+      kontrol(odm); kontrol(tah);
+      if (typeof window.storeOdm === 'function') window.storeOdm(odm);
+      if (typeof window.storeTahsilat === 'function') window.storeTahsilat(tah);
+      window.toast?.('Migration tamamlandı: Düzeltilen ' + duzelti + ', belirsiz ' + belirsiz + ' (el ile kontrol gerekebilir)', 'ok');
+      if (typeof renderCari === 'function') renderCari();
+    }
+  });
+};
+
+/* PUSULA-002: Reddedilmiş cari → potansiyel reaktivasyonu (inline confirm extraction, K06) */
+window._cariReaktifEt = function(cariId) {
+  window.confirmModal('Reddedilmiş cari tekrar potansiyel aşamasına alınsın mı?', {
+    title: 'Cari Reaktif Et',
+    confirmText: 'Evet, Tekrar Aç',
+    onConfirm: function() {
+      var cs = loadCari();
+      var idx = cs.findIndex(function(x){ return String(x.id) === String(cariId); });
+      if (idx >= 0) {
+        cs[idx].status = null;
+        cs[idx].cariType = 'potansiyel';
+        cs[idx].updatedAt = Date.now();
+        storeCari(cs);
+        window.toast?.('Cari tekrar potansiyel', 'ok');
+        if (typeof renderCari === 'function') renderCari();
+      }
+    }
+  });
 };
 
 /* [CARI-PASIF-TOGGLE-001] Pasif toggle — operasyonel aktiflik durumu */
@@ -9106,13 +9130,20 @@ window._cariAktiflikToggle = function(cariId) {
   if (!cari) { window.toast?.('Cari bulunamadı', 'err'); return; }
   var yeni = cari.aktif === false ? true : false;
   var soru = yeni === true ? 'Bu cariyi tekrar AKTİF yapmak istediğinizden emin misiniz?' : 'Bu cariyi PASİF yapmak istediğinizden emin misiniz?\n\n(Veri silinmez, liste/dropdown\'larda gizlenir)';
-  if (!confirm(soru)) return;
-  cari.aktif = yeni;
-  cari.updatedAt = Date.now();
-  cari.aktiflikTarihi = new Date().toISOString();
-  if (typeof storeCari === 'function') storeCari(cariler);
-  window.toast?.(yeni ? 'Cari aktif edildi' : 'Cari pasif edildi', 'ok');
-  if (typeof renderCari === 'function') renderCari();
+  /* PUSULA-002: native confirm → confirmModal (K06) */
+  window.confirmModal(soru, {
+    title: yeni ? 'Cari Aktif Et' : 'Cari Pasif Yap',
+    danger: !yeni,
+    confirmText: yeni ? 'Evet, Aktif Et' : 'Evet, Pasif Yap',
+    onConfirm: function() {
+      cari.aktif = yeni;
+      cari.updatedAt = Date.now();
+      cari.aktiflikTarihi = new Date().toISOString();
+      if (typeof storeCari === 'function') storeCari(cariler);
+      window.toast?.(yeni ? 'Cari aktif edildi' : 'Cari pasif edildi', 'ok');
+      if (typeof renderCari === 'function') renderCari();
+    }
+  });
 };
 
 window._cariBulkDelete = function() {
