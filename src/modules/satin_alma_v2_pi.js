@@ -104,12 +104,25 @@ var PI_DILLER = {
 window.PI_DILLER = PI_DILLER;
 
 /* ── PI ana fonksiyon ───────────────────────────────────────── */
-window._piOlustur = function(teklif, tasarim, katman) {
+window._piOlustur = function(teklif, tasarim, katman, skipKontrol) {
   /* CLAUDE-KURAL-PI-001 madde 7: PI üretiminden önce 4 kontrol — hata önleme */
-  if (typeof window._piOnKontrol === 'function') {
+  /* SATIS-V3-PI-TR-WARN-001 */
+  if (!skipKontrol && typeof window._piOnKontrol === 'function') {
     var _onHata = window._piOnKontrol(teklif);
     if (_onHata) {
-      window.toast?.(_onHata, 'err');
+      if (typeof window.confirmModal === 'function') {
+        window.confirmModal(_onHata + '\n\nYine de PI olusturmak istiyor musunuz?', {
+          title: 'PI Uyarisi',
+          danger: false,
+          confirmText: 'Devam Et',
+          cancelText: 'Iptal',
+          onConfirm: function() {
+            window._piOlustur(teklif, tasarim, katman, true);
+          }
+        });
+      } else {
+        window.toast?.(_onHata, 'err');
+      }
       return;
     }
   }
