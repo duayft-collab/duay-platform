@@ -57,7 +57,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div style="flex:1;min-width:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;border-right:0.5px solid var(--b)">';
   // MUSTERI-ONCEKI-SATIS-002: önceki teklif uyarı banner placeholder
   ic += '<div id="sav2-prev-warn" style="display:none"></div>';
-  ic += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">';
+  ic += '<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1fr;gap:10px">';
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">MÜŞTERİ <span style="color:#A32D2D">*</span></div>';
   ic += '<input type="text" id="st-musteri-ac" placeholder="Musteri ara..." autocomplete="off" style="width:100%;padding:8px 10px;border:0.5px solid var(--b);border-radius:8px;font-size:13px;background:var(--sf)">';
       ic += '<div id="st-musteri-dd" style="display:none;position:absolute;background:var(--bg);border:0.5px solid var(--b);border-radius:8px;max-height:280px;overflow-y:auto;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,0.06);min-width:300px"></div>';
@@ -69,8 +69,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<input id="st-id" type="hidden" value="'+satisId+'"></div>';
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">GEÇERLİLİK <span style="color:#A32D2D">*</span></div>';
   ic += '<input type="date" id="st-gecerlilik" onchange="event.stopPropagation();window._saV2PIOnizlemeGuncelle()" onclick="event.stopPropagation()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
-  ic += '</div>';
-  ic += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">';
+  
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TESLİM KOŞULU <span style="color:#A32D2D">*</span></div>';
   ic += '<select id="st-incoterm" onchange="event.stopPropagation();window._saV2PIOnizlemeGuncelle()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
   ['EXW','FCA','FAS','FOB','CFR','CIF','CPT','CIP','DAP','DPU','DDP'].forEach(function(inc){ic += '<option value="'+inc+'" '+(inc==='EXW'?'selected':'')+'>'+inc+'</option>';});
@@ -78,20 +77,16 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">LİMAN / YER</div>';
   ic += '<input id="st-liman" value="Turkey" oninput="event.stopPropagation();window._saV2PIOnizlemeGuncelle()" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">PARA BİRİMİ</div>';
-  ic += '<select id="st-para-birimi" onchange="event.stopPropagation();window._saV2SatisTabloyuGuncelle?.();window._saV2PIOnizlemeGuncelle();window._saV2BankaGuncelle(this.value)" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option>USD</option><option>EUR</option><option>GBP</option><option>TRY</option><option>CNY</option></select></div>';
+  ic += '<select id="st-para-birimi" onchange="event.stopPropagation();window._saV2SatisTabloyuGuncelle?.();window._saV2PIOnizlemeGuncelle();window._saV2BankaGuncelle(this.value);var _kEl=document.getElementById(\'st-kur-mini\');if(_kEl){var _k=window._saKur&&window._saKur[this.value];if(_k){_kEl.style.display=\'block\';_kEl.textContent=\'1 \'+this.value+\' = \'+_k.toFixed(2)+\' TRY\';}else{_kEl.style.display=\'none\';}}" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option>USD</option><option>EUR</option><option>GBP</option><option>TRY</option><option>CNY</option></select></div>';
+  ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">KUR</div><div id="st-kur-mini" style="font-size:10px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t3);font-family:monospace">1 USD = '+(window._saKur?.USD||44.55).toFixed(2)+' TRY</div></div>'
   ic += '</div>';
-  ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">ÖDEME KOŞULU</div>';
+  ic += '<div style="display:none"><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">ÖDEME KOŞULU</div>';
   ic += '<select id="st-odeme" onchange="event.stopPropagation();window._saV2PIOnizlemeGuncelle()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
   ['30% Advance, 70% L/C at sight','50% Advance, 50% L/C at sight','100% Advance before shipment','L/C at sight','T/T 30 days after B/L','T/T 60 days after B/L','D/P at sight','Open Account 30 days'].forEach(function(o){ic += '<option>'+o+'</option>';});
   ic += '</select></div>';
   /* T03-8 v2: sol banka div hidden — sağ PI altında yeni görünür div var */
   ic += '<div id="st-banka-bilgi" style="display:none;font-size:9px;padding:6px 10px;background:#E6F1FB;border-radius:5px;border:0.5px solid #B5D4F4;color:#0C447C">USD IBAN: TR12 0001 2003 4500 0123 4567 89 · Garanti Bankası</div>';
-  ic += '<div id="st-kur-bilgi" style="font-size:9px;color:var(--t3);padding:4px 10px;background:var(--s2);border-radius:4px;margin-top:4px">';
-  ic += '1 USD = '+(window._saKur?.USD||44.55).toFixed(2)+' TL &nbsp;\u00b7&nbsp; ';
-  ic += '1 EUR = '+(window._saKur?.EUR||51.70).toFixed(2)+' TL &nbsp;\u00b7&nbsp; ';
-  ic += '1 GBP = '+(window._saKur?.GBP||59.30).toFixed(2)+' TL';
-  ic += '</div>';
-
+  
   /* SATIS-JOBID-001: Job ID seçimi + tedarikçi karşılaştırma */
   ic += '<div style="display:flex;align-items:end;gap:8px;padding:8px 10px;background:#FFFCF5;border:0.5px solid #F4E4BC;border-radius:5px;margin-top:6px">';
   ic += '<div style="flex:1"><div style="font-size:8px;font-weight:500;color:#854F0B;letter-spacing:.06em;margin-bottom:3px">JOB ID SEÇ (Tedarik Kaynağı)</div>';
