@@ -11,7 +11,7 @@
    PI'da görünen alanlar: sirket, adres, tel, mail, web */
 var PI_ADRES = {
   /* PI'da görünen alanlar */
-  sirket: 'Duay International Trading Ltd.',
+  sirket: 'Duay Global LLC',
   adres: 'Karadolap District, Neseli St. 1/5, Eyupsultan, Istanbul, TÜRKİYE',
   tel: '+90 212 625 5 444',
   mobil: '+90 532 270 5113',
