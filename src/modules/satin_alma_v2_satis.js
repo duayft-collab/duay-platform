@@ -232,6 +232,9 @@ window._saV2TeklifOlustur = function(id) {
   window._stSartlar = (duzenleme && duzenleme.sartlar && duzenleme.sartlar.length)
     ? duzenleme.sartlar.slice()
     : (window._saV2Sartlar?.() || []).slice(0, 5);
+  window._stFreightToggle = !!(duzenleme && duzenleme.freightToggle);
+  window._stFreightAmount = (duzenleme && parseFloat(duzenleme.freightAmount)) || 0;
+  window._stInsuranceAmount = (duzenleme && parseFloat(duzenleme.insuranceAmount)) || 0;
   setTimeout(function() { window._saV2SartListeGuncelle(); }, 100);
   setTimeout(function(){ window._saV2PIOnizlemeGuncelle?.(); }, 50);
   // MUSTERI-ONCEKI-SATIS-002: form açıldığında önceki teklif kontrolü
@@ -271,6 +274,27 @@ window._saV2TeklifOlustur = function(id) {
       window._saV2PIOnizlemeGuncelle?.();
       window._saV2BankaGuncelle?.(duzenleme.paraBirimi || duzenleme.para || 'USD');
       window._saV2SatisValidate?.();
+      // Edit mode UI sync — freight/insurance state -> UI
+      var inco = (document.getElementById('st-incoterm') || {}).value || '';
+      var showRow = (inco === 'CFR' || inco === 'CIF' || inco === 'CIP');
+      var row = document.getElementById('st-freight-row');
+      if (row) row.style.display = showRow ? 'flex' : 'none';
+      if (showRow) {
+        var icon = document.getElementById('st-freight-toggle-icon');
+        var inputs = document.getElementById('st-freight-inputs');
+        var btn = document.getElementById('st-freight-toggle');
+        var freightInp = document.getElementById('st-freight-amount');
+        var insInp = document.getElementById('st-insurance-amount');
+        var insLabel = document.getElementById('st-insurance-label');
+        if (icon) icon.textContent = window._stFreightToggle ? '●' : '○';
+        if (inputs) inputs.style.display = window._stFreightToggle ? 'flex' : 'none';
+        if (btn) btn.style.background = window._stFreightToggle ? 'var(--s3)' : 'var(--s2)';
+        if (freightInp) freightInp.value = window._stFreightAmount > 0 ? window._stFreightAmount : '';
+        if (insInp) insInp.value = window._stInsuranceAmount > 0 ? window._stInsuranceAmount : '';
+        var showIns = (inco === 'CIF' || inco === 'CIP');
+        if (insLabel) insLabel.style.display = showIns ? '' : 'none';
+        if (insInp) insInp.style.display = showIns ? '' : 'none';
+      }
     }, 120);
 
   }
@@ -545,6 +569,9 @@ window._saV2SatisKaydet = function(alisId) {
     urunler:urunler,
     /* SARTLAR-PERSIST: modal session şartlarını kaydet (yoksa boş array) */
     sartlar: (window._stSartlar || []).slice(),
+      freightToggle: !!window._stFreightToggle,
+      freightAmount: parseFloat(window._stFreightAmount) || 0,
+      insuranceAmount: parseFloat(window._stInsuranceAmount) || 0,
     toplamSatis:toplamSatis.toFixed(2),
     toplamEUR: (parseFloat(toplamSatis) / ((window._saKur||{}).EUR||51.70) * ((window._saKur||{}).USD||44.55)).toFixed(2),
     toplamKar:toplamKar,
