@@ -371,9 +371,9 @@ function openUrunModal(id) {
       + '<div style="margin-top:12px;background:var(--sf2,rgba(0,0,0,0.02));border:0.5px solid var(--b,#e0e0e0);border-radius:8px;padding:12px">'
         + '<div style="font-size:10px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">BELGELER</div>'
         + '<div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px">'
-          + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Datasheet</label><input type="file" id="udb-datasheet-' + n + '" accept=".pdf" style="font-size:10px;width:100%" onchange="event.stopPropagation();window._udbBelgeYukle && window._udbBelgeYukle(' + n + ', \'Datasheet\', this.files[0])"></div>'
+          + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Datasheet</label><input type="file" id="udb-datasheet-' + n + '" accept=".pdf" style="font-size:10px;width:100%" onchange="event.stopPropagation();window._udbBelgeYukle && window._udbBelgeYukle(' + n + ', \'Datasheet\', this.files[0])">' + (u && u.datasheet ? window._udbBelgeLink(u.datasheet) : '') + '</div>'
           + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Üretim Tarihi</label><input type="date" id="udb-uretimTarihi-' + n + '" value="' + esc(u.uretimTarihi || '') + '" class="fi" style="font-size:11px;width:100%"></div>'
-          + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Ürün Kataloğu</label><input type="file" id="udb-katalog-' + n + '" accept=".pdf,image/*" style="font-size:10px;width:100%" onchange="event.stopPropagation();window._udbBelgeYukle && window._udbBelgeYukle(' + n + ', \'Katalog\', this.files[0])"></div>'
+          + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Ürün Kataloğu</label><input type="file" id="udb-katalog-' + n + '" accept=".pdf,image/*" style="font-size:10px;width:100%" onchange="event.stopPropagation();window._udbBelgeYukle && window._udbBelgeYukle(' + n + ', \'Katalog\', this.files[0])">' + (u && u.katalog ? window._udbBelgeLink(u.katalog) : '') + '</div>'
           + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Bakım Yılı</label><input type="number" id="udb-bakimYili-' + n + '" value="' + esc(u.bakimYili || '') + '" placeholder="örn: 2024" class="fi" style="font-size:11px;width:100%"></div>'
         + '</div>'
         + '<button type="button" style="margin-top:10px;width:100%;padding:8px;border:0.5px dashed var(--b,#e0e0e0);border-radius:6px;background:transparent;color:var(--t3,#8a8a8a);font-size:11px;cursor:pointer;font-family:inherit">+ Diğer Teknik Dökümanlar Ekle</button>'
@@ -997,7 +997,23 @@ window._udbKopyala = function(id) {
 
 /* URUN-FORM-KART-LAYOUT-001-ADIM-B: Görsel yükleme + preview (Canvas compress URUN-GORSEL-COMPRESS-001 ile uyumlu) */
 if (typeof window._udbGorselYukle !== 'function') {
-  window._udbBelgeYukle = function(n, key, file) {
+  window._udbFileNameFromUrl = function(url) {
+  if (!url) return '';
+  if (url.indexOf('data:') === 0) return 'kayitli (eski format)';
+  try {
+    var m = url.match(/%2F\d+_([^?]+)\?/);
+    return m ? decodeURIComponent(m[1]) : 'kayitli';
+  } catch (e) { return 'kayitli'; }
+};
+
+window._udbBelgeLink = function(url) {
+  if (!url) return '';
+  var fname = window._udbFileNameFromUrl(url);
+  var safeUrl = String(url).replace(/"/g, '&quot;');
+  return '<a href="' + safeUrl + '" target="_blank" rel="noopener" style="display:block;font-size:10px;color:#0F6E56;margin-top:4px;text-decoration:none">\u{1F4C4} ' + fname + ' \u2713</a>';
+};
+
+window._udbBelgeYukle = function(n, key, file) {
   if (!file) return;
   if (file.size > 20 * 1024 * 1024) { window.toast && window.toast(key + ' max 20MB olabilir', 'err'); return; }
   if (typeof window._uploadBase64ToStorage !== 'function') { window.toast && window.toast('Storage hazir degil', 'err'); return; }
