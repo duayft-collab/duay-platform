@@ -498,7 +498,7 @@ window._piTasarimA = function(t, bugun, satirlar, katman, gizliKod, L) {
   satirlar.forEach(function(s) { h += '<tr><td style="color:#aaa">' + s.no + '</td><td><div style="font-weight:500">' + s.ad + '</div><div style="font-size:9px;color:#888">' + s.kod + '</div>' + (s.eskiKod?'<div style="font-size:9px;color:#888">'+(L.eskiKod||'Old Code')+': '+s.eskiKod+'</div>':'') + '</td><td>' + s.miktar + '</td><td>' + s.birim + '</td><td style="text-align:right">$' + s.satisF + '</td><td style="text-align:right;font-weight:500">$' + s.toplam + '</td></tr>'; });
   h += '</tbody></table></div>';
   h += '<div style="display:flex;justify-content:flex-end;padding:14px 32px;border-top:0.5px solid #eee">';
-  h += '<div style="text-align:right"><div style="font-size:14px;font-weight:700;border-top:1px solid #111;padding-top:8px;margin-top:4px">' + L.toplam + ' USD ' + toplamSatis + '</div></div></div>';
+  h += (function(){var fi = window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD'); var totalVal = (fi.grandTotal !== null ? fi.grandTotal.toFixed(2) : toplamSatis); return '<div style="text-align:right">' + (fi.preTotalHTML || '') + '<div style="font-size:14px;font-weight:700;border-top:1px solid #111;padding-top:8px;margin-top:4px">' + L.toplam + ' USD ' + totalVal + '</div></div></div>';})();
   h += '<div style="padding:10px 32px 24px;border-top:0.5px solid #eee">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-end">';
   h += '<div style="border-top:0.5px solid #aaa;width:160px;text-align:center;padding-top:5px;font-size:9px;color:#666">' + L.imza + '</div>';
@@ -533,7 +533,7 @@ window._piTasarimB = function(t, bugun, satirlar, katman, gizliKod, L) {
   satirlar.forEach(function(s) { h += '<tr><td style="color:#aaa">' + s.no + '</td><td><div style="font-weight:500">' + s.ad + '</div><div style="font-size:9px;color:#888">' + s.kod + '</div>' + (s.eskiKod?'<div style="font-size:9px;color:#888">'+(L.eskiKod||'Old Code')+': '+s.eskiKod+'</div>':'') + '</td><td>' + s.miktar + '</td><td>' + s.birim + '</td><td style="text-align:right">$' + s.satisF + '</td><td style="text-align:right;font-weight:500;color:#185FA5">$' + s.toplam + '</td></tr>'; });
   h += '</tbody></table></div>';
   h += '<div style="display:flex;justify-content:flex-end;align-items:center;padding:12px 28px;border-top:0.5px solid #eee;gap:24px">';
-  h += '<div style="background:#185FA5;color:#fff;padding:8px 20px;border-radius:4px;font-size:14px;font-weight:700">' + L.toplam + ': USD ' + toplamSatis + '</div></div>';
+  h += (function(){var fi = window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD'); var totalVal = (fi.grandTotal !== null ? fi.grandTotal.toFixed(2) : toplamSatis); var pre = fi.preTotalHTML ? '<div style="font-size:10px;color:#666;text-align:right;margin-bottom:4px">' + fi.preTotalHTML + '</div>' : ''; return pre + '<div style="background:#185FA5;color:#fff;padding:8px 20px;border-radius:4px;font-size:14px;font-weight:700">' + L.toplam + ': USD ' + totalVal + '</div></div>';})();
   h += '<div style="padding:10px 28px 20px;display:flex;justify-content:space-between;align-items:flex-end">';
   h += '<div style="border-top:0.5px solid #aaa;width:160px;text-align:center;padding-top:5px;font-size:9px;color:#666">' + L.imza + '</div>';
   h += '<div style="font-size:8px;color:#bbb">' + L.not + '</div>';
@@ -571,7 +571,7 @@ window._piTasarimC = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '</tbody></table>';
   h += '<div style="border-top:1px solid #1D9E75;padding-top:12px;margin-top:0;display:flex;justify-content:space-between;align-items:baseline">';
   h += '<div style="font-size:8px;color:#aaa">All amounts in USD</div>';
-  h += '<div style="font-size:15px;font-weight:700">' + L.toplam + ': USD ' + toplamSatis + '</div></div>';
+  h += (function(){var fi = window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD'); var totalVal = (fi.grandTotal !== null ? fi.grandTotal.toFixed(2) : toplamSatis); return (fi.preTotalHTML || '') + '<div style="font-size:15px;font-weight:700">' + L.toplam + ': USD ' + totalVal + '</div></div>';})();
   h += '<div style="margin-top:24px;display:flex;justify-content:space-between;align-items:flex-end">';
   h += '<div style="border-top:0.5px solid #aaa;width:160px;text-align:center;padding-top:5px;font-size:9px;color:#666">' + L.imza + '</div>';
   h += '<div style="font-size:8px;color:#bbb">' + L.not + '</div>';
