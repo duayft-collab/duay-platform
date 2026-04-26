@@ -28,6 +28,50 @@ var PI_ADRES = {
   adres2: 'Eyupsultan, Istanbul, TÜRKİYE',
   wp: '+90 532 270 5113'
 };
+
+// [PI-STANDART-001] Standart musteri header/footer/banka/sartlar bloku
+window._piStandartCariBilgi = function(t) {
+  if (!window.loadCari || !window._cariNormalize) return null;
+  try {
+    var list = window.loadCari({tumKullanicilar: true}) || [];
+    var c = list.find(function(c) {
+      return String(c['id']) === String(t['musteriId']) || c['kod'] === t['musteriKod'];
+    });
+    return c ? window._cariNormalize(c) : null;
+  } catch (e) { return null; }
+};
+
+window._piStandartBillTo = function(t) {
+  var n = window._piStandartCariBilgi(t);
+  var lines = [];
+  lines.push('<div style="font-weight:700;font-size:13px;margin-bottom:4px">' + (t['musteriAd'] || (n && n['name']) || '—') + '</div>');
+  if (n) {
+    if (n['adres']) lines.push('<div>' + n['adres'] + '</div>');
+    var loc = [n['city'], n['country']].filter(function(x){return x;}).join(' / ');
+    if (loc) lines.push('<div>' + loc + '</div>');
+    if (n['tel']) lines.push('<div>Tel: ' + n['tel'] + '</div>');
+    if (n['contact']) lines.push('<div>Attn: ' + n['contact'] + '</div>');
+  }
+  return lines.join('');
+};
+
+window._piStandartSartlar = function(t) {
+  if (!Array.isArray(t['sartlar']) || !t['sartlar'].length) return '';
+  var html = '<div style="margin-top:14px"><div style="font-weight:700;font-size:11px;margin-bottom:6px">TERMS &amp; CONDITIONS</div>';
+  html += '<ol style="margin:0;padding-left:18px;font-size:9.5px;line-height:1.45">';
+  t['sartlar'].forEach(function(line) {
+    html += '<li style="margin-bottom:2px">' + line + '</li>';
+  });
+  html += '</ol></div>';
+  return html;
+};
+
+window._piStandartBanka = function(t) {
+  if (typeof window._pdfBankaTekSatir === 'function') {
+    return window._pdfBankaTekSatir(t['paraBirimi']);
+  }
+  return '';
+};
 window.PI_ADRES = PI_ADRES;
 
 var PI_KOSULLAR = [
@@ -505,6 +549,12 @@ window._piTasarimA = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<div style="font-size:8px;color:#bbb">' + L.not + '</div>';
   h += '</div></div>';
   h += '<div class="gizli-kod">' + gizliKod + '</div>';
+  // [PI-STANDART-001] Standart sartlar + banka (L/O'da banka var, typeof guard)
+  if (typeof window._piStandartSartlar === 'function') h += window._piStandartSartlar(t);
+  if (typeof banka === 'undefined' && typeof window._piStandartBanka === 'function') {
+    var __std_banka = window._piStandartBanka(t);
+    if (__std_banka) h += '<div style="margin-top:10px;font-size:9.5px;color:#444">' + __std_banka + '</div>';
+  }
   return h;
 };
 
@@ -539,6 +589,12 @@ window._piTasarimB = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<div style="font-size:8px;color:#bbb">' + L.not + '</div>';
   h += '</div>';
   h += '<div class="gizli-kod">' + gizliKod + '</div>';
+  // [PI-STANDART-001] Standart sartlar + banka (L/O'da banka var, typeof guard)
+  if (typeof window._piStandartSartlar === 'function') h += window._piStandartSartlar(t);
+  if (typeof banka === 'undefined' && typeof window._piStandartBanka === 'function') {
+    var __std_banka = window._piStandartBanka(t);
+    if (__std_banka) h += '<div style="margin-top:10px;font-size:9.5px;color:#444">' + __std_banka + '</div>';
+  }
   return h;
 };
 
@@ -666,6 +722,12 @@ window._steklifRevGecmisHTML = function(teklif) {
     h += '</div>';
   });
   h += '</div>';
+  // [PI-STANDART-001] Standart sartlar + banka (L/O'da banka var, typeof guard)
+  if (typeof window._piStandartSartlar === 'function') h += window._piStandartSartlar(t);
+  if (typeof banka === 'undefined' && typeof window._piStandartBanka === 'function') {
+    var __std_banka = window._piStandartBanka(t);
+    if (__std_banka) h += '<div style="margin-top:10px;font-size:9.5px;color:#444">' + __std_banka + '</div>';
+  }
   return h;
 };
 
@@ -719,6 +781,12 @@ window._piTasarimI = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '</div>';
   h += '<div style="height:3px;background:#185FA5;margin-top:16px"></div>';
   h += '</div>';
+  // [PI-STANDART-001] Standart sartlar + banka (L/O'da banka var, typeof guard)
+  if (typeof window._piStandartSartlar === 'function') h += window._piStandartSartlar(t);
+  if (typeof banka === 'undefined' && typeof window._piStandartBanka === 'function') {
+    var __std_banka = window._piStandartBanka(t);
+    if (__std_banka) h += '<div style="margin-top:10px;font-size:9.5px;color:#444">' + __std_banka + '</div>';
+  }
   return h;
 };
 
@@ -762,6 +830,12 @@ window._piTasarimL = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<div style="width:180px;text-align:center"><div style="border-top:0.5px solid #111;padding-top:4px;font-size:7px;letter-spacing:.1em;color:#aaa">'+(L.tarihMuhur||'DATE / STAMP').toUpperCase()+'</div></div></div>';
   if(gizliKod) h+='<div style="text-align:center;margin-top:12px;font-size:7px;color:#ccc;font-family:monospace">'+gizliKod+'</div>';
   h += '</div>';
+  // [PI-STANDART-001] Standart sartlar + banka (L/O'da banka var, typeof guard)
+  if (typeof window._piStandartSartlar === 'function') h += window._piStandartSartlar(t);
+  if (typeof banka === 'undefined' && typeof window._piStandartBanka === 'function') {
+    var __std_banka = window._piStandartBanka(t);
+    if (__std_banka) h += '<div style="margin-top:10px;font-size:9.5px;color:#444">' + __std_banka + '</div>';
+  }
   return h;
 };
 
@@ -800,6 +874,12 @@ window._piTasarimO = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<div style="width:180px;text-align:center"><div style="border-top:2px solid #111;padding-top:4px;font-size:7px;letter-spacing:.12em;color:#aaa">'+(L.tarihMuhur||'DATE / STAMP').toUpperCase()+'</div></div></div>';
   if(gizliKod) h+='<div style="text-align:center;margin-top:12px;font-size:7px;color:#ccc;font-family:monospace">'+gizliKod+'</div>';
   h += '</div>';
+  // [PI-STANDART-001] Standart sartlar + banka (L/O'da banka var, typeof guard)
+  if (typeof window._piStandartSartlar === 'function') h += window._piStandartSartlar(t);
+  if (typeof banka === 'undefined' && typeof window._piStandartBanka === 'function') {
+    var __std_banka = window._piStandartBanka(t);
+    if (__std_banka) h += '<div style="margin-top:10px;font-size:9.5px;color:#444">' + __std_banka + '</div>';
+  }
   return h;
 };
 
