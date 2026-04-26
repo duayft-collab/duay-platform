@@ -887,9 +887,6 @@ window._saV2IncotermAutoSart = function(incoterm) {
   var showRow = (incoterm === 'CFR' || incoterm === 'CIF' || incoterm === 'CIP');
   if (row) row.style.display = showRow ? 'flex' : 'none';
   if (!showRow) {
-    window._stFreightToggle = false;
-    window._stFreightAmount = 0;
-    window._stInsuranceAmount = 0;
     var inputs = document.getElementById('st-freight-inputs');
     var icon = document.getElementById('st-freight-toggle-icon');
     var btn = document.getElementById('st-freight-toggle');
@@ -897,8 +894,6 @@ window._saV2IncotermAutoSart = function(incoterm) {
     if (inputs) inputs.style.display = 'none';
     if (icon) icon.textContent = '○';
     if (btn) btn.style.background = 'var(--s2)';
-    if (freightInp) freightInp.value = '';
-    if (insInp) insInp.value = '';
   }
   var showIns = (incoterm === 'CIF' || incoterm === 'CIP');
   if (insLabel) insLabel.style.display = showIns ? '' : 'none';
