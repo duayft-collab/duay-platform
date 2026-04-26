@@ -19,6 +19,11 @@
       tel: c.tel || c.phone || c.telefon || '',
       adres: c.adres || c.address || '',
       isDeleted: !!c.isDeleted,
+      vkn: c['vkn'] || c['tckn'] || c['vergiNo'] || c['taxNo'] || '',
+      country: c['country'] || c['ulke'] || '',
+      city: c['city'] || c['sehir'] || '',
+      kod: c['kod'] || '',
+      contact: c['contact'] || c['yetkili'] || '',
       raw: c
     };
   };
