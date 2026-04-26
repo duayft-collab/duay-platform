@@ -80,6 +80,8 @@ var PI_DILLER = {
     /* PI_DILLER.EN tamamlama (önceden fallback ile basılan label'lar) */
     proforma: 'Proforma Invoice',
     araToplam: 'Subtotal',
+      freight: 'Freight',
+      insurance: 'Insurance',
     banking: 'Banking Details',
     tradeTerms: 'Trade Terms',
     sartlar: 'Terms & Conditions',
@@ -185,6 +187,29 @@ window._piOlustur = function(teklif, tasarim, katman, skipKontrol) {
 };
 
 /* ── Ürün satırları (PI-FIYAT-001: form-set fiyat önceliği + number safety) ── */
+window._piFreightInsuranceHTML = function(t, L, paraSimge) {
+  if (!t || !t.freightToggle) return { preTotalHTML: '', grandTotal: null };
+  var freight = parseFloat(t.freightAmount) || 0;
+  var teslim = String(t.teslim || '');
+  var isCifCip = (teslim.indexOf('CIF') === 0 || teslim.indexOf('CIP') === 0);
+  var insurance = isCifCip ? (parseFloat(t.insuranceAmount) || 0) : 0;
+  var subtotal = parseFloat(t.toplamSatis) || 0;
+  var grandTotal = subtotal + freight + insurance;
+  var para = paraSimge || t.paraBirimi || 'USD';
+  var fmt = function(n) { return n.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}); };
+  var html = '';
+  var rowCss = 'display:flex;justify-content:space-between;font-size:10px;color:#666;padding:2px 0';
+  var lblSub = L && L['araToplam'] ? L['araToplam'] : 'Subtotal';
+  var lblFr = L && L['freight'] ? L['freight'] : 'Freight';
+  var lblIns = L && L['insurance'] ? L['insurance'] : 'Insurance';
+  html += '<div style="' + rowCss + '"><span>' + lblSub + '</span><span>' + para + ' ' + fmt(subtotal) + '</span></div>';
+  html += '<div style="' + rowCss + '"><span>' + lblFr + '</span><span>' + para + ' ' + fmt(freight) + '</span></div>';
+  if (isCifCip) {
+    html += '<div style="' + rowCss + '"><span>' + lblIns + '</span><span>' + para + ' ' + fmt(insurance) + '</span></div>';
+  }
+  return { preTotalHTML: html, grandTotal: grandTotal };
+};
+
 window._piUrunSatirlari = function(teklif, katman) {
   var urunler = teklif.urunler || [];
   if (!urunler.length && teklif.urunAdi) {
