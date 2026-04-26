@@ -999,11 +999,22 @@ window._udbKopyala = function(id) {
 if (typeof window._udbGorselYukle !== 'function') {
   window._udbBelgeYukle = function(n, key, file) {
   if (!file) return;
-  if (file.size > 10 * 1024 * 1024) { window.toast && window.toast(key + ' max 10MB olabilir', 'err'); return; }
+  if (file.size > 20 * 1024 * 1024) { window.toast && window.toast(key + ' max 20MB olabilir', 'err'); return; }
+  if (typeof window._uploadBase64ToStorage !== 'function') { window.toast && window.toast('Storage hazir degil', 'err'); return; }
   var reader = new FileReader();
-  reader.onload = function(ev) {
-    window['_udb' + key + n] = ev.target.result;
-    window.toast && window.toast(key + ' eklendi', 'ok');
+  reader.onload = async function(ev) {
+    try {
+      window.toast && window.toast(key + ' yukleniyor...', 'info');
+      var folder = 'urun-' + key.toLowerCase();
+      var dataUrl = ev['target']['result'];
+      var fname = file['name'];
+      var url = await window._uploadBase64ToStorage(dataUrl, fname, folder);
+      window['_udb' + key + n] = url;
+      window.toast && window.toast(key + ' eklendi', 'ok');
+    } catch (err) {
+      delete window['_udb' + key + n];
+      window.toast && window.toast(key + ' yukleme hatasi: ' + (err.message || err), 'err');
+    }
   };
   reader.readAsDataURL(file);
 };
