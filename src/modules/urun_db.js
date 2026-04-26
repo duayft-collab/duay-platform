@@ -371,9 +371,9 @@ function openUrunModal(id) {
       + '<div style="margin-top:12px;background:var(--sf2,rgba(0,0,0,0.02));border:0.5px solid var(--b,#e0e0e0);border-radius:8px;padding:12px">'
         + '<div style="font-size:10px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">BELGELER</div>'
         + '<div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px">'
-          + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Datasheet</label><input type="file" id="udb-datasheet-' + n + '" accept=".pdf" style="font-size:10px;width:100%"></div>'
+          + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Datasheet</label><input type="file" id="udb-datasheet-' + n + '" accept=".pdf" style="font-size:10px;width:100%" onchange="event.stopPropagation();window._udbBelgeYukle && window._udbBelgeYukle(' + n + ', \'Datasheet\', this.files[0])"></div>'
           + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Üretim Tarihi</label><input type="date" id="udb-uretimTarihi-' + n + '" value="' + esc(u.uretimTarihi || '') + '" class="fi" style="font-size:11px;width:100%"></div>'
-          + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Ürün Kataloğu</label><input type="file" id="udb-katalog-' + n + '" accept=".pdf,image/*" style="font-size:10px;width:100%"></div>'
+          + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Ürün Kataloğu</label><input type="file" id="udb-katalog-' + n + '" accept=".pdf,image/*" style="font-size:10px;width:100%" onchange="event.stopPropagation();window._udbBelgeYukle && window._udbBelgeYukle(' + n + ', \'Katalog\', this.files[0])"></div>'
           + '<div><label style="display:block;font-size:11px;color:var(--t3,#8a8a8a);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Bakım Yılı</label><input type="number" id="udb-bakimYili-' + n + '" value="' + esc(u.bakimYili || '') + '" placeholder="örn: 2024" class="fi" style="font-size:11px;width:100%"></div>'
         + '</div>'
         + '<button type="button" style="margin-top:10px;width:100%;padding:8px;border:0.5px dashed var(--b,#e0e0e0);border-radius:6px;background:transparent;color:var(--t3,#8a8a8a);font-size:11px;cursor:pointer;font-family:inherit">+ Diğer Teknik Dökümanlar Ekle</button>'
@@ -448,6 +448,8 @@ window._saveUrunDB = function() {
       _uSrc = window._udbEditSource.find(function(x){ return String(x._udbFormN) === String(n); });
     }
     var image = window['_udbImg' + n] || (_uSrc && (_uSrc.image || _uSrc.gorsel)) || null;
+    var datasheet = window['_udbDatasheet' + n] || (_uSrc && _uSrc.datasheet) || null;
+    var katalog = window['_udbKatalog' + n] || (_uSrc && _uSrc.katalog) || null;
 
     if (!duayName) { hatalar.push('Satır '+n+': Ürün adı (TR) zorunlu'); return; }
     if (!vendorId) { hatalar.push('Satır '+n+': Tedarikçi zorunlu'); return; }
@@ -494,6 +496,10 @@ window._saveUrunDB = function() {
       updatedByName: (window.CU?.()?.name || window.CU?.()?.displayName || '—'),
       image: image||null,
       _hasImage: !!image,
+      datasheet: datasheet||null,
+      _hasDatasheet: !!datasheet,
+      katalog: katalog||null,
+      _hasKatalog: !!katalog,
       _imageUploaded: image ? new Date().toISOString() : null,
       isDeleted: false,
       createdAt: new Date().toISOString(),
@@ -991,7 +997,18 @@ window._udbKopyala = function(id) {
 
 /* URUN-FORM-KART-LAYOUT-001-ADIM-B: Görsel yükleme + preview (Canvas compress URUN-GORSEL-COMPRESS-001 ile uyumlu) */
 if (typeof window._udbGorselYukle !== 'function') {
-  window._udbGorselYukle = function(input, n) {
+  window._udbBelgeYukle = function(n, key, file) {
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { window.toast && window.toast(key + ' max 10MB olabilir', 'err'); return; }
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    window['_udb' + key + n] = ev.target.result;
+    window.toast && window.toast(key + ' eklendi', 'ok');
+  };
+  reader.readAsDataURL(file);
+};
+
+window._udbGorselYukle = function(input, n) {
     var file = input.files && input.files[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { window.toast?.('Görsel max 5MB olabilir', 'err'); input.value = ''; return; }
