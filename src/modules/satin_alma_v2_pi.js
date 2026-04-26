@@ -190,7 +190,7 @@ window._piUrunSatirlari = function(teklif, katman) {
   if (!urunler.length && teklif.urunAdi) {
     urunler = [{ duayKodu: teklif.duayKodu || '', urunAdi: teklif.urunAdi || '', miktar: teklif.miktar || 1, alisTl: parseFloat(teklif.alisF) || 0, marj: 33, gorsel: teklif.gorsel || '' }];
   }
-  return urunler.map(function(u, i) {
+  return urunler.filter(function(u){var qty=parseFloat(u.miktar)||0;var desc=String((u.urunAdi||u.duayAdi||u.ingAd||"")).trim();var kod=String((u.kod||u.duayKodu||"")).trim();return qty>0||desc!==""||kod!=="";}).map(function(u, i) {
     var miktar = parseFloat(u.miktar) || 1;
     /* Alış öncelik: alisHedef (form'da kur çevrilmiş) > alisTl > alisF */
     var alis = parseFloat(u.alisHedef != null ? u.alisHedef : (u.alisTl != null ? u.alisTl : u.alisF)) || 0;
