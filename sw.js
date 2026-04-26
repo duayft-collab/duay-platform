@@ -20,7 +20,7 @@
 /* [CACHE-BUMP-2026-04-25-V33] FİX-PI-A-001 Format A duplicate Terms + Banking ünvan EN aktivasyon */
 /* [CACHE-BUMP-2026-04-25-V34] PI-001 sprint kapanış (8 madde TAMAM) */
 /* [CACHE-BUMP-2026-04-25-V35] ALIS-003+004+005 + PUSULA-002+012 + SATIS-001+002+006+008+009 toplu */
-const CACHE_NAME    = 'duay-platform-v35';
+const CACHE_NAME    = 'duay-platform-v36';
 const CACHE_VERSION = '35.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
@@ -118,6 +118,11 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // [SW-FIREBASESTORAGE-BYPASS-001] Storage URL'leri SW araya girmeden browser'a birak
+  if (url.hostname === 'firebasestorage.googleapis.com') {
+    return;
+  }
 
   // Firebase, CDN ve dış API'lar → Network-First
   if (
