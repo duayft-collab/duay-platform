@@ -56,7 +56,7 @@ function checkLine(items) {
 }
 function _fmtDate(s) { if(!s)return '___/___/____'; var d=new Date(s); if(isNaN(d))return s; return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear(); }
 function _todayFmt() { return _fmtDate(new Date().toISOString()); }
-function _fmtMoney(v,c) { var n=parseFloat(v)||0; return (c||'USD')+' '+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function _fmtMoney(v,c) { var n=parseFloat(v)||0; return (c||'USD')+' '+n.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
 function _sortU(urunler) { return urunler.slice().sort(function(a,b){ return (parseInt(a.konteyner_sira)||99)-(parseInt(b.konteyner_sira)||99); }); }
 
