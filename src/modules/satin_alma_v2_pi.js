@@ -473,7 +473,7 @@ window._piCSS = function(tasarim) {
 /* ── Tasarım A — Corporate (siyah-beyaz klasik) ────────────── */
 window._piTasarimA = function(t, bugun, satirlar, katman, gizliKod, L) {
   L = L || PI_DILLER.EN;
-  var toplamSatis = satirlar.reduce(function(a, s) { return a + parseFloat(s.toplam); }, 0).toFixed(2);
+  var toplamSatis = satirlar.reduce(function(a, s) { return a + parseFloat(s.toplam); }, 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
   var h = '<div style="padding:28px 32px 20px;border-bottom:2px solid #111">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
   h += '<div><div style="font-size:22px;font-weight:700;letter-spacing:.5px">' + PI_ADRES.sirket + '</div>';
@@ -498,7 +498,7 @@ window._piTasarimA = function(t, bugun, satirlar, katman, gizliKod, L) {
   satirlar.forEach(function(s) { h += '<tr><td style="color:#aaa">' + s.no + '</td><td><div style="font-weight:500">' + s.ad + '</div><div style="font-size:9px;color:#888">' + s.kod + '</div>' + (s.eskiKod?'<div style="font-size:9px;color:#888">'+(L.eskiKod||'Old Code')+': '+s.eskiKod+'</div>':'') + '</td><td>' + s.miktar + '</td><td>' + s.birim + '</td><td style="text-align:right">$' + s.satisF + '</td><td style="text-align:right;font-weight:500">$' + s.toplam + '</td></tr>'; });
   h += '</tbody></table></div>';
   h += '<div style="display:flex;justify-content:flex-end;padding:14px 32px;border-top:0.5px solid #eee">';
-  h += (function(){var fi = window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD'); var totalVal = (fi.grandTotal !== null ? fi.grandTotal.toFixed(2) : toplamSatis); return '<div style="text-align:right">' + (fi.preTotalHTML || '') + '<div style="font-size:14px;font-weight:700;border-top:1px solid #111;padding-top:8px;margin-top:4px">' + L.toplam + ' USD ' + totalVal + '</div></div></div>';})();
+  h += (function(){var fi = window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD'); var totalVal = (fi.grandTotal !== null ? fi.grandTotal.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) : toplamSatis); return '<div style="text-align:right">' + (fi.preTotalHTML || '') + '<div style="font-size:14px;font-weight:700;border-top:1px solid #111;padding-top:8px;margin-top:4px">' + L.toplam + ' USD ' + totalVal + '</div></div></div>';})();
   h += '<div style="padding:10px 32px 24px;border-top:0.5px solid #eee">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-end">';
   h += '<div style="border-top:0.5px solid #aaa;width:160px;text-align:center;padding-top:5px;font-size:9px;color:#666">' + L.imza + '</div>';
@@ -511,7 +511,7 @@ window._piTasarimA = function(t, bugun, satirlar, katman, gizliKod, L) {
 /* ── Tasarım B — Modern Blue (Duay mavisi accent) ──────────── */
 window._piTasarimB = function(t, bugun, satirlar, katman, gizliKod, L) {
   L = L || PI_DILLER.EN;
-  var toplamSatis = satirlar.reduce(function(a, s) { return a + parseFloat(s.toplam); }, 0).toFixed(2);
+  var toplamSatis = satirlar.reduce(function(a, s) { return a + parseFloat(s.toplam); }, 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
   var h = '<div style="background:#185FA5;padding:22px 28px;display:flex;justify-content:space-between;align-items:flex-start">';
   h += '<div><div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:.3px">' + PI_ADRES.sirket + '</div>';
   h += '<div style="font-size:9px;color:#B5D4F4;margin-top:3px">' + PI_ADRES.adres1 + ' · ' + PI_ADRES.adres2 + '</div>';
@@ -533,7 +533,7 @@ window._piTasarimB = function(t, bugun, satirlar, katman, gizliKod, L) {
   satirlar.forEach(function(s) { h += '<tr><td style="color:#aaa">' + s.no + '</td><td><div style="font-weight:500">' + s.ad + '</div><div style="font-size:9px;color:#888">' + s.kod + '</div>' + (s.eskiKod?'<div style="font-size:9px;color:#888">'+(L.eskiKod||'Old Code')+': '+s.eskiKod+'</div>':'') + '</td><td>' + s.miktar + '</td><td>' + s.birim + '</td><td style="text-align:right">$' + s.satisF + '</td><td style="text-align:right;font-weight:500;color:#185FA5">$' + s.toplam + '</td></tr>'; });
   h += '</tbody></table></div>';
   h += '<div style="display:flex;justify-content:flex-end;align-items:center;padding:12px 28px;border-top:0.5px solid #eee;gap:24px">';
-  h += (function(){var fi = window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD'); var totalVal = (fi.grandTotal !== null ? fi.grandTotal.toFixed(2) : toplamSatis); var pre = fi.preTotalHTML ? '<div style="font-size:10px;color:#666;text-align:right;margin-bottom:4px">' + fi.preTotalHTML + '</div>' : ''; return pre + '<div style="background:#185FA5;color:#fff;padding:8px 20px;border-radius:4px;font-size:14px;font-weight:700">' + L.toplam + ': USD ' + totalVal + '</div></div>';})();
+  h += (function(){var fi = window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD'); var totalVal = (fi.grandTotal !== null ? fi.grandTotal.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) : toplamSatis); var pre = fi.preTotalHTML ? '<div style="font-size:10px;color:#666;text-align:right;margin-bottom:4px">' + fi.preTotalHTML + '</div>' : ''; return pre + '<div style="background:#185FA5;color:#fff;padding:8px 20px;border-radius:4px;font-size:14px;font-weight:700">' + L.toplam + ': USD ' + totalVal + '</div></div>';})();
   h += '<div style="padding:10px 28px 20px;display:flex;justify-content:space-between;align-items:flex-end">';
   h += '<div style="border-top:0.5px solid #aaa;width:160px;text-align:center;padding-top:5px;font-size:9px;color:#666">' + L.imza + '</div>';
   h += '<div style="font-size:8px;color:#bbb">' + L.not + '</div>';
@@ -545,7 +545,7 @@ window._piTasarimB = function(t, bugun, satirlar, katman, gizliKod, L) {
 /* ── Tasarım C — Premium Green (yeşil top bar + grid layout) ─ */
 window._piTasarimC = function(t, bugun, satirlar, katman, gizliKod, L) {
   L = L || PI_DILLER.EN;
-  var toplamSatis = satirlar.reduce(function(a, s) { return a + parseFloat(s.toplam); }, 0).toFixed(2);
+  var toplamSatis = satirlar.reduce(function(a, s) { return a + parseFloat(s.toplam); }, 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
   var h = '<div style="height:6px;background:#1D9E75;margin:-32px -32px 24px"></div>';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:0.5px solid #eee;padding-bottom:16px;margin-bottom:16px">';
   h += '<div><div style="font-size:9px;font-weight:700;color:#1D9E75;text-transform:uppercase;letter-spacing:.12em;margin-bottom:5px">Proforma Invoice</div>';
@@ -571,7 +571,7 @@ window._piTasarimC = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '</tbody></table>';
   h += '<div style="border-top:1px solid #1D9E75;padding-top:12px;margin-top:0;display:flex;justify-content:space-between;align-items:baseline">';
   h += '<div style="font-size:8px;color:#aaa">All amounts in USD</div>';
-  h += (function(){var fi = window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD'); var totalVal = (fi.grandTotal !== null ? fi.grandTotal.toFixed(2) : toplamSatis); return (fi.preTotalHTML || '') + '<div style="font-size:15px;font-weight:700">' + L.toplam + ': USD ' + totalVal + '</div></div>';})();
+  h += (function(){var fi = window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD'); var totalVal = (fi.grandTotal !== null ? fi.grandTotal.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) : toplamSatis); return (fi.preTotalHTML || '') + '<div style="font-size:15px;font-weight:700">' + L.toplam + ': USD ' + totalVal + '</div></div>';})();
   h += '<div style="margin-top:24px;display:flex;justify-content:space-between;align-items:flex-end">';
   h += '<div style="border-top:0.5px solid #aaa;width:160px;text-align:center;padding-top:5px;font-size:9px;color:#666">' + L.imza + '</div>';
   h += '<div style="font-size:8px;color:#bbb">' + L.not + '</div>';
@@ -708,7 +708,7 @@ window._piTasarimI = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<thead><tr style="border-bottom:1px solid #185FA5"><th style="color:#185FA5;font-size:8px;padding:5px 4px;text-align:left">'+(L.no||'#')+'</th><th style="color:#185FA5;font-size:8px;padding:5px 4px;text-align:left">'+L.urun+'</th><th style="color:#185FA5;font-size:8px;padding:5px 4px;text-align:right">'+L.miktar+'</th><th style="color:#185FA5;font-size:8px;padding:5px 4px;text-align:right">'+L.birimFiyat+'</th><th style="color:#185FA5;font-size:8px;padding:5px 4px;text-align:right">'+L.tutar+'</th></tr></thead>';
   var satirHTML = (typeof satirlar === 'string') ? satirlar : (Array.isArray(satirlar) ? satirlar.map(function(s){return '<tr><td style="font-size:9px;padding:4px;color:#aaa">'+s.no+'</td><td style="font-size:9px;padding:4px"><div style="font-weight:600">'+s.ad+'</div><div style="font-size:8px;color:#888">'+s.kod+'</div></td><td style="font-size:9px;padding:4px;text-align:right">'+s.miktar+' '+s.birim+'</td><td style="font-size:9px;padding:4px;text-align:right">$'+s.satisF+'</td><td style="font-size:9px;padding:4px;text-align:right;font-weight:600">$'+s.toplam+'</td></tr>';}).join('') : '');
   h += '<tbody>'+satirHTML+'</tbody></table>';
-  var toplamGoster = t.genelToplam || (Array.isArray(satirlar) ? satirlar.reduce(function(a,s){return a+parseFloat(s.toplam||0);},0).toFixed(2) : '0');
+  var toplamGoster = t.genelToplam || (Array.isArray(satirlar) ? satirlar.reduce(function(a,s){return a+parseFloat(s.toplam||0);},0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '0');
   h += '<div style="text-align:right;border-top:1px solid #185FA5;padding-top:8px;margin-bottom:16px"><span style="font-size:10px;color:#888;margin-right:8px">'+L.toplam+'</span><span style="font-size:16px;font-weight:700;color:#185FA5">'+toplamGoster+' '+(t.paraBirimi||'USD')+'</span></div>';
   if(sartlar.length){h+='<div style="margin-bottom:12px"><div style="font-size:8px;font-weight:600;color:#185FA5;margin-bottom:4px">'+(L.sartlar||'Terms')+'</div>';sartlar.slice(0,10).forEach(function(s,i){h+='<div style="font-size:8px;color:#555;margin-bottom:2px">'+(i+1)+'. '+s+'</div>';});h+='</div>';}
   h += '<div style="font-size:8px;color:#aaa;font-style:italic;margin-bottom:3px">'+(L.gorselNot||'Product images shown are for illustrative purposes only.')+'</div>';
@@ -753,7 +753,7 @@ window._piTasarimL = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<thead><tr style="border-top:0.5px solid #ddd;border-bottom:0.5px solid #ddd"><th style="color:#aaa;font-size:8px;padding:5px 4px">'+(L.no||'#')+'</th><th style="color:#aaa;font-size:8px;padding:5px 4px">'+L.urun+'</th><th style="color:#aaa;font-size:8px;text-align:right;padding:5px 4px">'+L.miktar+'</th><th style="color:#aaa;font-size:8px;text-align:right;padding:5px 4px">'+L.birimFiyat+'</th><th style="color:#aaa;font-size:8px;text-align:right;padding:5px 4px">'+L.tutar+'</th></tr></thead>';
   var satirHTML2 = (typeof satirlar === 'string') ? satirlar : (Array.isArray(satirlar) ? satirlar.map(function(s){return '<tr><td style="font-size:9px;padding:4px;color:#aaa">'+s.no+'</td><td style="font-size:9px;padding:4px"><div style="font-weight:600">'+s.ad+'</div><div style="font-size:8px;color:#888">'+s.kod+'</div></td><td style="font-size:9px;padding:4px;text-align:right">'+s.miktar+' '+s.birim+'</td><td style="font-size:9px;padding:4px;text-align:right">$'+s.satisF+'</td><td style="font-size:9px;padding:4px;text-align:right;font-weight:600">$'+s.toplam+'</td></tr>';}).join('') : '');
   h += '<tbody>'+satirHTML2+'</tbody></table>';
-  var toplamGoster2 = t.genelToplam || (Array.isArray(satirlar) ? satirlar.reduce(function(a,s){return a+parseFloat(s.toplam||0);},0).toFixed(2) : '0');
+  var toplamGoster2 = t.genelToplam || (Array.isArray(satirlar) ? satirlar.reduce(function(a,s){return a+parseFloat(s.toplam||0);},0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '0');
   h += '<div style="border-top:2px solid #111;padding-top:8px;text-align:right;margin-bottom:16px"><span style="font-size:8px;color:#aaa;letter-spacing:.1em;margin-right:8px">'+L.toplam.toUpperCase()+' · '+(t.paraBirimi||'USD')+'</span><span style="font-size:18px;font-weight:300">'+toplamGoster2+'</span></div>';
   if(sartlar.length){h+='<div style="margin-bottom:12px"><div style="font-size:8px;font-weight:600;color:#555;margin-bottom:4px">'+(L.sartlar||'Terms')+'</div>';sartlar.slice(0,10).forEach(function(s,i){h+='<div style="font-size:8px;color:#555;margin-bottom:2px">'+(i+1)+'. '+s+'</div>';});h+='</div>';}
   h += '<div style="font-size:8px;color:#aaa;font-style:italic;margin-bottom:3px">'+(L.gorselNot||'Product images shown are for illustrative purposes only.')+'</div>';
@@ -791,7 +791,7 @@ window._piTasarimO = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<thead><tr style="border-bottom:1px solid #111"><th style="color:#111;font-size:8px;padding:5px 4px">'+(L.no||'#')+'</th><th style="color:#111;font-size:8px;padding:5px 4px">'+L.urun+'</th><th style="color:#111;font-size:8px;text-align:right;padding:5px 4px">'+L.miktar+'</th><th style="color:#111;font-size:8px;text-align:right;padding:5px 4px">'+L.birimFiyat+'</th><th style="color:#111;font-size:8px;text-align:right;padding:5px 4px">'+L.tutar+'</th></tr></thead>';
   var satirHTML3 = (typeof satirlar === 'string') ? satirlar : (Array.isArray(satirlar) ? satirlar.map(function(s){return '<tr><td style="font-size:9px;padding:4px;color:#aaa">'+s.no+'</td><td style="font-size:9px;padding:4px"><div style="font-weight:600">'+s.ad+'</div><div style="font-size:8px;color:#888">'+s.kod+'</div></td><td style="font-size:9px;padding:4px;text-align:right">'+s.miktar+' '+s.birim+'</td><td style="font-size:9px;padding:4px;text-align:right">$'+s.satisF+'</td><td style="font-size:9px;padding:4px;text-align:right;font-weight:600">$'+s.toplam+'</td></tr>';}).join('') : '');
   h += '<tbody>'+satirHTML3+'</tbody></table>';
-  var toplamGoster3 = t.genelToplam || (Array.isArray(satirlar) ? satirlar.reduce(function(a,s){return a+parseFloat(s.toplam||0);},0).toFixed(2) : '0');
+  var toplamGoster3 = t.genelToplam || (Array.isArray(satirlar) ? satirlar.reduce(function(a,s){return a+parseFloat(s.toplam||0);},0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '0');
   h += '<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><div style="border-left:3px solid #111;padding-left:10px"><div style="font-size:7px;color:#aaa;letter-spacing:.12em">'+L.toplam.toUpperCase()+'</div><div style="font-size:20px;font-weight:300">'+toplamGoster3+' <span style="font-size:11px">'+(t.paraBirimi||'USD')+'</span></div></div></div>';
   if(sartlar.length){h+='<div style="margin-bottom:12px"><div style="font-size:8px;font-weight:600;color:#555;margin-bottom:4px">'+(L.sartlar||'Terms')+'</div>';sartlar.slice(0,10).forEach(function(s,i){h+='<div style="font-size:8px;color:#555;margin-bottom:2px">'+(i+1)+'. '+s+'</div>';});h+='</div>';}
   h += '<div style="font-size:8px;color:#ccc;font-style:italic;margin-bottom:2px">'+(L.gorselNot||'Product images shown are for illustrative purposes only.')+'</div>';
@@ -870,8 +870,8 @@ window._piTasarimD1 = function(t, bugun, satirlar, katman, gizliKod, L) {
     if (s.aciklama) html += '<div class="pi-d-prod-sub">' + esc(s.aciklama) + '</div>';
     html += '</div></div></td>';
     html += '<td class="num">' + esc(String(s.miktar || 0)) + ' ' + esc(s.birim || '') + '</td>';
-    html += '<td class="num">' + Number(s.satisF || 0).toFixed(2) + '</td>';
-    html += '<td class="num">' + Number(s.toplam || 0).toFixed(2) + '</td>';
+    html += '<td class="num">' + Number(s.satisF || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</td>';
+    html += '<td class="num">' + Number(s.toplam || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</td>';
     html += '</tr>';
   });
   html += '</tbody></table>';
@@ -880,8 +880,8 @@ window._piTasarimD1 = function(t, bugun, satirlar, katman, gizliKod, L) {
   /* PI-BANKA-001: paraBirimi bug fix — t.dil yerine t.paraBirimi */
   var birim = t.paraBirimi || 'USD';
   html += '<div class="pi-d-totals"><div class="pi-d-totals-block">';
-  html += '<div class="pi-d-totals-row"><span>' + esc(L.araToplam || 'Subtotal') + '</span><span>' + birim + ' ' + araToplam.toFixed(2) + '</span></div>';
-  html += '<div class="pi-d-totals-row grand"><span>' + esc(L.toplam || 'Total') + '</span><span>' + birim + ' ' + araToplam.toFixed(2) + '</span></div>';
+  html += '<div class="pi-d-totals-row"><span>' + esc(L.araToplam || 'Subtotal') + '</span><span>' + birim + ' ' + araToplam.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
+  html += '<div class="pi-d-totals-row grand"><span>' + esc(L.toplam || 'Total') + '</span><span>' + birim + ' ' + araToplam.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
   html += '</div></div>';
 
   /* Info grid */
@@ -980,8 +980,8 @@ window._piTasarimD2 = function(t, bugun, satirlar, katman, gizliKod, L) {
     if (s.aciklama) html += '<div class="pi-d-prod-sub">' + esc(s.aciklama) + '</div>';
     html += '</td>';
     html += '<td class="num">' + esc(String(s.miktar || 0)) + ' ' + esc(s.birim || '') + '</td>';
-    html += '<td class="num">' + Number(s.satisF || 0).toFixed(2) + '</td>';
-    html += '<td class="num">' + Number(s.toplam || 0).toFixed(2) + '</td>';
+    html += '<td class="num">' + Number(s.satisF || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</td>';
+    html += '<td class="num">' + Number(s.toplam || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</td>';
     html += '</tr>';
   });
   html += '</tbody></table>';
@@ -989,8 +989,8 @@ window._piTasarimD2 = function(t, bugun, satirlar, katman, gizliKod, L) {
   /* PI-BANKA-001: paraBirimi bug fix — t.dil yerine t.paraBirimi */
   var birim = t.paraBirimi || 'USD';
   html += '<div class="pi-d-totals"><div class="pi-d-totals-block">';
-  html += '<div class="pi-d-totals-row"><span>' + esc(L.araToplam || 'Subtotal') + '</span><span>' + birim + ' ' + araToplam.toFixed(2) + '</span></div>';
-  html += '<div class="pi-d-totals-row grand"><span>' + esc(L.toplam || 'Total') + '</span><span>' + birim + ' ' + araToplam.toFixed(2) + '</span></div>';
+  html += '<div class="pi-d-totals-row"><span>' + esc(L.araToplam || 'Subtotal') + '</span><span>' + birim + ' ' + araToplam.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
+  html += '<div class="pi-d-totals-row grand"><span>' + esc(L.toplam || 'Total') + '</span><span>' + birim + ' ' + araToplam.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
   html += '</div></div>';
 
   html += '<div class="pi-d-info-grid">';
