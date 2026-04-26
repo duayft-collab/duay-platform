@@ -906,7 +906,7 @@ window._pdfBankaListesi = function(paraBirimi) {
         : pb === 'EUR' ? 'TR97 0020 3000 0889 5310 0000 07'
         :                'TR27 0020 3000 0889 5310 0000 06',
     swift: 'BTFHTRIS',
-    hesapSahibi: (window.PI_ADRES?.sirket || 'Duay International Trading Ltd.'),
+    hesapSahibi: (window.PI_ADRES?.unvanTR || 'Duay Uluslararası Ticaret Ltd. Şti.'),
     paraBirimi: pb
   };
   if (!IBAN_DATA.length) return [fallback];
@@ -916,7 +916,7 @@ window._pdfBankaListesi = function(paraBirimi) {
       sube: item.sube || '',
       iban: item[pb] || item.USD || '',
       swift: item.swift || 'BTFHTRIS',
-      hesapSahibi: item.hesapSahibi || (window.PI_ADRES?.sirket || 'Duay International Trading Ltd.'),
+      hesapSahibi: item.hesapSahibi || (window.PI_ADRES?.unvanTR || 'Duay Uluslararası Ticaret Ltd. Şti.'),
       paraBirimi: pb
     };
   }).filter(function(b){ return b.iban; });
@@ -956,7 +956,7 @@ window._pdfBankaTekSatir = function(paraBirimi) {
 window._pdfOrtakFooter = function(stil) {
   /* stil: 'kompakt' (Format B), 'tam' (Format A), 'sade' (Format C, D) */
   var p = window.PI_ADRES || {};
-  var sirket = p.sirket || 'Duay International Trading Ltd.';
+  var sirket = p.sirket || 'Duay Global LLC';
   var adres = p.adres || ((p.adres1 || '') + (p.adres2 ? ', ' + p.adres2 : ''));
   var tel = p.tel || '';
   var mail = p.mail || '';
