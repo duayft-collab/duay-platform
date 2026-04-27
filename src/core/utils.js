@@ -832,21 +832,26 @@ window._pdfTeklifNormalize = function(t) {
   var cari = {};
   if (window.loadCari) {
     var cariler = window.loadCari() || [];
+    var key_kod = String(t.musteriKod || t.musteriCid || '').trim();
+    var key_id = String(t.musteriId || '').trim();
+    var key_ad = String(t.musteri || t.musteriAd || '').trim();
     cari = cariler.find(function(c){
-      return String(c.kod || c.id) === String(t.musteriKod || t.musteriCid || '');
+      return key_id && String(c.id || '') === key_id;
     }) || cariler.find(function(c){
-      return (c.name || c.unvan) === (t.musteri || t.musteriAd);
+      return key_kod && String(c.kod || '').trim() === key_kod;
+    }) || cariler.find(function(c){
+      return key_ad && (String(c.unvan || '').trim() === key_ad || String(c.name || '').trim() === key_ad);
     }) || {};
   }
   return {
     teklifNo: t.teklifNo || t.teklifId || t.id || '',
     revNo: String(t.revNo || '01').padStart(2, '0'),
     teklifTarih: t.createdAt || t.tarih || t.ts || '',
-    musteri: t.musteri || t.musteriAd || '',
+    musteri: cari.unvan || cari.name || t.musteri || t.musteriAd || '',
     musteriKod: t.musteriKod || cari.kod || '',
-    musteriAdres: cari.adres || cari.address || '',
-    musteriVergiNo: cari.vergiNo || cari.taxNo || '',
-    musteriTelefon: cari.telefon || cari.phone || '',
+    musteriAdres: cari.adres || cari.address || cari.adres1 || cari.address1 || '',
+    musteriVergiNo: cari.vergiNo || cari.taxNo || cari.vkn || '',
+    musteriTelefon: cari.telefon || cari.phone || cari.tel || cari.gsm || '',
     gecerlilik: t.gecerlilik || t.gecerlilikTarihi || '30 days',
     teslim:     t.teslim     || t.teslimSekli     || 'FOB Istanbul',
     odeme:      t.odeme      || t.odemeKosulu     || '35% advance, 65% before shipment',
