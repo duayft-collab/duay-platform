@@ -27,8 +27,9 @@
 /* [CACHE-BUMP-2026-04-27-V40] LOJ-1A (expected_deliveries Sil butonu) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V41] LOJ-1B-A (expected_deliveries Düzenle modal) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V42] LOJ-1B-B (expected_deliveries Onay & Satınalma 4 alan) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v42';
-const CACHE_VERSION = '42.0.0';
+/* [CACHE-BUMP-2026-04-27-V43] LOJ-1B-C1 (inline status combobox + DEPODA + statusHistory) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v43';
+const CACHE_VERSION = '43.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [

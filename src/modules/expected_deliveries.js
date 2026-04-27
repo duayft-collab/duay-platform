@@ -69,7 +69,7 @@
 
   /* ─── VALIDATION ──────────────────────────────────────────── */
   var PRIORITIES = ['LOW', 'NORMAL', 'CRITICAL'];
-  var STATUSES = ['TEDARIK_ASAMASINDA','URETIMDE','YUKLEME_BEKLIYOR','YOLDA','GUMRUKTE','TESLIM_ALINDI','GECIKTI'];
+  var STATUSES = ['TEDARIK_ASAMASINDA','URETIMDE','YUKLEME_BEKLIYOR','YOLDA','GUMRUKTE','DEPODA','TESLIM_ALINDI','GECIKTI'];
   var DELAY_OWNERS = ['supplier', 'logistics', 'internal'];
 
   window._edValidate = function(ed) {
@@ -269,6 +269,32 @@
     if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(list);
     document.getElementById('ed-edit-modal')?.remove();
     window.toast?.('Kayıt güncellendi', 'ok');
+    window._edRenderPanel?.();
+  };
+
+  /* LOJ-1B-C1: Inline status combobox + statusHistory */
+  window._edStatusChange = function(edId, newStatus) {
+    if (!edId || !newStatus) return;
+    var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+    var idx = -1;
+    for (var i = 0; i < list.length; i++) { if (list[i].id === edId) { idx = i; break; } }
+    if (idx === -1) { window.toast?.('Kayıt bulunamadı', 'err'); return; }
+    var ed = list[idx];
+    if (ed.status === newStatus) return;
+    if (!Array.isArray(ed.statusHistory)) ed.statusHistory = [];
+    ed.statusHistory.push({
+      from: ed.status || '',
+      to: newStatus,
+      changedAt: new Date().toISOString(),
+      changedBy: window._currentUser?.id || window._currentUserId || null
+    });
+    ed.status = newStatus;
+    ed.statusUpdatedAt = new Date().toISOString();
+    ed.updatedAt = new Date().toISOString();
+    list[idx] = ed;
+    if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(list);
+    var label = STATUS_LABELS[newStatus] || newStatus;
+    window.toast?.('Durum güncellendi: ' + label, 'ok');
     window._edRenderPanel?.();
   };
 
@@ -761,6 +787,7 @@
     YUKLEME_BEKLIYOR: 'Yükleme',
     YOLDA: 'Yolda',
     GUMRUKTE: 'Gümrükte',
+    DEPODA: 'Depoda',
     TESLIM_ALINDI: 'Teslim',
     GECIKTI: 'Gecikti'
   };
@@ -770,6 +797,7 @@
     YUKLEME_BEKLIYOR: '#854F0B',
     YOLDA: '#185FA5',
     GUMRUKTE: '#7C3AED',
+    DEPODA: '#7C3AED',
     TESLIM_ALINDI: '#16A34A',
     GECIKTI: '#E0574F'
   };
@@ -1408,6 +1436,7 @@
       'YUKLEME_BEKLIYOR':{t:'Yükleme',c:'#CA8A04',bg:'#FEF9C3'},
       'YOLDA':{t:'Yolda',c:'#EA580C',bg:'#FFEDD5'},
       'GUMRUKTE':{t:'Gümrükte',c:'#7C3AED',bg:'#F3E8FF'},
+      'DEPODA':{t:'Depoda',c:'#7C3AED',bg:'#EDE9FE'},
       'TESLIM_ALINDI':{t:'Teslim',c:'#0F6E56',bg:'#D1FAE5'},
       'GECIKTI':{t:'Gecikmiş',c:'#DC2626',bg:'#FEE2E2'}
     };
@@ -1444,7 +1473,7 @@
       return '<div style="display:grid;grid-template-columns:2fr 1.3fr 1.1fr 0.9fr 0.9fr auto;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px">'
         + '<div><div style="font-weight:500;color:var(--t)">'+esc(ed.productName||'—')+'</div>'
         + '<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(tedAd)+'</div></div>'
-        + '<div><span style="display:inline-block;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:500;color:'+st.c+';background:'+st.bg+'">'+esc(st.t)+'</span></div>'
+        + '<div onclick="event.stopPropagation()"><select onchange="window._edStatusChange && window._edStatusChange(\'' + esc(ed.id) + '\', this.value)" style="padding:3px 8px;border-radius:10px;font-size:10px;font-weight:500;color:' + st['c'] + ';background:' + st['bg'] + ';border:0.5px solid ' + st['c'] + '33;cursor:pointer;font-family:inherit">' + STATUSES.map(function(__sk){var __s = STATUS[__sk];return '<option value="' + __sk + '"' + (ed.status === __sk ? ' selected' : '') + '>' + esc(__s ? __s['t'] : __sk) + '</option>';}).join('') + '</select></div>'
         + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+qd+'/'+qt+' <span style="color:var(--t3);font-size:10px">(%'+pct+')</span></div>'
         + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+esc(eta)+'</div>'
         + '<div style="font-size:11px">'+daysHtml+'</div>'
