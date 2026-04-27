@@ -61,7 +61,10 @@
     ed.quantityDelivered = window._edCalculateDelivered(ed);
     ed.quantityRemaining = window._edCalculateRemaining(ed);
     ed.remainingDays = window._edCalculateRemainingDays(ed);
-    if (window._edIsOverdue(ed) && ed.status !== 'TESLIM_ALINDI') {
+    /* LOJ-FIX-001: Sadece ilk aşamalarda (mal henüz hareket etmemiş) overdue ise GECIKTI.
+       YOLDA, GUMRUKTE, DEPODA, TESLIM_ALINDI durumlarında kullanıcı seçimini koru. */
+    var __earlyStatuses = ['TEDARIK_ASAMASINDA', 'URETIMDE', 'YUKLEME_BEKLIYOR'];
+    if (window._edIsOverdue(ed) && __earlyStatuses.indexOf(ed.status) !== -1) {
       ed.status = 'GECIKTI';
     }
     return ed;

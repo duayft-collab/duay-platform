@@ -34,8 +34,9 @@
 /* [CACHE-BUMP-2026-04-27-V47] LOJ-1B-C4 (Belge PDF Storage upload) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V48] LOJ-1B-D (Gelen/Giden + filtre + arama bar) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V49] LOJ-1B-E (Aksiyon menüsünde Eke göz at) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v49';
-const CACHE_VERSION = '49.0.0';
+/* [CACHE-BUMP-2026-04-27-V50] LOJ-FIX-001 (akıllı GECIKTI override) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v50';
+const CACHE_VERSION = '50.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
