@@ -852,7 +852,13 @@ window._pdfTeklifNormalize = function(t) {
     musteriAdres: cari.adres || cari.address || cari.adres1 || cari.address1 || '',
     musteriVergiNo: cari.vergiNo || cari.taxNo || cari.vkn || '',
     musteriTelefon: cari.telefon || cari.phone || cari.tel || cari.gsm || '',
-    gecerlilik: t.gecerlilik || t.gecerlilikTarihi || '30 days',
+    gecerlilik: (function(){
+      if (t.gecerlilik) return t.gecerlilik;
+      if (t.gecerlilikTarihi) return t.gecerlilikTarihi;
+      var d = new Date();
+      d.setDate(d.getDate() + 7);
+      return d.toISOString().slice(0,10);
+    })(),
     teslim:     t.teslim     || t.teslimSekli     || 'FOB Istanbul',
     odeme:      t.odeme      || t.odemeKosulu     || '35% advance, 65% before shipment',
     sartlar: Array.isArray(t.sartlar) ? t.sartlar : [],
