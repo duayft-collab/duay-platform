@@ -111,10 +111,10 @@ function makePackingList(dosya, urunler, bl) {
   rows.push(new D.TableRow({children:[ totalCellR([bold('',1)],400),totalCellR([bold('',1)],3800),totalCellR([bold('',1)],1600), totalCell([bold(String(totKoli),17)],1200),totalCell([bold('',17)],1200), totalCell([bold(totNet.toFixed(2)+' kg',17)],1800),totalCell([bold(totBrut.toFixed(2)+' kg',17)],1800) ]}));
 
   return new D.Document({sections:[{properties:pageProps,children:[
-    headerTbl('Packing List',plNo+'\nDate: '+tarih+'  ·  Ref: '+invNo,'Uluslararasi Ticaret  ·  '+pol+'  ·  export@duayglobal.com'),
+    headerTbl('Packing List',plNo+'\nDate: '+tarih+'  ·  Ref: '+invNo,'Uluslararasi Ticaret  ·  '+pol+'  ·  brn.simsek@gmail.com'),
     blank(200),
     tbl([new D.TableRow({children:[
-      new D.TableCell({children:[p([label('Shipper / Exporter')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg(pol,17)],'left',40),p([muted('export@duayglobal.com',16)],'left',0)],width:{size:6000,type:'dxa'},borders:allNone,margins:cellMargS}),
+      new D.TableCell({children:[p([label('Shipper / Exporter')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg(pol,17)],'left',40),p([muted('brn.simsek@gmail.com',16)],'left',0)],width:{size:6000,type:'dxa'},borders:allNone,margins:cellMargS}),
       new D.TableCell({children:[p([label('Consignee / Buyer')],'left',80),p([bold(konsigne,18)],'left',40),p([reg(pod,17)],'left',0)],width:{size:8838,type:'dxa'},borders:allNone,margins:cellMargS}),
     ]})],[6000,8838]),
     blank(200),
@@ -190,7 +190,7 @@ function makePackingListMulti(dosya, urunler, bl) {
     }
 
     var pg = [
-      headerTbl('Packing List', sayfaBaslik+'\nDate: '+tarih+'  \u00b7  Ref: '+invNo, 'Uluslararasi Ticaret  \u00b7  '+pol+'  \u00b7  export@duayglobal.com'),
+      headerTbl('Packing List', sayfaBaslik+'\nDate: '+tarih+'  \u00b7  Ref: '+invNo, 'Uluslararasi Ticaret  \u00b7  '+pol+'  \u00b7  brn.simsek@gmail.com'),
       blank(200),
       tbl([new D.TableRow({children:[
         new D.TableCell({children:[p([label('Shipper / Exporter')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg(pol,17)],'left',0)],width:{size:6000,type:'dxa'},borders:allNone,margins:cellMargS}),
@@ -259,11 +259,11 @@ function makeCommercialInvoice(dosya, urunler) {
   var subRow=function(l,v){ return new D.TableRow({children:[ new D.TableCell({children:[p([muted(l,15)],'right',40)],columnSpan:5,borders:allNone,margins:cellMargS}), new D.TableCell({children:[p([muted(v,15)],'center',40)],width:{size:colW[5],type:'dxa'},borders:allNone,margins:cellMargS}) ]}); };
 
   return new D.Document({sections:[{properties:pageProps,children:[
-    headerTbl('Commercial Invoice',ciNo+'\nDate: '+tarih,'Duay Global LLC  ·  export@duayglobal.com'),
+    headerTbl('Commercial Invoice',ciNo+'\nDate: '+tarih,'Duay Global LLC  ·  brn.simsek@gmail.com'),
     blank(200),
     // Sadece Seller + Buyer (Shipment ve Payment bloklari kaldirildi)
     tbl([new D.TableRow({children:[
-      new D.TableCell({children:[p([label('Seller')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg('Istanbul, Turkey',17)],'left',40),p([muted('export@duayglobal.com',16)],'left',0)],width:{size:7000,type:'dxa'},borders:allNone,margins:cellMargS}),
+      new D.TableCell({children:[p([label('Seller')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg('Istanbul, Turkey',17)],'left',40),p([muted('brn.simsek@gmail.com',16)],'left',0)],width:{size:7000,type:'dxa'},borders:allNone,margins:cellMargS}),
       new D.TableCell({children:[p([label('Buyer & Consignee')],'left',80),p([bold(alici,18)],'left',40),p([reg(pod,17)],'left',0)],width:{size:7838,type:'dxa'},borders:allNone,margins:cellMargS}),
     ]})],[7000,7838]),
     blank(200),
@@ -300,7 +300,7 @@ function makeProformaInvoice(dosya, urunler) {
   if(!rows.length)rows.push(new D.TableRow({children:[dataCellC([muted('—',17)],colW[0],false),dataCell([muted('[Urun yok]',17)],colW[1],false),dataCellC([muted('—',17)],colW[2],false),dataCellC([muted('—',17)],colW[3],false),dataCellC([muted('—',17)],colW[4],false),dataCellC([muted('—',17)],colW[5],false)]}));
   var subRow=function(l,v){return new D.TableRow({children:[new D.TableCell({children:[p([muted(l,15)],'right',40)],columnSpan:5,borders:allNone,margins:cellMargS}),new D.TableCell({children:[p([muted(v,15)],'center',40)],width:{size:colW[5],type:'dxa'},borders:allNone,margins:cellMargS})]});};
   return new D.Document({sections:[{properties:pageProps,children:[
-    headerTbl('Proforma Invoice',piNo+'\nDate: '+tarih,'Duay Global LLC  ·  export@duayglobal.com'),
+    headerTbl('Proforma Invoice',piNo+'\nDate: '+tarih,'Duay Global LLC  ·  brn.simsek@gmail.com'),
     blank(200),
     tbl([new D.TableRow({children:[
       new D.TableCell({children:[p([label('Seller')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg('Istanbul, Turkey',17)],'left',0)],width:{size:7000,type:'dxa'},borders:allNone,margins:cellMargS}),
@@ -407,7 +407,7 @@ function makeFreightRequest(dosya, urunler) {
     headerTbl('Freight Rate Request',frqNo+'  ·  '+tarih,'Freight Rate Request Form'),
     blank(200),
     tbl([new D.TableRow({children:[
-      new D.TableCell({children:[new D.Table({width:{size:6000,type:'dxa'},columnWidths:[2400,3600],borders:allNone,rows:[infoRow('Talep Eden','Duay Global LLC',2400,3600),infoRow('Email','export@duayglobal.com',2400,3600)]})],width:{size:6000,type:'dxa'},borders:allNone,margins:{top:0,bottom:0,left:0,right:200}}),
+      new D.TableCell({children:[new D.Table({width:{size:6000,type:'dxa'},columnWidths:[2400,3600],borders:allNone,rows:[infoRow('Talep Eden','Duay Global LLC',2400,3600),infoRow('Email','brn.simsek@gmail.com',2400,3600)]})],width:{size:6000,type:'dxa'},borders:allNone,margins:{top:0,bottom:0,left:0,right:200}}),
       new D.TableCell({children:[new D.Table({width:{size:6000,type:'dxa'},columnWidths:[2400,3600],borders:allNone,rows:[infoRow('Forwarder','___________________',2400,3600),infoRow('Son Teklif','___/___/2026',2400,3600)]})],width:{size:8838,type:'dxa'},borders:allNone,margins:{top:0,bottom:0,left:200,right:0}}),
     ]})],[6000,8838]),
     blank(160),
