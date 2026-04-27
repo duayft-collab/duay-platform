@@ -175,6 +175,29 @@
     return true;
   };
 
+  /* LOJ-1A: Sil butonu — confirmModal + _edDelete + render */
+  window._edDeleteConfirm = function(edId) {
+    if (!edId) return;
+    if (typeof window.confirmModal !== 'function') {
+      window.toast?.('confirmModal bulunamadı', 'err');
+      return;
+    }
+    window.confirmModal('Bu kaydı silmek istediğinizden emin misiniz?', {
+      title: 'Kayıt Sil',
+      danger: true,
+      confirmText: 'Sil',
+      cancelText: 'İptal',
+      onConfirm: function() {
+        if (window._edDelete(edId)) {
+          window.toast?.('Kayıt silindi', 'ok');
+          window._edRenderPanel?.();
+        } else {
+          window.toast?.('Silme başarısız', 'err');
+        }
+      }
+    });
+  };
+
   /* ─── PARÇA 2: DELIVERY MANAGEMENT ──────────────────────── */
   var _edFindRaw = function(edId) {
     var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
@@ -1273,6 +1296,7 @@
       + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edChangeResponsibleModal && window._edChangeResponsibleModal(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">👤 Sorumlu Değiştir</button>'
       + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edPriorityMenu && window._edPriorityMenu(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">⭐ Öncelik Değiştir</button>'
       + (isOverdue ? '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edDelayReasonModal && window._edDelayReasonModal(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px;color:#E0574F" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">⚠️ Gecikme Sebebi</button>' : '')
+      + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edDeleteConfirm && window._edDeleteConfirm(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px;color:#E0574F" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">🗑️ Sil</button>'
     + '</div>';
     document.body.appendChild(mo);
   };

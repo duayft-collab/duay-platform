@@ -24,8 +24,9 @@
 /* [CACHE-BUMP-2026-04-27-V37] PI-FIX paketi (001-005) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V38] PI-FIX-007 (header WA+Web) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V39] URUN-IMG-001 + ROLE-FIX-001 aktivasyon */
+/* [CACHE-BUMP-2026-04-27-V40] LOJ-1A (expected_deliveries Sil butonu) aktivasyon */
 const CACHE_NAME    = 'duay-platform-v40';
-const CACHE_VERSION = '39.0.0';
+const CACHE_VERSION = '40.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
