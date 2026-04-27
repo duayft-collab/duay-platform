@@ -1569,7 +1569,7 @@
 
     // Cari lookup
     var cariMap = {};
-    try { (typeof window.loadCari === 'function' ? window.loadCari() : []).forEach(function(c){ cariMap[String(c.id)] = c.ad || c.firmaAdi || ''; }); } catch(e){}
+    try { (typeof window.loadCari === 'function' ? window.loadCari() : []).forEach(function(c){ cariMap[String(c.id)] = c.name || c.unvan || c.ad || c.firmaAdi || ''; }); } catch(e){}
 
     /* LOJ-1B-D: Filter state + apply + filterBar */
     if (!window._edFilterState) window._edFilterState = { yon: '', status: '', search: '' };
@@ -1613,20 +1613,27 @@
       var __yon = ed.yon || 'GIDEN';
       var __rowBg = __yon === 'GELEN' ? 'rgba(59,130,246,0.06)' : 'rgba(249,115,22,0.06)';
       var __yonBadge = __yon === 'GELEN' ? '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#DBEAFE;color:#1E40AF;font-weight:500">📥 GELEN</span>' : '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#FED7AA;color:#9A3412;font-weight:500">📤 GIDEN</span>';
-      return '<div style="display:grid;grid-template-columns:0.55fr 1.7fr 1.2fr 1fr 0.85fr 0.85fr auto;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
+      var __sorumluAd = ed.responsibleUserId ? _edUserAd(ed.responsibleUserId) : '';
+      var __sorumluInitials = __sorumluAd && __sorumluAd !== '—' ? __sorumluAd.split(' ').map(function(__p){return (__p[0]||'').toUpperCase();}).slice(0,2).join('') : '—';
+      var __ikonlar = '';
+      if (ed.belgeUrl) __ikonlar += '<a href="' + esc(ed.belgeUrl) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none;font-size:13px;margin-right:4px" title="Belge / PDF">📎</a>';
+      if (ed.trackingUrl) __ikonlar += '<a href="' + esc(ed.trackingUrl) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none;font-size:13px" title="Tracking">🔗</a>';
+      if (!__ikonlar) __ikonlar = '<span style="color:var(--t3);font-size:10px">—</span>';
+      return '<div style="display:grid;grid-template-columns:0.5fr 2fr 1fr 0.8fr 0.8fr 0.7fr 0.7fr auto;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
         + '<div>' + __yonBadge + '</div>'
         + '<div><div style="font-weight:500;color:var(--t)">'+esc(ed.productName||'—')+'</div>'
         + '<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(tedAd)+'</div></div>'
         + '<div onclick="event.stopPropagation()"><select onchange="window._edStatusChange && window._edStatusChange(\'' + esc(ed.id) + '\', this.value)" style="padding:3px 8px;border-radius:10px;font-size:10px;font-weight:500;color:' + st['c'] + ';background:' + st['bg'] + ';border:0.5px solid ' + st['c'] + '33;cursor:pointer;font-family:inherit">' + STATUSES.map(function(__sk){var __s = STATUS[__sk];return '<option value="' + __sk + '"' + (ed.status === __sk ? ' selected' : '') + '>' + esc(__s ? __s['t'] : __sk) + '</option>';}).join('') + '</select></div>'
         + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+qd+'/'+qt+' <span style="color:var(--t3);font-size:10px">(%'+pct+')</span></div>'
         + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+esc(eta)+'</div>'
-        + '<div style="font-size:11px">'+daysHtml+'</div>'
+        + '<div style="font-size:11px;font-weight:600;color:var(--t2);text-align:center" title="' + esc(__sorumluAd || 'Atanmamış') + '">' + esc(__sorumluInitials) + '</div>'
+        + '<div style="font-size:13px;text-align:center">' + __ikonlar + '</div>'
         + '<button onclick="event.stopPropagation();window._edAksiyonMenu && window._edAksiyonMenu(\''+esc(ed.id)+'\')" style="padding:4px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;color:var(--t3);font-size:14px;font-family:inherit;line-height:1">⋮</button>'
         + '</div>';
     }).join('');
 
-    var hdrRow = '<div style="display:grid;grid-template-columns:0.55fr 1.7fr 1.2fr 1fr 0.85fr 0.85fr auto;gap:12px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
-      + '<div>Yön</div><div>Ürün / Tedarikçi</div><div>Durum</div><div>Miktar</div><div>Tahmini</div><div>Kalan</div><div></div></div>';
+    var hdrRow = '<div style="display:grid;grid-template-columns:0.5fr 2fr 1fr 0.8fr 0.8fr 0.7fr 0.7fr auto;gap:12px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
+      + '<div>Yön</div><div>Ürün / Tedarikçi</div><div>Durum</div><div>Miktar</div><div>Tahmini</div><div>Sorumlu</div><div>İkon</div><div></div></div>';
 
     return '<div id="ed-list-container" style="'+card+'">'
       + '<div style="'+hdr+'">'

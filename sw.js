@@ -36,8 +36,9 @@
 /* [CACHE-BUMP-2026-04-27-V49] LOJ-1B-E (Aksiyon menüsünde Eke göz at) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V50] LOJ-FIX-001 (akıllı GECIKTI override) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V51] LOJ-FIX-002 (Sevkiyat Merkezi auto re-render) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v51';
-const CACHE_VERSION = '51.0.0';
+/* [CACHE-BUMP-2026-04-27-V52] LOJ-1B-G (Sorumlu + ikon kolonları + tedarikçi fix) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v52';
+const CACHE_VERSION = '52.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
