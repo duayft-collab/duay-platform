@@ -869,6 +869,81 @@ window._pdfTeklifNormalize = function(t) {
   };
 };
 
+
+/* PI-FIX-003: TR -> EN birim çevirisi (PI render katmanı, ürün master TR kalır) */
+window._unitToEN = function(birim) {
+  if (!birim) return '';
+  var k = String(birim).trim().toLowerCase().replace(/\s+/g, '');
+  var map = {
+    /* Adet/Sayım */
+    'adet':'pcs', 'adt':'pcs', 'ad':'pcs', 'ade':'pcs', 'tane':'pcs',
+    'cift':'pair', 'çift':'pair',
+    'set':'set', 'takim':'set', 'takım':'set',
+    'duzine':'dozen', 'düzine':'dozen',
+    'gros':'gross',
+    /* Ağırlık */
+    'gr':'g', 'gram':'g', 'g':'g',
+    'kg':'kg', 'kilogram':'kg', 'kilo':'kg',
+    'ton':'ton', 'tn':'ton',
+    'mt':'mt',
+    'lb':'lb', 'libre':'lb', 'pound':'lb',
+    'oz':'oz', 'ons':'oz',
+    /* Hacim */
+    'ml':'ml',
+    'cl':'cl', 'santilitre':'cl',
+    'lt':'L', 'litre':'L', 'l':'L',
+    'm3':'m³', 'm³':'m³', 'metrekup':'m³', 'metreküp':'m³',
+    'cm3':'cm³', 'cm³':'cm³',
+    'galon':'gal', 'gallon':'gal', 'gal':'gal',
+    /* Uzunluk */
+    'mm':'mm', 'milimetre':'mm',
+    'cm':'cm', 'santimetre':'cm',
+    'metre':'m', 'm':'m',
+    'km':'km', 'kilometre':'km',
+    'inch':'in', 'inç':'in', 'in':'in',
+    'ft':'ft', 'feet':'ft', 'fit':'ft',
+    'yd':'yd', 'yarda':'yd',
+    /* Alan */
+    'm2':'m²', 'm²':'m²', 'metrekare':'m²',
+    'cm2':'cm²', 'cm²':'cm²',
+    'mm2':'mm²', 'mm²':'mm²',
+    'hektar':'ha', 'ha':'ha',
+    'akre':'acre', 'acre':'acre',
+    /* Ambalaj */
+    'kutu':'box', 'box':'box',
+    'koli':'carton', 'carton':'carton',
+    'paket':'pack', 'pkt':'pack', 'pack':'pack',
+    'torba':'bag', 'bag':'bag',
+    'cuval':'sack', 'çuval':'sack', 'sack':'sack',
+    'top':'roll', 'rulo':'roll', 'roll':'roll',
+    'bobin':'reel', 'reel':'reel',
+    'varil':'drum', 'fici':'drum', 'fıçı':'drum', 'drum':'drum',
+    'palet':'pallet', 'pl':'pallet', 'pallet':'pallet',
+    'bidon':'jerrycan', 'jerrycan':'jerrycan',
+    'sise':'bottle', 'şişe':'bottle', 'bottle':'bottle',
+    'konteyner':'container', 'container':'container',
+    'bigbag':'big-bag', 'big-bag':'big-bag',
+    'bohca':'bundle', 'bohça':'bundle', 'bundle':'bundle',
+    'demet':'bunch', 'bag(demet)':'bunch', 'bunch':'bunch',
+    'balya':'bale', 'bale':'bale',
+    /* Endüstriyel */
+    'levha':'sheet', 'sheet':'sheet',
+    'cubuk':'bar', 'çubuk':'bar', 'bar':'bar',
+    'boru':'pipe', 'pipe':'pipe',
+    'profil':'profile', 'profile':'profile',
+    'tel':'wire', 'wire':'wire',
+    /* Süre/Hizmet */
+    'saat':'hour', 'hr':'hour', 'hour':'hour',
+    'gun':'day', 'gün':'day', 'day':'day',
+    'hafta':'week', 'week':'week',
+    'ay':'month', 'month':'month',
+    'yil':'year', 'yıl':'year', 'year':'year',
+    'servis':'service', 'service':'service',
+    'pcs':'pcs'
+  };
+  return map[k] || birim;
+};
+
 /* FEAT-07e: Kripto sipariş numarası (ORD-XXXXXXXX) */
 window._ordKodUret = function() {
   var chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // I, O, 0, 1 yok (görsel karışıklık)
