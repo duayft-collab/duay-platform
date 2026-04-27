@@ -193,7 +193,7 @@
       onConfirm: function() {
         if (window._edDelete(edId)) {
           window.toast?.('Kayıt silindi', 'ok');
-          window._edRenderPanel?.();
+          window._edRefresh?.();
         } else {
           window.toast?.('Silme başarısız', 'err');
         }
@@ -287,7 +287,7 @@
     if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(list);
     document.getElementById('ed-edit-modal')?.remove();
     window.toast?.('Kayıt güncellendi', 'ok');
-    window._edRenderPanel?.();
+    window._edRefresh?.();
   };
 
   /* LOJ-1B-C1: Inline status combobox + statusHistory */
@@ -313,7 +313,7 @@
     if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(list);
     var label = STATUS_LABELS[newStatus] || newStatus;
     window.toast?.('Durum güncellendi: ' + label, 'ok');
-    window._edRenderPanel?.();
+    window._edRefresh?.();
   };
 
   /* LOJ-1B-C2: Armatör seçildiğinde tracking URL otomatik dolum
@@ -401,6 +401,15 @@
       return;
     }
     window.open(ed.belgeUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  /* LOJ-FIX-002: Tek noktadan ed re-render — ana panel + Sevkiyat Merkezi tablosu */
+  window._edRefresh = function() {
+    if (typeof window._edRenderPanel === 'function') window._edRenderPanel();
+    var container = document.getElementById('ed-list-container');
+    if (container && typeof window.renderEdList === 'function') {
+      container.outerHTML = window.renderEdList();
+    }
   };
 
   /* ─── PARÇA 2: DELIVERY MANAGEMENT ──────────────────────── */
