@@ -1042,7 +1042,7 @@ window._udbGorselYukle = function(input, n) {
     var reader = new FileReader();
     reader.onload = function(ev) {
       var img = new Image();
-      img.onload = function() {
+      img.onload = async function() {
         var maxDim = 200;
         var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
         var w = Math.round(img.width * scale);
@@ -1051,9 +1051,22 @@ window._udbGorselYukle = function(input, n) {
         canvas.width = w; canvas.height = h;
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
         var compressed = canvas.toDataURL('image/jpeg', 0.7);
-        window['_udbImg' + n] = compressed;
         var preview = document.getElementById('udb-img-preview-' + n);
         if (preview) preview.innerHTML = '<img src="' + compressed + '" style="width:100%;height:100%;object-fit:cover" alt="">';
+        /* URUN-IMG-001: Storage upload, base64 fallback yok */
+        if (typeof window._uploadBase64ToStorage !== 'function') {
+          window.toast && window.toast('Storage helper bulunamadı', 'err');
+          return;
+        }
+        try {
+          window.toast && window.toast('Görsel yükleniyor...', 'info');
+          var url = await window._uploadBase64ToStorage(compressed, file.name, 'urun-image');
+          window['_udbImg' + n] = url;
+          if (preview) preview.innerHTML = '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover" alt="">';
+          window.toast && window.toast('Görsel yüklendi', 'ok');
+        } catch (err) {
+          window.toast && window.toast('Storage hatası: ' + (err && err.message || String(err)), 'err');
+        }
       };
       img.onerror = function() {
         window['_udbImg' + n] = ev.target.result;
