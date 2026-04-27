@@ -769,7 +769,10 @@ window._piTasarimI = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '</div>';
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:0.5px solid #eee">';
   h += '<div style="padding:10px 24px;border-right:0.5px solid #eee"><div style="font-size:8px;letter-spacing:.1em;color:#185FA5;font-weight:600;margin-bottom:3px">'+L.alici+'</div>';
-  h += '<div style="font-size:11px;font-weight:600">'+(t.musteri||t.musteriAd||'—')+'</div></div>';
+  h += '<div style="font-size:11px;font-weight:600">'+(t.musteri||t.musteriAd||'—')+'</div>'
+     + (t.musteriAdres ? '<div style="font-size:9px;color:#888;margin-top:2px">' + esc(t.musteriAdres) + '</div>' : '')
+     + (t.musteriTelefon ? '<div style="font-size:9px;color:#888;margin-top:1px">Tel: ' + esc(t.musteriTelefon) + '</div>' : '')
+     + '</div>';
   h += '<div style="padding:10px 24px;display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:9px">';
   h += '<div><div style="color:#888">'+(L.teslim||'Delivery')+'</div><div style="font-weight:600">'+(t.teslimYeri||t.teslim||t.teslimMasraf||'—')+'</div></div>';
   h += '<div><div style="color:#888">'+(L.gecerlilik||'Valid')+'</div><div style="font-weight:600">'+(t.gecerlilikTarihi||t.gecerlilik||'—')+'</div></div>';
@@ -821,7 +824,10 @@ window._piTasarimL = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<div style="font-size:8px;color:#aaa;margin-top:2px">'+bugun+'</div>';
   h += '</div>';
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">';
-  h += '<div style="border:0.5px solid #ddd;padding:10px 12px;border-radius:3px"><div style="font-size:7px;letter-spacing:.1em;color:#aaa;margin-bottom:4px">'+L.alici.toUpperCase()+'</div><div style="font-weight:600;font-size:11px">'+(t.musteri||t.musteriAd||'—')+'</div></div>';
+  h += '<div style="border:0.5px solid #ddd;padding:10px 12px;border-radius:3px"><div style="font-size:7px;letter-spacing:.1em;color:#aaa;margin-bottom:4px">'+L.alici.toUpperCase()+'</div><div style="font-weight:600;font-size:11px">'+(t.musteri||t.musteriAd||'—')+'</div>'
+       + (t.musteriAdres ? '<div style="font-size:9px;color:#888;margin-top:3px">' + esc(t.musteriAdres) + '</div>' : '')
+       + (t.musteriTelefon ? '<div style="font-size:9px;color:#888;margin-top:1px">Tel: ' + esc(t.musteriTelefon) + '</div>' : '')
+       + '</div>';
   h += '<div style="border:0.5px solid #ddd;padding:10px 12px;border-radius:3px"><div style="font-size:7px;letter-spacing:.1em;color:#aaa;margin-bottom:4px">SHIPMENT DETAILS</div>';
   h += '<div style="font-size:9px"><span style="color:#aaa">'+(L.teslim||'Delivery')+': </span><strong>'+(t.teslimYeri||t.teslim||'—')+'</strong></div>';
   h += '<div style="font-size:9px"><span style="color:#aaa">'+(L.gecerlilik||'Valid')+': </span><strong>'+(t.gecerlilikTarihi||t.gecerlilik||'—')+'</strong></div>';
@@ -866,7 +872,10 @@ window._piTasarimO = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '</div>';
   h += '<div style="height:2px;background:#111;margin-bottom:14px"></div>';
   h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;font-size:8px">';
-  h += '<div><div style="color:#aaa;margin-bottom:2px">'+L.alici+'</div><div style="font-weight:600;font-size:9px">'+(t.musteri||t.musteriAd||'—')+'</div></div>';
+  h += '<div><div style="color:#aaa;margin-bottom:2px">'+L.alici+'</div><div style="font-weight:600;font-size:9px">'+(t.musteri||t.musteriAd||'—')+'</div>'
+       + (t.musteriAdres ? '<div style="font-size:8px;color:#aaa;margin-top:2px">' + esc(t.musteriAdres) + '</div>' : '')
+       + (t.musteriTelefon ? '<div style="font-size:8px;color:#aaa">Tel: ' + esc(t.musteriTelefon) + '</div>' : '')
+       + '</div>';
   h += '<div><div style="color:#aaa;margin-bottom:2px">'+(L.teslim||'Delivery')+'</div><div style="font-weight:600;font-size:9px">'+(t.teslimYeri||t.teslim||'—')+'</div></div>';
   h += '<div><div style="color:#aaa;margin-bottom:2px">'+(L.gecerlilik||'Valid')+'</div><div style="font-weight:600;font-size:9px">'+(t.gecerlilikTarihi||t.gecerlilik||'—')+'</div></div>';
   h += '<div><div style="color:#aaa;margin-bottom:2px">'+(L.odeme||'Payment')+'</div><div style="font-size:9px">'+(t.odemeKosulu||t.odeme||'—').slice(0,20)+'</div></div>';
