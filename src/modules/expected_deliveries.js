@@ -232,7 +232,7 @@
         + '<div>' + _edWizardLabel('Konteyner No') + '<input id="ede-konteynerNo" style="' + _edWizardInput + '" value="' + _uiEsc(ed.konteynerNo || '') + '"></div>'
         + '<div>' + _edWizardLabel('Armatör') + '<select id="ede-armator" onchange="window._edAutoFillTrackingUrl && window._edAutoFillTrackingUrl()" style="' + _edWizardInput + '">' + ['','MSC','Maersk','CMA CGM','COSCO','Hapag-Lloyd','ONE','Evergreen','Yang Ming','HMM','ZIM','PIL','OOCL','Diger'].map(function(__c){return '<option value="' + __c + '"' + (ed.armator === __c ? ' selected' : '') + '>' + (__c || '— Seçin —') + '</option>';}).join('') + '</select></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Yükleme Firma') + '<input id="ede-yuklemeFirmaAd" style="' + _edWizardInput + '" value="' + _uiEsc(ed.yuklemeFirmaAd || '') + '"></div>'
-        + '<div style="grid-column:span 2">' + _edWizardLabel('Tracking URL') + '<input id="ede-trackingUrl" type="url" style="' + _edWizardInput + '" value="' + _uiEsc(ed.trackingUrl || '') + '" placeholder="https://..."></div>'
+        + '<div style="grid-column:span 2">' + _edWizardLabel('Tracking URL') + '<div style="display:flex;gap:6px;align-items:stretch">' + '<input id="ede-trackingUrl" type="url" style="' + _edWizardInput + ';flex:1" value="' + _uiEsc(ed.trackingUrl || '') + '" placeholder="https://...">' + '<button type="button" onclick="window._edOpenTrackingUrl && window._edOpenTrackingUrl()" style="padding:8px 14px;border:0.5px solid var(--b);background:var(--s2);color:var(--t2);border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap" title="Yeni sekmede aç">🔗 Aç</button>' + '</div></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Varış Zamanı') + '<input id="ede-varisZamani" type="datetime-local" style="' + _edWizardInput + '" value="' + (ed.varisZamani || '') + '"></div>'
         + '<div>' + _edWizardLabel('Öncelik') + '<select id="ede-priority" style="' + _edWizardInput + '">' + priOpts.map(function(p) { return '<option value="' + p[0] + '"' + (ed.priority === p[0] ? ' selected' : '') + '>' + p[1] + '</option>'; }).join('') + '</select></div>'
         + '<div>' + _edWizardLabel('Durum') + '<select id="ede-status" style="' + _edWizardInput + '">' + statusOpts.map(function(st) { return '<option value="' + st[0] + '"' + (ed.status === st[0] ? ' selected' : '') + '>' + st[1] + '</option>'; }).join('') + '</select></div>'
@@ -330,6 +330,13 @@
     };
     var input = document.getElementById('ede-trackingUrl');
     if (input && urls[hat]) input.value = urls[hat];
+  };
+
+  /* LOJ-1B-C3: Tracking URL'i yeni sekmede aç (🔗 Aç butonu handler) */
+  window._edOpenTrackingUrl = function() {
+    var u = (document.getElementById('ede-trackingUrl')?.value || '').trim();
+    if (!u) { window.toast?.('URL boş', 'err'); return; }
+    window.open(u, '_blank', 'noopener,noreferrer');
   };
 
   /* ─── PARÇA 2: DELIVERY MANAGEMENT ──────────────────────── */
