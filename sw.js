@@ -22,8 +22,9 @@
 /* [CACHE-BUMP-2026-04-25-V35] ALIS-003+004+005 + PUSULA-002+012 + SATIS-001+002+006+008+009 toplu */
 /* [CACHE-BUMP-2026-04-26-V36] FIRMA-INFO paketi (001-007) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V37] PI-FIX paketi (001-005) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v38';
-const CACHE_VERSION = '37.0.0';
+/* [CACHE-BUMP-2026-04-27-V38] PI-FIX-007 (header WA+Web) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v39';
+const CACHE_VERSION = '38.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
