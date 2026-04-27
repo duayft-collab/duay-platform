@@ -742,7 +742,7 @@ src/modules/crm.js
 src/modules/crm_hub.js
 src/modules/crm_panel.js
 src/modules/excel_import.js
-src/modules/expected_deliveries.js
+src/modules/expected_deliveries.js  (LOJ-1A, LOJ-1B, LOJ-2)
 src/modules/fason.js
 src/modules/fason_checklist.js
 src/modules/formlar.js
