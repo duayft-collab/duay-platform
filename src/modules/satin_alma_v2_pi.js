@@ -150,6 +150,14 @@ var PI_DILLER = {
 window.PI_DILLER = PI_DILLER;
 
 /* ── PI ana fonksiyon ───────────────────────────────────────── */
+/* PI-FIX-005: Originator helper — sadece teklif.originator dolu ise bastırır */
+window._piOriginator = function(t) {
+  if (!t || !t.originator) return '';
+  var name = t.originator;
+  var esc = window._esc || function(s){ return String(s||''); };
+  return '<div style="font-size:9px;color:#444;margin-bottom:2px">Originator: ' + esc(name) + '</div>';
+};
+
 window._piOlustur = function(teklif, tasarim, katman, skipKontrol) {
   /* CLAUDE-KURAL-PI-001 madde 7: PI üretiminden önce 4 kontrol — hata önleme */
   /* SATIS-V3-PI-TR-WARN-001 */
@@ -172,6 +180,34 @@ window._piOlustur = function(teklif, tasarim, katman, skipKontrol) {
       return;
     }
   }
+  /* PI-FIX-005: Originator opsiyonel — kullanıcıya sor */
+  if (!skipKontrol && !teklif.originator && !teklif._originatorAsked) {
+    var __cu = (window.Auth && window.Auth.getCU && window.Auth.getCU()) || {};
+    var __cuName = __cu.name || '';
+    if (__cuName) {
+      teklif._originatorAsked = true;
+      var __msg = 'Footer kısmına originator olarak adınız eklensin mi? (' + __cuName + ')';
+      if (typeof window.confirmModal === 'function') {
+        window.confirmModal(__msg, {
+          title: 'Originator',
+          danger: false,
+          confirmText: 'Adımı Ekle',
+          cancelText: 'Eklemeden Devam',
+          onConfirm: function() { teklif.originator = __cuName; window._piOlustur(teklif, tasarim, katman, true); },
+          onCancel:  function() { window._piOlustur(teklif, tasarim, katman, true); }
+        });
+        return;
+      } else if (confirm(__msg)) {
+        teklif.originator = __cuName;
+        window._piOlustur(teklif, tasarim, katman, true);
+        return;
+      } else {
+        window._piOlustur(teklif, tasarim, katman, true);
+        return;
+      }
+    }
+  }
+
   /* PI-FIX-004: D1 tasarımı görselli — eksik görsel uyarısı */
   if (!skipKontrol && tasarim === 'D1' && typeof window._piUrunSatirlari === 'function') {
     var __d1Satirlar = window._piUrunSatirlari(teklif, katman) || [];
@@ -573,7 +609,7 @@ window._piTasarimA = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += (function(){var fi = window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD'); var totalVal = (fi.grandTotal !== null ? fi.grandTotal.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) : toplamSatis); return '<div style="text-align:right">' + (fi.preTotalHTML || '') + '<div style="font-size:14px;font-weight:700;border-top:1px solid #111;padding-top:8px;margin-top:4px">' + L.toplam + ' USD ' + totalVal + '</div></div></div>';})();
   h += '<div style="padding:10px 32px 24px;border-top:0.5px solid #eee">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-end">';
-  h += '<div style="border-top:0.5px solid #aaa;width:160px;text-align:center;padding-top:5px;font-size:9px;color:#666">' + L.imza + '</div>';
+  h += '<div style="border-top:0.5px solid #aaa;width:160px;text-align:center;padding-top:5px;font-size:9px;color:#666">' + (window._piOriginator?window._piOriginator(t):'') + L.imza + '</div>';
   h += '<div style="font-size:8px;color:#bbb">' + L.not + '</div>';
   h += '</div></div>';
   h += '<div class="gizli-kod">' + gizliKod + '</div>';
@@ -616,7 +652,7 @@ window._piTasarimB = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<div style="display:flex;justify-content:flex-end;align-items:center;padding:12px 28px;border-top:0.5px solid #eee;gap:24px">';
   h += (function(){var fi = window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD'); var totalVal = (fi.grandTotal !== null ? fi.grandTotal.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) : toplamSatis); var pre = fi.preTotalHTML ? '<div style="font-size:10px;color:#666;text-align:right;margin-bottom:4px">' + fi.preTotalHTML + '</div>' : ''; return pre + '<div style="background:#185FA5;color:#fff;padding:8px 20px;border-radius:4px;font-size:14px;font-weight:700">' + L.toplam + ': USD ' + totalVal + '</div></div>';})();
   h += '<div style="padding:10px 28px 20px;display:flex;justify-content:space-between;align-items:flex-end">';
-  h += '<div style="border-top:0.5px solid #aaa;width:160px;text-align:center;padding-top:5px;font-size:9px;color:#666">' + L.imza + '</div>';
+  h += '<div style="border-top:0.5px solid #aaa;width:160px;text-align:center;padding-top:5px;font-size:9px;color:#666">' + (window._piOriginator?window._piOriginator(t):'') + L.imza + '</div>';
   h += '<div style="font-size:8px;color:#bbb">' + L.not + '</div>';
   h += '</div>';
   h += '<div class="gizli-kod">' + gizliKod + '</div>';
@@ -663,7 +699,7 @@ window._piTasarimC = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<div style="font-size:8px;color:#aaa">All amounts in USD</div>';
   h += (function(){var fi = window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD'); var totalVal = (fi.grandTotal !== null ? fi.grandTotal.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) : toplamSatis); return (fi.preTotalHTML || '') + '<div style="font-size:15px;font-weight:700">' + L.toplam + ': USD ' + totalVal + '</div></div>';})();
   h += '<div style="margin-top:24px;display:flex;justify-content:space-between;align-items:flex-end">';
-  h += '<div style="border-top:0.5px solid #aaa;width:160px;text-align:center;padding-top:5px;font-size:9px;color:#666">' + L.imza + '</div>';
+  h += '<div style="border-top:0.5px solid #aaa;width:160px;text-align:center;padding-top:5px;font-size:9px;color:#666">' + (window._piOriginator?window._piOriginator(t):'') + L.imza + '</div>';
   h += '<div style="font-size:8px;color:#bbb">' + L.not + '</div>';
   h += '</div>';
   h += '<div class="gizli-kod">' + gizliKod + '</div>';
@@ -812,7 +848,7 @@ window._piTasarimI = function(t, bugun, satirlar, katman, gizliKod, L) {
   if(sartlar.length){h+='<div style="margin-bottom:12px"><div style="font-size:8px;font-weight:600;color:#185FA5;margin-bottom:4px">'+(L.sartlar||'Terms')+'</div>';sartlar.slice(0,10).forEach(function(s,i){h+='<div style="font-size:8px;color:#555;margin-bottom:2px">'+(i+1)+'. '+s+'</div>';});h+='</div>';}
   h += '<div style="font-size:8px;color:#aaa;font-style:italic;margin-bottom:3px">'+(L.gorselNot||'Product images shown are for illustrative purposes only.')+'</div>';
   h += '<div style="font-size:8px;color:#555;margin-bottom:16px">'+banka+'</div>';
-  h += '<div style="display:flex;justify-content:space-between"><div style="width:180px;text-align:center"><div style="border-top:0.5px solid #111;padding-top:4px;font-size:7px;letter-spacing:.1em;color:#888">'+L.imza+'</div></div>';
+  h += '<div style="display:flex;justify-content:space-between"><div style="width:180px;text-align:center"><div style="border-top:0.5px solid #111;padding-top:4px;font-size:7px;letter-spacing:.1em;color:#888">'+(window._piOriginator?window._piOriginator(t):'')+L.imza+'</div></div>';
   h += '<div style="width:180px;text-align:center"><div style="border-top:0.5px solid #111;padding-top:4px;font-size:7px;letter-spacing:.1em;color:#888">'+(L.tarihMuhur||'DATE / STAMP')+'</div></div></div>';
   if(gizliKod) h+='<div style="text-align:center;margin-top:12px;font-size:7px;color:#ccc;font-family:monospace">'+gizliKod+'</div>';
   h += '</div>';
@@ -866,7 +902,7 @@ window._piTasarimL = function(t, bugun, satirlar, katman, gizliKod, L) {
   if(sartlar.length){h+='<div style="margin-bottom:12px"><div style="font-size:8px;font-weight:600;color:#555;margin-bottom:4px">'+(L.sartlar||'Terms')+'</div>';sartlar.slice(0,10).forEach(function(s,i){h+='<div style="font-size:8px;color:#555;margin-bottom:2px">'+(i+1)+'. '+s+'</div>';});h+='</div>';}
   h += '<div style="font-size:8px;color:#aaa;font-style:italic;margin-bottom:3px">'+(L.gorselNot||'Product images shown are for illustrative purposes only.')+'</div>';
   h += '<div style="font-size:8px;color:#555;margin-bottom:20px">'+banka+'</div>';
-  h += '<div style="display:flex;justify-content:space-between"><div style="width:180px;text-align:center"><div style="border-top:0.5px solid #111;padding-top:4px;font-size:7px;letter-spacing:.1em;color:#aaa">'+L.imza.toUpperCase()+'</div></div>';
+  h += '<div style="display:flex;justify-content:space-between"><div style="width:180px;text-align:center"><div style="border-top:0.5px solid #111;padding-top:4px;font-size:7px;letter-spacing:.1em;color:#aaa">'+(window._piOriginator?window._piOriginator(t):'')+L.imza.toUpperCase()+'</div></div>';
   h += '<div style="width:180px;text-align:center"><div style="border-top:0.5px solid #111;padding-top:4px;font-size:7px;letter-spacing:.1em;color:#aaa">'+(L.tarihMuhur||'DATE / STAMP').toUpperCase()+'</div></div></div>';
   if(gizliKod) h+='<div style="text-align:center;margin-top:12px;font-size:7px;color:#ccc;font-family:monospace">'+gizliKod+'</div>';
   h += '</div>';
@@ -913,7 +949,7 @@ window._piTasarimO = function(t, bugun, satirlar, katman, gizliKod, L) {
   if(sartlar.length){h+='<div style="margin-bottom:12px"><div style="font-size:8px;font-weight:600;color:#555;margin-bottom:4px">'+(L.sartlar||'Terms')+'</div>';sartlar.slice(0,10).forEach(function(s,i){h+='<div style="font-size:8px;color:#555;margin-bottom:2px">'+(i+1)+'. '+s+'</div>';});h+='</div>';}
   h += '<div style="font-size:8px;color:#ccc;font-style:italic;margin-bottom:2px">'+(L.gorselNot||'Product images shown are for illustrative purposes only.')+'</div>';
   h += '<div style="font-size:8px;color:#aaa;margin-bottom:18px">'+banka+'</div>';
-  h += '<div style="display:flex;justify-content:space-between"><div style="width:180px;text-align:center"><div style="border-top:2px solid #111;padding-top:4px;font-size:7px;letter-spacing:.12em;color:#aaa">'+L.imza.toUpperCase()+'</div></div>';
+  h += '<div style="display:flex;justify-content:space-between"><div style="width:180px;text-align:center"><div style="border-top:2px solid #111;padding-top:4px;font-size:7px;letter-spacing:.12em;color:#aaa">'+(window._piOriginator?window._piOriginator(t):'')+L.imza.toUpperCase()+'</div></div>';
   h += '<div style="width:180px;text-align:center"><div style="border-top:2px solid #111;padding-top:4px;font-size:7px;letter-spacing:.12em;color:#aaa">'+(L.tarihMuhur||'DATE / STAMP').toUpperCase()+'</div></div></div>';
   if(gizliKod) h+='<div style="text-align:center;margin-top:12px;font-size:7px;color:#ccc;font-family:monospace">'+gizliKod+'</div>';
   h += '</div>';
@@ -1030,7 +1066,7 @@ window._piTasarimD1 = function(t, bugun, satirlar, katman, gizliKod, L) {
   /* Footer */
   /* CLAUDE-KURAL-PI-001 madde 5: footer'a kurumsal bilgi (PI_ADRES) */
   html += '<div class="pi-d-footer">';
-  html += '<div class="pi-d-sign">' + esc(L.imza || 'Authorized Signature') + '</div>';
+  html += (window._piOriginator?window._piOriginator(t):'') + '<div class="pi-d-sign">' + esc(L.imza || 'Authorized Signature') + '</div>';
   html += '<div style="font-size:9px;color:#86868b;text-align:right;line-height:1.5">'
     + esc(sirket) + '<br/>' + esc(((window.PI_ADRES || {}).web) || 'www.duaycor.com') + '</div>';
   html += '<div class="pi-d-page-no">Page 1 / 1</div>';
@@ -1135,7 +1171,7 @@ window._piTasarimD2 = function(t, bugun, satirlar, katman, gizliKod, L) {
 
   /* CLAUDE-KURAL-PI-001 madde 5: footer'a kurumsal bilgi (PI_ADRES) */
   html += '<div class="pi-d-footer">';
-  html += '<div class="pi-d-sign">' + esc(L.imza || 'Authorized Signature') + '</div>';
+  html += (window._piOriginator?window._piOriginator(t):'') + '<div class="pi-d-sign">' + esc(L.imza || 'Authorized Signature') + '</div>';
   html += '<div style="font-size:9px;color:#86868b;text-align:right;line-height:1.5">'
     + esc(sirket) + '<br/>' + esc(((window.PI_ADRES || {}).web) || 'www.duaycor.com') + '</div>';
   html += '<div class="pi-d-page-no">Page 1 / 1</div>';
