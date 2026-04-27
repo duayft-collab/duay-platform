@@ -228,6 +228,12 @@
         + '<div>' + _edWizardLabel('Teklif Onay Tarihi') + '<input id="ede-teklifOnayTarihi" type="datetime-local" style="' + _edWizardInput + '" value="' + (ed.teklifOnayTarihi || '') + '"></div>'
         + '<div>' + _edWizardLabel('Avans Ödeme Tarihi') + '<input id="ede-avansOdemeTarihi" type="datetime-local" style="' + _edWizardInput + '" value="' + (ed.avansOdemeTarihi || '') + '"></div>'
         + '<div>' + _edWizardLabel('Satınalma Sorumlusu') + '<select id="ede-satinAlmaSorumlusu" style="' + _edWizardInput + '">' + _edUserOpts(ed.satinAlmaSorumlusu || '') + '</select></div>'
+        + '<div style="grid-column:span 2;font-size:11px;font-weight:600;color:var(--t2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--b)">Sevkiyat & Takip</div>'
+        + '<div>' + _edWizardLabel('Konteyner No') + '<input id="ede-konteynerNo" style="' + _edWizardInput + '" value="' + _uiEsc(ed.konteynerNo || '') + '"></div>'
+        + '<div>' + _edWizardLabel('Armatör') + '<select id="ede-armator" onchange="window._edAutoFillTrackingUrl && window._edAutoFillTrackingUrl()" style="' + _edWizardInput + '">' + ['','MSC','Maersk','CMA CGM','COSCO','Hapag-Lloyd','ONE','Evergreen','Yang Ming','HMM','ZIM','PIL','OOCL','Diger'].map(function(__c){return '<option value="' + __c + '"' + (ed.armator === __c ? ' selected' : '') + '>' + (__c || '— Seçin —') + '</option>';}).join('') + '</select></div>'
+        + '<div style="grid-column:span 2">' + _edWizardLabel('Yükleme Firma') + '<input id="ede-yuklemeFirmaAd" style="' + _edWizardInput + '" value="' + _uiEsc(ed.yuklemeFirmaAd || '') + '"></div>'
+        + '<div style="grid-column:span 2">' + _edWizardLabel('Tracking URL') + '<input id="ede-trackingUrl" type="url" style="' + _edWizardInput + '" value="' + _uiEsc(ed.trackingUrl || '') + '" placeholder="https://..."></div>'
+        + '<div style="grid-column:span 2">' + _edWizardLabel('Varış Zamanı') + '<input id="ede-varisZamani" type="datetime-local" style="' + _edWizardInput + '" value="' + (ed.varisZamani || '') + '"></div>'
         + '<div>' + _edWizardLabel('Öncelik') + '<select id="ede-priority" style="' + _edWizardInput + '">' + priOpts.map(function(p) { return '<option value="' + p[0] + '"' + (ed.priority === p[0] ? ' selected' : '') + '>' + p[1] + '</option>'; }).join('') + '</select></div>'
         + '<div>' + _edWizardLabel('Durum') + '<select id="ede-status" style="' + _edWizardInput + '">' + statusOpts.map(function(st) { return '<option value="' + st[0] + '"' + (ed.status === st[0] ? ' selected' : '') + '>' + st[1] + '</option>'; }).join('') + '</select></div>'
       + '</div>'
@@ -263,6 +269,11 @@
     list[idx].teklifOnayTarihi = document.getElementById('ede-teklifOnayTarihi')?.value || '';
     list[idx].avansOdemeTarihi = document.getElementById('ede-avansOdemeTarihi')?.value || '';
     list[idx].satinAlmaSorumlusu = document.getElementById('ede-satinAlmaSorumlusu')?.value || '';
+    list[idx].konteynerNo = document.getElementById('ede-konteynerNo')?.value || '';
+    list[idx].armator = document.getElementById('ede-armator')?.value || '';
+    list[idx].yuklemeFirmaAd = document.getElementById('ede-yuklemeFirmaAd')?.value || '';
+    list[idx].trackingUrl = document.getElementById('ede-trackingUrl')?.value || '';
+    list[idx].varisZamani = document.getElementById('ede-varisZamani')?.value || '';
     list[idx].priority = document.getElementById('ede-priority')?.value || 'NORMAL';
     list[idx].status = document.getElementById('ede-status')?.value || list[idx].status;
     list[idx].updatedAt = new Date().toISOString();
@@ -296,6 +307,29 @@
     var label = STATUS_LABELS[newStatus] || newStatus;
     window.toast?.('Durum güncellendi: ' + label, 'ok');
     window._edRenderPanel?.();
+  };
+
+  /* LOJ-1B-C2: Armatör seçildiğinde tracking URL otomatik dolum
+     13 carrier URL pattern (kargo modülündeki autoFillKonteynUrl ile aynı) */
+  window._edAutoFillTrackingUrl = function() {
+    var hat = document.getElementById('ede-armator')?.value || '';
+    var urls = {
+      'MSC': 'https://www.msc.com/track-a-shipment?agencyPath=msc',
+      'Maersk': 'https://www.maersk.com/tracking/',
+      'CMA CGM': 'https://www.cma-cgm.com/ebusiness/tracking/search',
+      'COSCO': 'https://elines.coscoshipping.com/ebusiness/cargoTracking',
+      'Hapag-Lloyd': 'https://www.hapag-lloyd.com/en/online-business/track/track-by-container-solution.html',
+      'ONE': 'https://ecomm.one-line.com/ecom/CUP_HOM_3301.do',
+      'Evergreen': 'https://www.shipmentlink.com/servlet/TUF1_CargoTracking.do',
+      'Yang Ming': 'https://www.yangming.com/e-service/Track_Trace/track_trace_cargo_tracking.aspx',
+      'HMM': 'https://www.hmm21.com/cms/business/ebiz/trackTrace/trackTrace/index.jsp',
+      'ZIM': 'https://www.zim.com/tools/track-a-shipment',
+      'PIL': 'https://www.pilship.com/shared/ajax/?fn=get_track_trace',
+      'OOCL': 'https://www.oocl.com/eng/ourservices/eservices/cargotracking/Pages/cargotracking.aspx',
+      'Diger': ''
+    };
+    var input = document.getElementById('ede-trackingUrl');
+    if (input && urls[hat]) input.value = urls[hat];
   };
 
   /* ─── PARÇA 2: DELIVERY MANAGEMENT ──────────────────────── */
