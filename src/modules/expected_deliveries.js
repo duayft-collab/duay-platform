@@ -223,6 +223,11 @@
         + '<div>' + _edWizardLabel('Termin (gün)') + '<input id="ede-deliveryTermDays" type="number" min="1" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.deliveryTermDays || '') + '"></div>'
         + '<div>' + _edWizardLabel('Tolerans (gün)') + '<input id="ede-toleranceDays" type="number" min="0" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.toleranceDays || '') + '"></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Sorumlu *') + '<select id="ede-responsibleUserId" style="' + _edWizardInput + '">' + _edUserOpts(ed.responsibleUserId) + '</select></div>'
+        + '<div style="grid-column:span 2;font-size:11px;font-weight:600;color:var(--t2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--b)">Onay & Satınalma</div>'
+        + '<div>' + _edWizardLabel('Teklif Onaylayan') + '<select id="ede-teklifOnaylayan" style="' + _edWizardInput + '">' + _edUserOpts(ed.teklifOnaylayan || '') + '</select></div>'
+        + '<div>' + _edWizardLabel('Teklif Onay Tarihi') + '<input id="ede-teklifOnayTarihi" type="datetime-local" style="' + _edWizardInput + '" value="' + (ed.teklifOnayTarihi || '') + '"></div>'
+        + '<div>' + _edWizardLabel('Avans Ödeme Tarihi') + '<input id="ede-avansOdemeTarihi" type="datetime-local" style="' + _edWizardInput + '" value="' + (ed.avansOdemeTarihi || '') + '"></div>'
+        + '<div>' + _edWizardLabel('Satınalma Sorumlusu') + '<select id="ede-satinAlmaSorumlusu" style="' + _edWizardInput + '">' + _edUserOpts(ed.satinAlmaSorumlusu || '') + '</select></div>'
         + '<div>' + _edWizardLabel('Öncelik') + '<select id="ede-priority" style="' + _edWizardInput + '">' + priOpts.map(function(p) { return '<option value="' + p[0] + '"' + (ed.priority === p[0] ? ' selected' : '') + '>' + p[1] + '</option>'; }).join('') + '</select></div>'
         + '<div>' + _edWizardLabel('Durum') + '<select id="ede-status" style="' + _edWizardInput + '">' + statusOpts.map(function(st) { return '<option value="' + st[0] + '"' + (ed.status === st[0] ? ' selected' : '') + '>' + st[1] + '</option>'; }).join('') + '</select></div>'
       + '</div>'
@@ -254,6 +259,10 @@
     list[idx].deliveryTermDays = parseInt(document.getElementById('ede-deliveryTermDays')?.value) || list[idx].deliveryTermDays;
     list[idx].toleranceDays = parseInt(document.getElementById('ede-toleranceDays')?.value) || 0;
     list[idx].responsibleUserId = document.getElementById('ede-responsibleUserId')?.value || list[idx].responsibleUserId;
+    list[idx].teklifOnaylayan = document.getElementById('ede-teklifOnaylayan')?.value || '';
+    list[idx].teklifOnayTarihi = document.getElementById('ede-teklifOnayTarihi')?.value || '';
+    list[idx].avansOdemeTarihi = document.getElementById('ede-avansOdemeTarihi')?.value || '';
+    list[idx].satinAlmaSorumlusu = document.getElementById('ede-satinAlmaSorumlusu')?.value || '';
     list[idx].priority = document.getElementById('ede-priority')?.value || 'NORMAL';
     list[idx].status = document.getElementById('ede-status')?.value || list[idx].status;
     list[idx].updatedAt = new Date().toISOString();

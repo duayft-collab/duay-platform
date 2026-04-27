@@ -26,8 +26,9 @@
 /* [CACHE-BUMP-2026-04-27-V39] URUN-IMG-001 + ROLE-FIX-001 aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V40] LOJ-1A (expected_deliveries Sil butonu) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V41] LOJ-1B-A (expected_deliveries Düzenle modal) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v41';
-const CACHE_VERSION = '41.0.0';
+/* [CACHE-BUMP-2026-04-27-V42] LOJ-1B-B (expected_deliveries Onay & Satınalma 4 alan) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v42';
+const CACHE_VERSION = '42.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
