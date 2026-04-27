@@ -172,6 +172,30 @@ window._piOlustur = function(teklif, tasarim, katman, skipKontrol) {
       return;
     }
   }
+  /* PI-FIX-004: D1 tasarımı görselli — eksik görsel uyarısı */
+  if (!skipKontrol && tasarim === 'D1' && typeof window._piUrunSatirlari === 'function') {
+    var __d1Satirlar = window._piUrunSatirlari(teklif, katman) || [];
+    var __d1Eksik = __d1Satirlar.filter(function(s){ return !s.gorsel; }).length;
+    if (__d1Eksik > 0) {
+      var __d1Msg = __d1Eksik + ' / ' + __d1Satirlar.length + ' ürün görselsiz. D1 görselli tasarım — boş görüneceklerdir. Devam edilsin mi? (D2 görselsiz tasarımdır)';
+      if (typeof window.confirmModal === 'function') {
+        window.confirmModal(__d1Msg, {
+          title: 'D1 Görsel Uyarısı',
+          danger: false,
+          confirmText: 'Devam Et',
+          cancelText: 'İptal',
+          onConfirm: function() { window._piOlustur(teklif, tasarim, katman, true); }
+        });
+        return;
+      } else if (confirm(__d1Msg)) {
+        window._piOlustur(teklif, tasarim, katman, true);
+        return;
+      } else {
+        return;
+      }
+    }
+  }
+
   /* PDF-HARMONIZE-001: V2 form (gecerlilik/teslim/odeme) ↔ inline (gecerlilikTarihi/teslimSekli/odemeKosulu)
      şema fallback + cari lookup. _piTasarimA/B/C/I/L/O fonksiyonları teklif.* okuyor —
      üst seviyede tek truth source ile zenginleştir. */
