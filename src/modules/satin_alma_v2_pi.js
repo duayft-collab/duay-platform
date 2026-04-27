@@ -583,7 +583,7 @@ window._piTasarimA = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
   h += '<div><div style="font-size:22px;font-weight:700;letter-spacing:.5px">' + PI_ADRES.sirket + '</div>';
   h += '<div style="font-size:9px;color:#666;margin-top:3px">International Trade</div>';
-  h += '<div style="font-size:9px;color:#666;margin-top:8px;line-height:1.8">' + PI_ADRES.adres1 + '<br>' + PI_ADRES.adres2 + '<br>Tel: ' + PI_ADRES.tel + '<br>' + PI_ADRES.mail + '</div></div>';
+  h += '<div style="font-size:9px;color:#666;margin-top:8px;line-height:1.8">' + PI_ADRES.adres1 + '<br>' + PI_ADRES.adres2 + '<br>Tel: ' + PI_ADRES.tel + '<br>WA: ' + PI_ADRES.mobil + '<br>' + PI_ADRES.mail + '<br>' + PI_ADRES.web + '</div></div>';
   h += '<div style="text-align:right">';
   h += '<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.08em">Proforma Invoice</div>';
   h += '<div style="font-size:18px;font-weight:700;font-family:monospace;margin-top:2px">' + (t.teklifId || '') + '</div>';
@@ -629,7 +629,7 @@ window._piTasarimB = function(t, bugun, satirlar, katman, gizliKod, L) {
   var h = '<div style="background:#185FA5;padding:22px 28px;display:flex;justify-content:space-between;align-items:flex-start">';
   h += '<div><div style="font-size:20px;font-weight:700;color:#fff;letter-spacing:.3px">' + PI_ADRES.sirket + '</div>';
   h += '<div style="font-size:9px;color:#B5D4F4;margin-top:3px">' + PI_ADRES.adres1 + ' · ' + PI_ADRES.adres2 + '</div>';
-  h += '<div style="font-size:9px;color:#B5D4F4;margin-top:2px">' + PI_ADRES.tel + ' · ' + PI_ADRES.mail + '</div></div>';
+  h += '<div style="font-size:9px;color:#B5D4F4;margin-top:2px">' + PI_ADRES.tel + ' · WA: ' + PI_ADRES.mobil + ' · ' + PI_ADRES.mail + ' · ' + PI_ADRES.web + '</div></div>';
   h += '<div style="text-align:right"><div style="font-size:9px;color:#B5D4F4;text-transform:uppercase;letter-spacing:.08em">Proforma Invoice</div>';
   h += '<div style="font-size:16px;font-weight:700;color:#fff;font-family:monospace;margin-top:2px">' + (t.teklifId || '') + '</div>';
   h += '<div style="font-size:9px;color:#B5D4F4;margin-top:3px">' + bugun + ' · Rev ' + (t.revNo || '01') + '</div></div></div>';
@@ -675,7 +675,7 @@ window._piTasarimC = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '<div style="font-size:10px;color:#555;line-height:1.8">No: <strong style="font-family:monospace">' + (t.teklifId || '') + '</strong><br>Date: ' + bugun + '<br>Valid: 30 days · Rev: ' + (t.revNo || '01') + '</div></div>';
   h += '<div style="text-align:right"><div style="font-size:18px;font-weight:700;letter-spacing:.3px">' + PI_ADRES.sirket + '</div>';
   h += '<div style="font-size:9px;color:#888;margin-top:3px">' + PI_ADRES.adres1 + ' · ' + PI_ADRES.adres2 + '</div>';
-  h += '<div style="font-size:9px;color:#888">' + PI_ADRES.tel + ' · ' + PI_ADRES.mail + '</div></div></div>';
+  h += '<div style="font-size:9px;color:#888">' + PI_ADRES.tel + ' · WA: ' + PI_ADRES.mobil + ' · ' + PI_ADRES.mail + ' · ' + PI_ADRES.web + '</div></div></div>';
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px">';
   h += '<div style="border-left:3px solid #1D9E75;padding-left:12px">';
   h += '<div style="font-size:8px;font-weight:700;color:#1D9E75;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">' + L.alici + '</div>';
@@ -970,6 +970,8 @@ window._piTasarimD1 = function(t, bugun, satirlar, katman, gizliKod, L) {
   var adres2 = (window.PI_ADRES && window.PI_ADRES.adres2) || '';
   var tel    = (window.PI_ADRES && window.PI_ADRES.tel) || '';
   var mail   = (window.PI_ADRES && window.PI_ADRES.mail) || '';
+  var mobil  = (window.PI_ADRES && window.PI_ADRES.mobil) || '';
+  var web    = (window.PI_ADRES && window.PI_ADRES.web) || '';
   var esc = window._esc || function(s){return String(s||'');};
 
   var html = '<div class="pi-d-page">';
@@ -980,7 +982,7 @@ window._piTasarimD1 = function(t, bugun, satirlar, katman, gizliKod, L) {
   html += '<div>';
   html += '<div class="pi-d-brand">' + esc(sirket) + '</div>';
   html += '<div class="pi-d-brand-sub">' + esc(adres1) + (adres2 ? ' · ' + esc(adres2) : '') + '</div>';
-  if (tel || mail) html += '<div class="pi-d-brand-sub">' + esc(tel) + (mail ? ' · ' + esc(mail) : '') + '</div>';
+  if (tel || mobil || mail || web) html += '<div class="pi-d-brand-sub">' + esc(tel) + (mobil ? ' · WA: ' + esc(mobil) : '') + (mail ? ' · ' + esc(mail) : '') + (web ? ' · ' + esc(web) : '') + '</div>';
   html += '</div>';
   html += '<div>';
   html += '<div class="pi-d-title">' + esc(L.proforma || 'Proforma Invoice') + '</div>';
@@ -1084,6 +1086,8 @@ window._piTasarimD2 = function(t, bugun, satirlar, katman, gizliKod, L) {
   var adres2 = (window.PI_ADRES && window.PI_ADRES.adres2) || '';
   var tel    = (window.PI_ADRES && window.PI_ADRES.tel) || '';
   var mail   = (window.PI_ADRES && window.PI_ADRES.mail) || '';
+  var mobil  = (window.PI_ADRES && window.PI_ADRES.mobil) || '';
+  var web    = (window.PI_ADRES && window.PI_ADRES.web) || '';
   var esc = window._esc || function(s){return String(s||'');};
 
   var html = '<div class="pi-d-page">';
@@ -1093,7 +1097,7 @@ window._piTasarimD2 = function(t, bugun, satirlar, katman, gizliKod, L) {
   html += '<div>';
   html += '<div class="pi-d-brand">' + esc(sirket) + '</div>';
   html += '<div class="pi-d-brand-sub">' + esc(adres1) + (adres2 ? ' · ' + esc(adres2) : '') + '</div>';
-  if (tel || mail) html += '<div class="pi-d-brand-sub">' + esc(tel) + (mail ? ' · ' + esc(mail) : '') + '</div>';
+  if (tel || mobil || mail || web) html += '<div class="pi-d-brand-sub">' + esc(tel) + (mobil ? ' · WA: ' + esc(mobil) : '') + (mail ? ' · ' + esc(mail) : '') + (web ? ' · ' + esc(web) : '') + '</div>';
   html += '</div>';
   html += '<div>';
   html += '<div class="pi-d-title">' + esc(L.proforma || 'Proforma Invoice') + '</div>';
