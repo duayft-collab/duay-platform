@@ -984,6 +984,31 @@ function injectAllModals() {
   _fillTebSorumlu();
 }
 
+/* MODAL-FIX-001: autoFillKonteynUrl — ktn-hat select onchange handler
+   13 carrier tracking URL pattern, primary input id 'ktn-url' (modals.js:212) */
+window.autoFillKonteynUrl = function() {
+  var hat = document.getElementById('ktn-hat')?.value || '';
+  var urls = {
+    'MSC': 'https://www.msc.com/track-a-shipment?agencyPath=msc',
+    'Maersk': 'https://www.maersk.com/tracking/',
+    'CMA CGM': 'https://www.cma-cgm.com/ebusiness/tracking/search',
+    'COSCO': 'https://elines.coscoshipping.com/ebusiness/cargoTracking',
+    'Hapag-Lloyd': 'https://www.hapag-lloyd.com/en/online-business/track/track-by-container-solution.html',
+    'ONE': 'https://ecomm.one-line.com/ecom/CUP_HOM_3301.do',
+    'Evergreen': 'https://www.shipmentlink.com/servlet/TUF1_CargoTracking.do',
+    'Yang Ming': 'https://www.yangming.com/e-service/Track_Trace/track_trace_cargo_tracking.aspx',
+    'HMM': 'https://www.hmm21.com/cms/business/ebiz/trackTrace/trackTrace/index.jsp',
+    'ZIM': 'https://www.zim.com/tools/track-a-shipment',
+    'PIL': 'https://www.pilship.com/shared/ajax/?fn=get_track_trace',
+    'OOCL': 'https://www.oocl.com/eng/ourservices/eservices/cargotracking/Pages/cargotracking.aspx',
+    'Diger': ''
+  };
+  var input = document.getElementById('ktn-url')
+    || document.getElementById('ktn-tracking-url')
+    || document.querySelector('input[placeholder*="track"]');
+  if (input && urls[hat]) input.value = urls[hat];
+};
+
 function _fillKtnUsers() {
   const sel = document.getElementById('ktn-uid');
   if (!sel) return;
