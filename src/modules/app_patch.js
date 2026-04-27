@@ -3343,7 +3343,7 @@ window._openSAContract = function(id) {
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>Sözleşme #'+id+'</title><style>body{font-family:system-ui;padding:40px;max-width:700px;margin:0 auto;font-size:12px;line-height:1.6}h1{text-align:center;color:#1a365d;font-size:18px}h2{font-size:14px;color:#1a365d;margin-top:20px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{padding:8px;border:1px solid #ddd;font-size:11px}th{background:#f5f5f5}.sig{display:flex;justify-content:space-between;margin-top:40px}.sig div{width:40%;text-align:center}@media print{button{display:none!important}}</style></head><body>'
     +'<h1>SATIN ALMA SÖZLEŞMESİ</h1><div style="text-align:center;color:#666;margin-bottom:20px">DUAY GLOBAL LLC — '+esc(sa.supplier||sa.piNo||'')+'</div>'
-    +'<h2>1. Taraflar</h2><p><b>Alıcı:</b> DUAY GLOBAL LLC<br><b>Satıcı:</b> '+esc(sa.vendor?.name||sa.supplier||'')+'</p>'
+    +'<h2>1. Taraflar</h2><p><b>Alıcı:</b> DUAY GLOBAL LLC<br><span style="font-size:11px;color:#555;margin-left:48px">Duay Uluslararası Ticaret Ltd. Şti.</span><br><b>Satıcı:</b> '+esc(sa.vendor?.name||sa.supplier||'')+'</p>'
     +'<h2>2. Ürün Bilgileri</h2><table><tr><th>Açıklama</th><th>Toplam</th><th>KDV</th><th>Döviz</th></tr>'
     +'<tr><td>'+esc(sa.supplier||sa.piNo||'Ürün')+'</td><td>'+(sa.totalAmount||0)+' '+cur+'</td><td>'+(sa.kdv||0)+' '+cur+'</td><td>'+cur+'</td></tr></table>'
     +'<h2>3. Ödeme Koşulları</h2><p>Avans: %'+(sa.advanceRate||0)+' ('+(sa.advanceAmount||0)+' '+cur+')<br>Kalan: '+(sa.remainingAmount||0)+' '+cur+' — Vade: '+(sa.vadeDate||'—')+'</p>'
