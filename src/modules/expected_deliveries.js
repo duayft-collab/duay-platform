@@ -222,6 +222,7 @@
         + '<div>' + _edWizardLabel('Tahmini Teslim *') + '<input id="ede-estimatedDeliveryDate" type="date" style="' + _edWizardInput + '" value="' + (ed.estimatedDeliveryDate || '') + '"></div>'
         + '<div>' + _edWizardLabel('Termin (gün)') + '<input id="ede-deliveryTermDays" type="number" min="1" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.deliveryTermDays || '') + '"></div>'
         + '<div>' + _edWizardLabel('Tolerans (gün)') + '<input id="ede-toleranceDays" type="number" min="0" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.toleranceDays || '') + '"></div>'
+        + '<div style="grid-column:span 2">' + _edWizardLabel('Yön') + '<select id="ede-yon" style="' + _edWizardInput + '">' + ['GIDEN','GELEN'].map(function(__y){var __l = __y === 'GIDEN' ? '📤 Giden' : '📥 Gelen'; return '<option value="' + __y + '"' + ((ed.yon || 'GIDEN') === __y ? ' selected' : '') + '>' + __l + '</option>';}).join('') + '</select></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Sorumlu *') + '<select id="ede-responsibleUserId" style="' + _edWizardInput + '">' + _edUserOpts(ed.responsibleUserId) + '</select></div>'
         + '<div style="grid-column:span 2;font-size:11px;font-weight:600;color:var(--t2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--b)">Onay & Satınalma</div>'
         + '<div>' + _edWizardLabel('Teklif Onaylayan') + '<select id="ede-teklifOnaylayan" style="' + _edWizardInput + '">' + _edUserOpts(ed.teklifOnaylayan || '') + '</select></div>'
@@ -265,6 +266,7 @@
     list[idx].estimatedDeliveryDate = document.getElementById('ede-estimatedDeliveryDate')?.value || '';
     list[idx].deliveryTermDays = parseInt(document.getElementById('ede-deliveryTermDays')?.value) || list[idx].deliveryTermDays;
     list[idx].toleranceDays = parseInt(document.getElementById('ede-toleranceDays')?.value) || 0;
+    list[idx].yon = document.getElementById('ede-yon')?.value || 'GIDEN';
     list[idx].responsibleUserId = document.getElementById('ede-responsibleUserId')?.value || list[idx].responsibleUserId;
     list[idx].teklifOnaylayan = document.getElementById('ede-teklifOnaylayan')?.value || '';
     list[idx].teklifOnayTarihi = document.getElementById('ede-teklifOnayTarihi')?.value || '';
@@ -375,6 +377,16 @@
     var statusEl = document.getElementById('ede-belge-status');
     if (urlEl) urlEl.value = '';
     if (statusEl) statusEl.textContent = 'Belge yok';
+  };
+
+  /* LOJ-1B-D: Filter state update + re-render */
+  window._edFilter = function(field, value) {
+    if (!window._edFilterState) window._edFilterState = { yon: '', status: '', search: '' };
+    window._edFilterState[field] = value;
+    var container = document.getElementById('ed-list-container');
+    if (container && typeof window.renderEdList === 'function') {
+      container.outerHTML = window.renderEdList();
+    }
   };
 
   /* ─── PARÇA 2: DELIVERY MANAGEMENT ──────────────────────── */
@@ -1535,6 +1547,31 @@
     var cariMap = {};
     try { (typeof window.loadCari === 'function' ? window.loadCari() : []).forEach(function(c){ cariMap[String(c.id)] = c.ad || c.firmaAdi || ''; }); } catch(e){}
 
+    /* LOJ-1B-D: Filter state + apply + filterBar */
+    if (!window._edFilterState) window._edFilterState = { yon: '', status: '', search: '' };
+    var __fs = window._edFilterState;
+    list = list.filter(function(__ed) {
+      if (__fs.yon && (__ed.yon || 'GIDEN') !== __fs.yon) return false;
+      if (__fs.status && __ed.status !== __fs.status) return false;
+      if (__fs.search) {
+        var __q = String(__fs.search).trim().toLowerCase();
+        var __hay = ((__ed.productName || '') + ' ' + (__ed.supplierId || '') + ' ' + (cariMap[String(__ed.supplierId)] || '') + ' ' + (__ed.konteynerNo || '')).toLowerCase();
+        if (__hay.indexOf(__q) === -1) return false;
+      }
+      return true;
+    });
+    var __fbStyle = 'font-size:11px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--sf);color:var(--t);font-family:inherit;cursor:pointer';
+    var __fbActive = 'font-size:11px;padding:5px 10px;border:0.5px solid var(--ac);border-radius:5px;background:var(--ac);color:#fff;font-family:inherit;cursor:pointer;font-weight:500';
+    var filterBar = '<div style="padding:8px 16px;background:var(--s2);border-bottom:0.5px solid var(--b);display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+      + '<button type="button" onclick="window._edFilter && window._edFilter(\'yon\', \'\')" style="' + (__fs.yon === '' ? __fbActive : __fbStyle) + '">Tümü</button>'
+      + '<button type="button" onclick="window._edFilter && window._edFilter(\'yon\', \'GELEN\')" style="' + (__fs.yon === 'GELEN' ? __fbActive : __fbStyle) + '">📥 Gelen</button>'
+      + '<button type="button" onclick="window._edFilter && window._edFilter(\'yon\', \'GIDEN\')" style="' + (__fs.yon === 'GIDEN' ? __fbActive : __fbStyle) + '">📤 Giden</button>'
+      + '<select onchange="window._edFilter && window._edFilter(\'status\', this.value)" style="' + __fbStyle + ';padding:5px 8px">'
+        + '<option value=""' + (__fs.status === '' ? ' selected' : '') + '>Tüm Durumlar</option>'
+        + STATUSES.map(function(__sk){var __s = STATUS[__sk]; return '<option value="' + __sk + '"' + (__fs.status === __sk ? ' selected' : '') + '>' + (__s ? __s['t'] : __sk) + '</option>';}).join('')
+      + '</select>'
+      + '<input type="search" placeholder="Ara: ürün, tedarikçi, konteyner..." value="' + esc(__fs.search || '') + '" oninput="window._edFilter && window._edFilter(\'search\', this.value)" style="' + __fbStyle + ';flex:1;min-width:160px;cursor:text">'
+    + '</div>';
     var rows = list.slice(0,20).map(function(ed){
       var st = STATUS[ed.status] || {t: ed.status || '-', c:'#6B7280', bg:'#F3F4F6'};
       var tedAd = cariMap[String(ed.supplierId)] || ed.tedarikci || '—';
@@ -1549,7 +1586,11 @@
       }
       var qd = ed.quantityDelivered || 0, qt = ed.quantityTotal || 0;
       var pct = qt > 0 ? Math.round(qd/qt*100) : 0;
-      return '<div style="display:grid;grid-template-columns:2fr 1.3fr 1.1fr 0.9fr 0.9fr auto;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px">'
+      var __yon = ed.yon || 'GIDEN';
+      var __rowBg = __yon === 'GELEN' ? 'rgba(59,130,246,0.06)' : 'rgba(249,115,22,0.06)';
+      var __yonBadge = __yon === 'GELEN' ? '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#DBEAFE;color:#1E40AF;font-weight:500">📥 GELEN</span>' : '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#FED7AA;color:#9A3412;font-weight:500">📤 GIDEN</span>';
+      return '<div style="display:grid;grid-template-columns:0.55fr 1.7fr 1.2fr 1fr 0.85fr 0.85fr auto;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
+        + '<div>' + __yonBadge + '</div>'
         + '<div><div style="font-weight:500;color:var(--t)">'+esc(ed.productName||'—')+'</div>'
         + '<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(tedAd)+'</div></div>'
         + '<div onclick="event.stopPropagation()"><select onchange="window._edStatusChange && window._edStatusChange(\'' + esc(ed.id) + '\', this.value)" style="padding:3px 8px;border-radius:10px;font-size:10px;font-weight:500;color:' + st['c'] + ';background:' + st['bg'] + ';border:0.5px solid ' + st['c'] + '33;cursor:pointer;font-family:inherit">' + STATUSES.map(function(__sk){var __s = STATUS[__sk];return '<option value="' + __sk + '"' + (ed.status === __sk ? ' selected' : '') + '>' + esc(__s ? __s['t'] : __sk) + '</option>';}).join('') + '</select></div>'
@@ -1560,14 +1601,15 @@
         + '</div>';
     }).join('');
 
-    var hdrRow = '<div style="display:grid;grid-template-columns:2fr 1.3fr 1.1fr 0.9fr 0.9fr auto;gap:12px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
-      + '<div>Ürün / Tedarikçi</div><div>Durum</div><div>Miktar</div><div>Tahmini</div><div>Kalan</div><div></div></div>';
+    var hdrRow = '<div style="display:grid;grid-template-columns:0.55fr 1.7fr 1.2fr 1fr 0.85fr 0.85fr auto;gap:12px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
+      + '<div>Yön</div><div>Ürün / Tedarikçi</div><div>Durum</div><div>Miktar</div><div>Tahmini</div><div>Kalan</div><div></div></div>';
 
-    return '<div style="'+card+'">'
+    return '<div id="ed-list-container" style="'+card+'">'
       + '<div style="'+hdr+'">'
       + '<span style="font-size:13px;font-weight:500">Beklenen Teslimatlar <span style="font-weight:400;color:var(--t3);font-size:11px;margin-left:6px">'+list.length+' kayıt</span></span>'
       + '<button onclick="window._edWizardAc && window._edWizardAc()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit">+ Yeni</button>'
       + '</div>'
+      + filterBar
       + hdrRow + rows
       + (list.length > 20 ? '<div style="padding:8px 16px;text-align:center;font-size:10px;color:var(--t3)">+'+(list.length-20)+' kayıt daha</div>' : '')
       + '</div>';
