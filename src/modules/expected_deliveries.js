@@ -234,6 +234,7 @@
         + '<div style="grid-column:span 2">' + _edWizardLabel('Yükleme Firma') + '<input id="ede-yuklemeFirmaAd" style="' + _edWizardInput + '" value="' + _uiEsc(ed.yuklemeFirmaAd || '') + '"></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Tracking URL') + '<div style="display:flex;gap:6px;align-items:stretch">' + '<input id="ede-trackingUrl" type="url" style="' + _edWizardInput + ';flex:1" value="' + _uiEsc(ed.trackingUrl || '') + '" placeholder="https://...">' + '<button type="button" onclick="window._edOpenTrackingUrl && window._edOpenTrackingUrl()" style="padding:8px 14px;border:0.5px solid var(--b);background:var(--s2);color:var(--t2);border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap" title="Yeni sekmede aç">🔗 Aç</button>' + '</div></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Varış Zamanı') + '<input id="ede-varisZamani" type="datetime-local" style="' + _edWizardInput + '" value="' + (ed.varisZamani || '') + '"></div>'
+        + '<div style="grid-column:span 2">' + _edWizardLabel('Belge / Sözleşme PDF') + '<div style="display:flex;flex-direction:column;gap:6px">' + '<input type="file" accept=".pdf,application/pdf" onchange="window._edUploadBelge && window._edUploadBelge(this)" style="font-size:11px;padding:6px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t);font-family:inherit">' + '<input type="hidden" id="ede-belgeUrl" value="' + _uiEsc(ed.belgeUrl || '') + '">' + '<div id="ede-belge-status" style="font-size:11px;color:var(--t3);padding:4px 0">' + (ed.belgeUrl ? '✓ Mevcut belge · <a href="' + _uiEsc(ed.belgeUrl) + '" target="_blank" rel="noopener" style="color:var(--ac)">Görüntüle</a> · <button type="button" onclick="window._edBelgeKaldir && window._edBelgeKaldir()" style="background:none;border:none;cursor:pointer;color:#E0574F;font-size:11px;font-family:inherit;padding:0">🗑️ Kaldır</button>' : 'Belge yok') + '</div>' + '</div></div>'
         + '<div>' + _edWizardLabel('Öncelik') + '<select id="ede-priority" style="' + _edWizardInput + '">' + priOpts.map(function(p) { return '<option value="' + p[0] + '"' + (ed.priority === p[0] ? ' selected' : '') + '>' + p[1] + '</option>'; }).join('') + '</select></div>'
         + '<div>' + _edWizardLabel('Durum') + '<select id="ede-status" style="' + _edWizardInput + '">' + statusOpts.map(function(st) { return '<option value="' + st[0] + '"' + (ed.status === st[0] ? ' selected' : '') + '>' + st[1] + '</option>'; }).join('') + '</select></div>'
       + '</div>'
@@ -274,6 +275,7 @@
     list[idx].yuklemeFirmaAd = document.getElementById('ede-yuklemeFirmaAd')?.value || '';
     list[idx].trackingUrl = document.getElementById('ede-trackingUrl')?.value || '';
     list[idx].varisZamani = document.getElementById('ede-varisZamani')?.value || '';
+    list[idx].belgeUrl = document.getElementById('ede-belgeUrl')?.value || '';
     list[idx].priority = document.getElementById('ede-priority')?.value || 'NORMAL';
     list[idx].status = document.getElementById('ede-status')?.value || list[idx].status;
     list[idx].updatedAt = new Date().toISOString();
@@ -337,6 +339,42 @@
     var u = (document.getElementById('ede-trackingUrl')?.value || '').trim();
     if (!u) { window.toast?.('URL boş', 'err'); return; }
     window.open(u, '_blank', 'noopener,noreferrer');
+  };
+
+  /* LOJ-1B-C4: PDF eki Storage upload + kaldırma */
+  window._edUploadBelge = async function(fileInput) {
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+    var file = fileInput.files[0];
+    if (file['size'] > 20 * 1024 * 1024) { window.toast?.('Dosya 20MB limitini aşıyor', 'err'); return; }
+    if (typeof window._uploadBase64ToStorage !== 'function') {
+      window.toast?.('Storage helper bulunamadı', 'err'); return;
+    }
+    var statusEl = document.getElementById('ede-belge-status');
+    var urlEl = document.getElementById('ede-belgeUrl');
+    if (statusEl) statusEl.textContent = 'Yükleniyor...';
+    try {
+      var dataUrl = await new Promise(function(resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function(e) { resolve(e.target.result); };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      var url = await window._uploadBase64ToStorage(dataUrl, file['name'], 'expected-deliveries-belge');
+      if (urlEl) urlEl.value = url;
+      var fnameEsc = (window._uiEsc || window._esc || function(x){return x;})(file['name']);
+      if (statusEl) statusEl.innerHTML = '✓ Yüklendi: ' + fnameEsc + ' · <a href="' + url + '" target="_blank" rel="noopener" style="color:var(--ac)">Görüntüle</a> · <button type="button" onclick="window._edBelgeKaldir && window._edBelgeKaldir()" style="background:none;border:none;cursor:pointer;color:#E0574F;font-size:11px;font-family:inherit;padding:0">🗑️ Kaldır</button>';
+      window.toast?.('Belge yüklendi', 'ok');
+    } catch (err) {
+      window.toast?.('Yükleme başarısız: ' + (err && err.message || String(err)), 'err');
+      if (statusEl) statusEl.textContent = 'Belge yok';
+    }
+  };
+
+  window._edBelgeKaldir = function() {
+    var urlEl = document.getElementById('ede-belgeUrl');
+    var statusEl = document.getElementById('ede-belge-status');
+    if (urlEl) urlEl.value = '';
+    if (statusEl) statusEl.textContent = 'Belge yok';
   };
 
   /* ─── PARÇA 2: DELIVERY MANAGEMENT ──────────────────────── */

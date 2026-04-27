@@ -31,8 +31,9 @@
 /* [CACHE-BUMP-2026-04-27-V44] MODAL-FIX-001 (autoFillKonteynUrl + 13 carrier) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V45] LOJ-1B-C2 (Sevkiyat & Takip 5 alan + auto-fill tracking URL) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V46] LOJ-1B-C3 (Tracking URL tek tıkla aç butonu) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v46';
-const CACHE_VERSION = '46.0.0';
+/* [CACHE-BUMP-2026-04-27-V47] LOJ-1B-C4 (Belge PDF Storage upload) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v47';
+const CACHE_VERSION = '47.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
