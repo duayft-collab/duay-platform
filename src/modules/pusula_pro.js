@@ -3249,7 +3249,8 @@ window._ppGorevMentionDropdownAc = function(query, anchorEl) {
   document.body.appendChild(dropdown);
 };
 
-window._ppGorevMentionInsert = function(username) {
+window._ppGorevMentionInsert = function(label) {
+  // PP-GOREV-MENTION-CLEANUP-001: parametre adı 'label' (callsite displayName/ad/name/email zincirinden string geçiyor)
   try {
     var el = document.getElementById('ppf-aciklama');
     if (!el) return;
@@ -3271,7 +3272,7 @@ window._ppGorevMentionInsert = function(username) {
     mention.className = 'pp-mention';
     mention.contentEditable = 'false';
     mention.style.cssText = 'background:#E6F1FB;color:#3B82F6;padding:1px 5px;border-radius:3px;font-weight:500';
-    mention.textContent = '@' + username;
+    mention.textContent = '@' + label;
     deleteRange.insertNode(mention);
     var space = document.createTextNode(' ');
     if (mention.nextSibling) mention.parentNode.insertBefore(space, mention.nextSibling);
