@@ -2818,14 +2818,28 @@ window._ppAbonelikPanelRender = function(body, h) {
   abonelikler.forEach(function(a) {
     var yenileme = a.yenileme || '—';
     var kalan = yenileme&&yenileme!=='—' ? Math.ceil((new Date(yenileme)-new Date(bugun))/86400000) : null;
-    var kRenk = kalan!==null&&kalan<=30?'var(--pp-err)':'var(--pp-info)';
-    var kBg = kalan!==null&&kalan<=30?'#FCEBEB':'#E6F1FB';
+    // [PP-ABN-001 START] 4-kademe vade renk uyari sistemi
+    var kRenk, kBg, kLabel;
+    if (kalan === null) {
+      kRenk = 'var(--t3)'; kBg = 'transparent'; kLabel = '—';
+    } else if (kalan < 0) {
+      kRenk = '#DC2626'; kBg = '#FEE2E2'; kLabel = '🔴 ' + Math.abs(kalan) + ' gun gecikti';
+    } else if (kalan === 0) {
+      kRenk = '#EA580C'; kBg = '#FED7AA'; kLabel = '🟠 Bugun — acil';
+    } else if (kalan < 3) {
+      kRenk = '#EA580C'; kBg = '#FED7AA'; kLabel = '🟠 ' + kalan + ' gun — acil';
+    } else if (kalan < 7) {
+      kRenk = '#D97706'; kBg = '#FEF3C7'; kLabel = '🟡 ' + kalan + ' gun';
+    } else {
+      kRenk = '#16A34A'; kBg = '#DCFCE7'; kLabel = '🟢 ' + kalan + ' gun';
+    }
+    // [PP-ABN-001 END]
     h += '<div style="display:grid;grid-template-columns:100px 1fr 80px 100px 80px 60px;align-items:center;padding:8px 12px;border-bottom:0.5px solid var(--b)" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">';
     h += '<span style="font-size:var(--pp-meta);padding:2px 6px;border-radius:3px;background:#EEEDFE;color:#3C3489;font-weight:500">'+_ppEsc(a.kategori||'')+'</span>';
     h += '<div><div style="font-size:var(--pp-body);font-weight:500;color:var(--t)">'+_ppEsc(a.baslik)+'</div><div style="font-size:var(--pp-meta);color:var(--t3)">'+_ppEsc(a.periyot||'')+'</div></div>';
     h += '<div style="font-size:var(--pp-meta);color:var(--t2)">'+_ppEsc(a.tutar?(a.tutar+' '+a.para):'—')+'</div>';
     h += '<div style="font-size:var(--pp-meta);color:var(--t3)">'+yenileme+'</div>';
-    h += kalan!==null?'<span style="font-size:var(--pp-meta);padding:2px 6px;border-radius:3px;background:'+kBg+';color:'+kRenk+';font-weight:500">'+kalan+' gün</span>':'<span></span>';
+    h += '<span style="font-size:var(--pp-meta);padding:2px 6px;border-radius:3px;background:'+kBg+';color:'+kRenk+';font-weight:500">'+kLabel+'</span>';
     h += '<div style="display:flex;gap:3px;justify-content:flex-end" onclick="event.stopPropagation()"><button onclick="event.stopPropagation();window._ppAbonelikSil(\''+a.id+'\')" style="font-size:var(--pp-meta);padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--pp-err)">×</button></div>';
     h += '</div>';
   });
