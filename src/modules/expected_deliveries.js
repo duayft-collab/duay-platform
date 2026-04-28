@@ -185,6 +185,22 @@
       window.toast?.('confirmModal bulunamadı', 'err');
       return;
     }
+    /* LOJ-1B-H: 24h+ + non-admin → admin onayı talebi */
+    var __all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+    var __ed = __all.find(function(e){ return e.id === edId; });
+    if (__ed && !window._edIsAdmin() && window._edIsOlderThan24h(__ed)) {
+      window.confirmModal('Bu kayıt 24 saatten eski. Silme talebiniz admin onayına gönderilecek.', {
+        title: 'Onay Gerekli',
+        danger: false,
+        confirmText: 'Talep Gönder',
+        cancelText: 'İptal',
+        onConfirm: function() {
+          window._edRequestApproval('delete', edId, null);
+          window.toast?.('Silme talebi admin onayına gönderildi', 'ok');
+        }
+      });
+      return;
+    }
     window.confirmModal('Bu kaydı silmek istediğinizden emin misiniz?', {
       title: 'Kayıt Sil',
       danger: true,
@@ -261,6 +277,35 @@
     var idx = -1;
     for (var i = 0; i < list.length; i++) { if (list[i].id === edId) { idx = i; break; } }
     if (idx === -1) { window.toast?.('Kayıt bulunamadı', 'err'); return; }
+    /* LOJ-1B-H: 24h+ + non-admin → admin onayı talebi (tüm form payload) */
+    if (!window._edIsAdmin() && window._edIsOlderThan24h(list[idx])) {
+      var __payload = {
+        productName: productName, supplierId: supplierId, quantityTotal: quantityTotal,
+        unit: document.getElementById('ede-unit')?.value || list[idx].unit,
+        proformaDate: document.getElementById('ede-proformaDate')?.value || '',
+        estimatedDeliveryDate: document.getElementById('ede-estimatedDeliveryDate')?.value || '',
+        deliveryTermDays: parseInt(document.getElementById('ede-deliveryTermDays')?.value) || list[idx].deliveryTermDays,
+        toleranceDays: parseInt(document.getElementById('ede-toleranceDays')?.value) || 0,
+        yon: document.getElementById('ede-yon')?.value || 'GIDEN',
+        responsibleUserId: document.getElementById('ede-responsibleUserId')?.value || list[idx].responsibleUserId,
+        teklifOnaylayan: document.getElementById('ede-teklifOnaylayan')?.value || '',
+        teklifOnayTarihi: document.getElementById('ede-teklifOnayTarihi')?.value || '',
+        avansOdemeTarihi: document.getElementById('ede-avansOdemeTarihi')?.value || '',
+        satinAlmaSorumlusu: document.getElementById('ede-satinAlmaSorumlusu')?.value || '',
+        konteynerNo: document.getElementById('ede-konteynerNo')?.value || '',
+        armator: document.getElementById('ede-armator')?.value || '',
+        yuklemeFirmaAd: document.getElementById('ede-yuklemeFirmaAd')?.value || '',
+        trackingUrl: document.getElementById('ede-trackingUrl')?.value || '',
+        varisZamani: document.getElementById('ede-varisZamani')?.value || '',
+        belgeUrl: document.getElementById('ede-belgeUrl')?.value || '',
+        priority: document.getElementById('ede-priority')?.value || 'NORMAL',
+        status: document.getElementById('ede-status')?.value || list[idx].status
+      };
+      window._edRequestApproval('update', edId, __payload);
+      document.getElementById('ed-edit-modal')?.remove();
+      window.toast?.('Düzenleme talebi admin onayına gönderildi', 'ok');
+      return;
+    }
     list[idx].productName = productName;
     list[idx].supplierId = supplierId;
     list[idx].quantityTotal = quantityTotal;
@@ -410,6 +455,49 @@
     if (container && typeof window.renderEdList === 'function') {
       container.outerHTML = window.renderEdList();
     }
+  };
+
+  /* LOJ-1B-H: Pending actions (admin onay sistemi) — 24h+ non-admin sil/düzenle talepleri */
+  var PENDING_KEY = 'ak_ed_pending_v1';
+  window._edPendingActionsLoad = function() {
+    try { return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]') || []; } catch(e) { return []; }
+  };
+  window._edPendingActionsStore = function(list) {
+    try { localStorage.setItem(PENDING_KEY, JSON.stringify(list || [])); } catch(e) {}
+  };
+  window._edIsAdmin = function() {
+    if (typeof window.isAdmin === 'function') return !!window.isAdmin();
+    var cu = (typeof window.CU === 'function' ? window.CU() : null) || {};
+    return (cu.role || cu.rol) === 'admin';
+  };
+  window._edIsOlderThan24h = function(ed) {
+    if (!ed) return false;
+    var ts = 0;
+    if (ed.createdAt) {
+      ts = new Date(ed.createdAt).getTime();
+    } else if (ed.id && typeof ed.id === 'string') {
+      var m = ed.id.match(/^ed_(\d+)/);
+      if (m) ts = parseInt(m[1], 10);
+    }
+    if (!ts || isNaN(ts)) return false;
+    return (Date.now() - ts) > 86400000;
+  };
+  window._edRequestApproval = function(action, edId, payload) {
+    var cu = (typeof window.CU === 'function' ? window.CU() : null) || {};
+    var list = window._edPendingActionsLoad();
+    list.push({
+      id: 'pa_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      edId: edId,
+      action: action,
+      payload: payload || null,
+      requestedBy: cu.id || cu.uid || null,
+      requestedByName: cu.name || cu.displayName || '—',
+      requestedAt: new Date().toISOString(),
+      status: 'pending',
+      reviewedBy: null,
+      reviewedAt: null
+    });
+    window._edPendingActionsStore(list);
   };
 
   /* ─── PARÇA 2: DELIVERY MANAGEMENT ──────────────────────── */
