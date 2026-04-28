@@ -3326,6 +3326,19 @@ window._ppGorevMentionNotifGonder = function(taskId, taskBaslik, aciklamaHtml) {
     } catch(e) { console.warn('[PP-MENTION-NOTIF-FAIL]', e.message); }
   });
 };
+
+// PP-GOREV-NOTIF-LINK-001: bildirim paneli mention notif tıklama → görev edit modal
+// _goToTask (database.js:2663) setInterval içinde window.openPusDetail çağırır.
+// Bu fn'i biz tanımlayarak akışı tamamlıyoruz: panel aç → görev modal aç.
+window.openPusDetail = function(taskId) {
+  if (!taskId) return;
+  if (typeof window._ppGorevDuzenle === 'function') {
+    window._ppGorevDuzenle(taskId);
+  } else if (typeof window._ppGorevPeek === 'function') {
+    // Fallback: edit fn yoksa peek modal aç (görüntüleme)
+    window._ppGorevPeek(taskId);
+  }
+};
 // [PP-GOREV-MENTION-001 END]
 
 window._ppAbonelikSil = function(id) {
