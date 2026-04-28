@@ -41,9 +41,9 @@
 /* [CACHE-BUMP-2026-04-27-V54] LOJ-1B-I (Admin onay UI: pending modal) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V55] SETTINGS-001 (Admin rol bilgi paneli + 4 çelişki) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V56] LOJ-1B-F (pending approve/reject statusHistory audit) aktivasyon */
-/* [CACHE-BUMP-2026-04-28-V63] PP-ABN/ODM-001 (PusulaPro abonelik + rutin ödeme 4-kademe vade renk uyarı) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v63';
-const CACHE_VERSION = '63.0.0';
+/* [CACHE-BUMP-2026-04-28-V64] PP-ABN-MODAL-001 (Abonelik ekleme/düzenleme modal) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v64';
+const CACHE_VERSION = '64.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [

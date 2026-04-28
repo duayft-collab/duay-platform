@@ -2854,7 +2854,10 @@ window._ppAbonelikPanelRender = function(body, h) {
     h += '<div style="font-size:var(--pp-meta);color:var(--t2)">'+_ppEsc(a.tutar?(a.tutar+' '+a.para):'—')+'</div>';
     h += '<div style="font-size:var(--pp-meta);color:var(--t3)">'+yenileme+'</div>';
     h += '<span style="font-size:var(--pp-meta);padding:2px 6px;border-radius:3px;background:'+kBg+';color:'+kRenk+';font-weight:500">'+kLabel+'</span>';
-    h += '<div style="display:flex;gap:3px;justify-content:flex-end" onclick="event.stopPropagation()"><button onclick="event.stopPropagation();window._ppAbonelikSil(\''+a.id+'\')" style="font-size:var(--pp-meta);padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--pp-err)">×</button></div>';
+    h += '<div style="display:flex;gap:3px;justify-content:flex-end" onclick="event.stopPropagation()">'
+       + '<button onclick="event.stopPropagation();window._ppAbonelikModalAc(\''+a.id+'\')" style="font-size:var(--pp-meta);padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2)" title="Duzenle">✎</button>'
+       + '<button onclick="event.stopPropagation();window._ppAbonelikSil(\''+a.id+'\')" style="font-size:var(--pp-meta);padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--pp-err)" title="Sil">×</button>'
+       + '</div>';
     h += '</div>';
   });
   h += '</div>';
@@ -2862,16 +2865,149 @@ window._ppAbonelikPanelRender = function(body, h) {
   body.innerHTML = h;
 };
 
-window._ppAbonelikYeniAc = function() {
-  var baslik=prompt('Abonelik adı:'); if(!baslik||!baslik.trim()) return;
-  var kategori=prompt('Kategori (SaaS/Altyapı/Lisans):')||'SaaS';
-  var tutar=prompt('Aylık tutar (opsiyonel):')||'';
-  var para=prompt('Para birimi (TRY/USD/EUR):')||'USD';
-  var yenileme=prompt('Yenileme tarihi (YYYY-MM-DD):')||'';
-  var yeni={id:'AB-'+Date.now(),baslik:baslik.trim(),kategori:kategori,tutar:tutar,para:para,periyot:'Aylık',yenileme:yenileme,hatirlatmaGun:14,durum:'active',createdAt:_ppNow()};
-  var liste=_ppAbonelikLoad(); liste.unshift(yeni); _ppAbonelikStore(liste);
-  window.toast?.('Abonelik eklendi','ok'); window._ppModRender();
+// [PP-ABN-MODAL-001 START] Abonelik ekleme/duzenleme modal
+// _ppVadeRenkHesapla: PP-ABN-001 4-kademe mantik (helper, sadece modal canli onizleme kullanir)
+window._ppVadeRenkHesapla = function(yenileme) {
+  if (!yenileme || yenileme === '—') return { renk: 'var(--t3)', bg: 'transparent', label: '—' };
+  var bugun = (typeof _ppToday === 'function') ? _ppToday() : new Date().toISOString().slice(0,10);
+  var kalan = Math.ceil((new Date(yenileme) - new Date(bugun)) / 86400000);
+  if (isNaN(kalan)) return { renk: 'var(--t3)', bg: 'transparent', label: '—' };
+  if (kalan < 0)   return { renk: '#DC2626', bg: '#FEE2E2', label: '🔴 ' + Math.abs(kalan) + ' gun gecikti' };
+  if (kalan === 0) return { renk: '#EA580C', bg: '#FED7AA', label: '🟠 Bugun — acil' };
+  if (kalan < 3)   return { renk: '#EA580C', bg: '#FED7AA', label: '🟠 ' + kalan + ' gun — acil' };
+  if (kalan < 7)   return { renk: '#D97706', bg: '#FEF3C7', label: '🟡 ' + kalan + ' gun' };
+  return { renk: '#16A34A', bg: '#DCFCE7', label: '🟢 ' + kalan + ' gun' };
 };
+
+// Modal-icin field/select helper'lari (IIFE scope, modul-icin)
+function _ppAbnFld(id, lbl, ph, val, tip) {
+  var esc = window._ppEsc || function(s){ return String(s||'').replace(/[<>&"']/g, function(m){ return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'})[m]; }); };
+  return '<div><div style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">' + lbl + '</div>'
+       + '<input id="' + id + '" type="' + (tip || 'text') + '" placeholder="' + (ph || '') + '" value="' + esc(val||'') + '" '
+       + 'style="width:100%;font-size:var(--pp-body);padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>';
+}
+function _ppAbnSel(id, lbl, opts, sel, oninput) {
+  var optHtml = opts.map(function(o) { return '<option value="' + o + '"' + (o === sel ? ' selected' : '') + '>' + o + '</option>'; }).join('');
+  return '<div><div style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">' + lbl + '</div>'
+       + '<select id="' + id + '"' + (oninput ? ' oninput="' + oninput + '"' : '') + ' style="width:100%;font-size:var(--pp-body);padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">' + optHtml + '</select></div>';
+}
+
+window._ppAbonelikModalAc = function(id) {
+  var mevcut = id ? (_ppAbonelikLoad().find(function(x){ return x.id === id && !x.isDeleted; })) : null;
+  var v = mevcut || { id:'', baslik:'', kategori:'SaaS', tutar:'', para:'USD', periyot:'Aylık', yenileme:'', hatirlatmaGun:14, onem:'onemli', not:'' };
+  document.getElementById('ppabn-form-modal')?.remove();
+  var modal = document.createElement('div');
+  modal.id = 'ppabn-form-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
+  modal.onclick = function(e) { if (e.target === modal) window._ppAbonelikModalKapat(); };
+  // ESC handler — modal kapaninca temizle
+  window._ppAbnModalEscHandler = function(e) { if (e.key === 'Escape') window._ppAbonelikModalKapat(); };
+  document.addEventListener('keydown', window._ppAbnModalEscHandler);
+  var esc = window._ppEsc || function(s){ return String(s||'').replace(/[<>&"']/g, function(m){ return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'})[m]; }); };
+  var baslikUstu = id ? 'Aboneligi Duzenle: ' + esc(v.baslik) : 'Yeni Abonelik';
+  var saveTxt = id ? 'Guncelle' : 'Kaydet';
+  var ic = '<div style="background:var(--sf);border-radius:var(--pp-r-md);border:0.5px solid var(--b);width:560px;max-height:90vh;overflow-y:auto">';
+  ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)">';
+  ic += '<div style="font-size:14px;font-weight:500;color:var(--t)">' + baslikUstu + '</div>';
+  ic += '<button onclick="event.stopPropagation();window._ppAbonelikModalKapat()" style="font-size:22px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">×</button>';
+  ic += '</div>';
+  ic += '<div style="padding:20px;display:flex;flex-direction:column;gap:12px">';
+  ic += '<input type="hidden" id="ppabn-id" value="' + esc(v.id||'') + '">';
+  ic += _ppAbnFld('ppabn-baslik', 'BASLIK *', 'Google Workspace, Claude, Domain...', v.baslik);
+  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  ic += _ppAbnSel('ppabn-kategori', 'KATEGORI', ['SaaS','Altyapi','Lisans','Diger'], v.kategori);
+  ic += _ppAbnSel('ppabn-onem', 'ONEM', ['kritik','onemli','opsiyonel'], v.onem || 'onemli');
+  ic += '</div>';
+  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  ic += _ppAbnFld('ppabn-tutar', 'TUTAR', '0.00', v.tutar, 'number');
+  ic += _ppAbnSel('ppabn-para', 'PARA', ['TRY','USD','EUR','GBP'], v.para);
+  ic += '</div>';
+  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  ic += _ppAbnSel('ppabn-periyot', 'PERIYOT', ['Aylik','Yillik','Haftalik','3 Ayda 1','6 Ayda 1'], v.periyot);
+  ic += _ppAbnFld('ppabn-hatirlatmaGun', 'HATIRLATMA (gun)', '14', String(v.hatirlatmaGun || 14), 'number');
+  ic += '</div>';
+  ic += '<div><div style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);margin-bottom:4px">YENILEME TARIHI</div>';
+  ic += '<div style="display:flex;gap:8px;align-items:center">';
+  ic += '<input id="ppabn-yenileme" type="date" value="' + esc(v.yenileme || '') + '" oninput="window._ppAbnVadeOnizle()" style="flex:1;font-size:var(--pp-body);padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">';
+  ic += '<span id="ppabn-vade-onizle" style="font-size:var(--pp-meta);padding:4px 8px;border-radius:3px;font-weight:500"></span>';
+  ic += '</div></div>';
+  ic += '<div><div style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);margin-bottom:4px">NOT</div>';
+  ic += '<textarea id="ppabn-not" rows="2" placeholder="Opsiyonel" style="width:100%;font-size:var(--pp-body);padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box;resize:vertical">' + esc(v.not || '') + '</textarea></div>';
+  ic += '</div>';
+  ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2)">';
+  ic += '<div style="font-size:var(--pp-meta);color:var(--t3)">* Baslik zorunlu</div>';
+  ic += '<div style="display:flex;gap:8px">';
+  if (id) ic += '<button onclick="event.stopPropagation();window._ppAbonelikModalKapat();window._ppAbonelikSil(\'' + esc(v.id) + '\')" style="font-size:var(--pp-body);padding:7px 14px;border:0.5px solid #DC2626;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:#DC2626">Sil</button>';
+  ic += '<button onclick="event.stopPropagation();window._ppAbonelikModalKapat()" style="font-size:var(--pp-body);padding:7px 14px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Iptal</button>';
+  ic += '<button onclick="event.stopPropagation();window._ppAbonelikModalKaydet()" style="font-size:var(--pp-body);padding:7px 18px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">' + saveTxt + '</button>';
+  ic += '</div></div></div>';
+  /* XSS-RISK: _ppEsc() zorunlu — kullanici verisi esc() ile gecirildi */
+  modal.innerHTML = ic;
+  document.body.appendChild(modal);
+  setTimeout(function() {
+    document.getElementById('ppabn-baslik')?.focus();
+    window._ppAbnVadeOnizle();
+  }, 100);
+};
+
+window._ppAbonelikModalKaydet = function() {
+  var g = function(id) { return (document.getElementById(id)?.value || '').trim(); };
+  var baslik = g('ppabn-baslik');
+  if (!baslik) { window.toast?.('Baslik zorunlu', 'err'); return; }
+  var id = g('ppabn-id');
+  var liste = _ppAbonelikLoad();
+  var entry = {
+    baslik: baslik,
+    kategori: g('ppabn-kategori') || 'SaaS',
+    onem: g('ppabn-onem') || 'onemli',
+    tutar: g('ppabn-tutar'),
+    para: g('ppabn-para') || 'USD',
+    periyot: g('ppabn-periyot') || 'Aylik',
+    hatirlatmaGun: parseInt(g('ppabn-hatirlatmaGun')) || 14,
+    yenileme: g('ppabn-yenileme'),
+    not: g('ppabn-not'),
+    durum: 'active'
+  };
+  if (id) {
+    var i = liste.findIndex(function(x){ return x.id === id; });
+    if (i === -1) { window.toast?.('Kayit bulunamadi', 'err'); return; }
+    Object.assign(liste[i], entry, { updatedAt: _ppNow() });
+    window.toast?.('Abonelik guncellendi', 'ok');
+  } else {
+    entry.id = 'AB-' + Date.now();
+    entry.createdAt = _ppNow();
+    liste.unshift(entry);
+    window.toast?.('Abonelik eklendi', 'ok');
+  }
+  _ppAbonelikStore(liste);
+  window._ppAbonelikModalKapat();
+  window._ppModRender();
+};
+
+window._ppAbonelikModalKapat = function() {
+  document.getElementById('ppabn-form-modal')?.remove();
+  if (window._ppAbnModalEscHandler) {
+    document.removeEventListener('keydown', window._ppAbnModalEscHandler);
+    window._ppAbnModalEscHandler = null;
+  }
+};
+
+window._ppAbnVadeOnizle = function() {
+  var yenileme = document.getElementById('ppabn-yenileme')?.value || '';
+  var rd = window._ppVadeRenkHesapla(yenileme);
+  var span = document.getElementById('ppabn-vade-onizle');
+  if (span) {
+    span.textContent = rd.label;
+    span.style.background = rd.bg;
+    span.style.color = rd.renk;
+  }
+};
+
+// Geriye uyum: prompt() yerine modal calistir
+window._ppAbonelikYeniAc = function() {
+  window._ppAbonelikModalAc(null);
+};
+// [PP-ABN-MODAL-001 END]
 
 window._ppAbonelikSil = function(id) {
   window.confirmModal('Bu aboneli\u011fi silmek istedi\u011finizden emin misiniz?',{confirmText:'Sil',danger:true,onConfirm:function(){
