@@ -512,6 +512,22 @@
     if (action.status !== 'pending') { window.toast?.('Talep zaten incelenmiş', 'warn'); return; }
     var ok = false;
     if (action.action === 'delete') {
+      /* LOJ-1B-K: Approved delete audit log — soft delete sayesinde statusHistory korunur */
+      var __delList = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+      var __delIdx = -1;
+      for (var __m = 0; __m < __delList.length; __m++) { if (__delList[__m].id === action.edId) { __delIdx = __m; break; } }
+      if (__delIdx !== -1) {
+        if (!Array.isArray(__delList[__delIdx].statusHistory)) __delList[__delIdx].statusHistory = [];
+        var __cu = (typeof window['CU'] === 'function') ? window['CU']() : null;
+        var __cuId = __cu ? (__cu.id || __cu.uid) : null;
+        __delList[__delIdx].statusHistory.push({
+          type: 'approved_delete',
+          by: __cuId,
+          requestedBy: action.requestedBy || null,
+          at: new Date().toISOString()
+        });
+        if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(__delList);
+      }
       ok = window._edDelete(action.edId);
     } else if (action.action === 'update' && action.payload) {
       var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];

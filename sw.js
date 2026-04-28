@@ -41,8 +41,9 @@
 /* [CACHE-BUMP-2026-04-27-V54] LOJ-1B-I (Admin onay UI: pending modal) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V55] SETTINGS-001 (Admin rol bilgi paneli + 4 çelişki) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V56] LOJ-1B-F (pending approve/reject statusHistory audit) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v56';
-const CACHE_VERSION = '56.0.0';
+/* [CACHE-BUMP-2026-04-27-V57] LOJ-1B-K (approved delete audit log) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v57';
+const CACHE_VERSION = '57.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
