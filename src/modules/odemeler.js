@@ -7206,12 +7206,104 @@ window._saveQuickCari = function() {
     notes: (document.getElementById('qc-notes')?.value || '').trim(),
   };
   if (editId) entry.id = parseInt(editId);
+  // PCARI-001: Potansiyel cari için 10 zorunlu alan kontrolü
+  if (!editId && entry.cariType === 'potansiyel') {
+    var _pcEksik = [];
+    if (!entry.name || entry.name.length < 2) _pcEksik.push('Firma Adı');
+    if (!entry.type || (entry.type !== 'musteri' && entry.type !== 'tedarikci')) _pcEksik.push('Tip (Müşteri/Tedarikçi)');
+    if (!entry.vkn || !/^\d{10}$/.test(entry.vkn)) _pcEksik.push('VKN (10 hane)');
+    if (!entry.taxOffice) _pcEksik.push('Vergi Dairesi');
+    if (!entry.country) _pcEksik.push('Ülke');
+    if (!entry.city) _pcEksik.push('Şehir');
+    if (!entry.address) _pcEksik.push('Adres');
+    if (!entry.email || entry.email.indexOf('@') < 0) _pcEksik.push('E-posta');
+    if (!entry.phone) _pcEksik.push('Telefon');
+    if (!entry.web) _pcEksik.push('Web');
+    if (_pcEksik.length > 0) {
+      window.toast?.('Potansiyel cari için zorunlu: ' + _pcEksik.join(', '), 'err');
+      return;
+    }
+  }
   var result = saveCari(entry);
   if (result === null) return; // Hata varsa modal kapanmasın
   document.getElementById('mo-quick-cari')?.remove();
   window.toast?.(editId ? 'Cari güncellendi ✓' : 'Cari eklendi ✓', 'ok');
   renderOdemeler();
   if (typeof renderCari === 'function') renderCari();
+  // PCARI-001: Yeni potansiyel cari → 2. aşama satıcı bilgi modal
+  if (!editId && entry.cariType === 'potansiyel' && result && result.id) {
+    setTimeout(function() { window._pcariExtraModalAc?.(result.id); }, 200);
+  }
+};
+
+// PCARI-001: 2. aşama satıcı bilgileri modal (opsiyonel — güçlendirir)
+window._pcariExtraModalAc = function(cariId) {
+  if (!cariId) return;
+  document.getElementById('pcari-extra-modal')?.remove();
+  var Q = String.fromCharCode(39);
+  var html = ''
+    + '<div class="mo" id="pcari-extra-modal" style="z-index:10001">'
+    +   '<div class="moc" style="max-width:560px">'
+    +     '<div class="moh"><b>Potansiyel Cari — Satıcı Bilgileri (2/2)</b>'
+    +     '<span class="x" onclick="document.getElementById(' + Q + 'pcari-extra-modal' + Q + ')?.remove()">&times;</span></div>'
+    +     '<div class="mob" style="display:flex;flex-direction:column;gap:8px;padding:14px">'
+    +       '<div style="font-size:11px;color:#888;margin-bottom:4px">Bu adım opsiyoneldir, sonra da doldurabilirsiniz. Eski firmalar ve sektörler dolduruluyorsa en az 40 karakter olmalı.</div>'
+    +       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    +         '<div><div class="fl">Satıcı Adı</div><input class="fi" id="pcari-sat-ad" placeholder="Ad"></div>'
+    +         '<div><div class="fl">Satıcı Soyadı</div><input class="fi" id="pcari-sat-soyad" placeholder="Soyad"></div>'
+    +       '</div>'
+    +       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    +         '<div><div class="fl">Cep Telefonu</div><input class="fi" id="pcari-sat-cep" placeholder="+90..."></div>'
+    +         '<div><div class="fl">E-posta</div><input class="fi" id="pcari-sat-mail" type="email" placeholder="ornek@firma.com"></div>'
+    +       '</div>'
+    +       '<div><div class="fl">Pozisyon</div><input class="fi" id="pcari-sat-poz" placeholder="Satış Müdürü, Genel Md., vb."></div>'
+    +       '<div><div class="fl">Eski Çalıştığı Firmalar (40+ karakter)</div><textarea class="fi" id="pcari-sat-eski" rows="3" placeholder="Önceki firmalar, dönem, görev — en az 40 karakter"></textarea></div>'
+    +       '<div><div class="fl">Bildiği Sektörler (40+ karakter)</div><textarea class="fi" id="pcari-sat-sek" rows="3" placeholder="Tekstil, kimya, lojistik — uzmanlık tanımı, en az 40 karakter"></textarea></div>'
+    +     '</div>'
+    +     '<div class="mof" style="display:flex;justify-content:flex-end;gap:8px;padding:10px">'
+    +       '<button class="btn" onclick="document.getElementById(' + Q + 'pcari-extra-modal' + Q + ')?.remove()">Sonra Doldur</button>'
+    +       '<button class="btn btnp" onclick="window._pcariSaveSatici?.(' + parseInt(cariId) + ')">Kaydet</button>'
+    +     '</div>'
+    +   '</div>'
+    + '</div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  setTimeout(function() { document.getElementById('pcari-sat-ad')?.focus(); }, 50);
+};
+
+window._pcariSaveSatici = function(cariId) {
+  if (!cariId) return;
+  var ad = (document.getElementById('pcari-sat-ad')?.value || '').trim();
+  var soyad = (document.getElementById('pcari-sat-soyad')?.value || '').trim();
+  var cep = (document.getElementById('pcari-sat-cep')?.value || '').trim();
+  var mail = (document.getElementById('pcari-sat-mail')?.value || '').trim();
+  var pozisyon = (document.getElementById('pcari-sat-poz')?.value || '').trim();
+  var eskiFirmalar = (document.getElementById('pcari-sat-eski')?.value || '').trim();
+  var sektorler = (document.getElementById('pcari-sat-sek')?.value || '').trim();
+  if (eskiFirmalar && eskiFirmalar.length < 40) {
+    window.toast?.('Eski firmalar dolu — 40+ karakter olmalı (daha detaylı yazın)', 'warn');
+    return;
+  }
+  if (sektorler && sektorler.length < 40) {
+    window.toast?.('Sektörler dolu — 40+ karakter olmalı (daha detaylı yazın)', 'warn');
+    return;
+  }
+  try {
+    var d = (typeof loadCari === 'function') ? loadCari() : [];
+    var c = d.find(function(x) { return x.id === parseInt(cariId); });
+    if (!c) { window.toast?.('Cari bulunamadı', 'err'); return; }
+    c.satici = { ad: ad, soyad: soyad, cep: cep, mail: mail, pozisyon: pozisyon, eskiFirmalar: eskiFirmalar, sektorler: sektorler };
+    if (!c.changeHistory) c.changeHistory = [];
+    var __cu = (typeof window['CU'] === 'function') ? window['CU']() : null;
+    var __ts = (typeof _nowTso === 'function') ? _nowTso() : new Date().toISOString();
+    c.changeHistory.push({ ts: __ts, by: __cu ? __cu.id : null, changes: ['Satıcı bilgileri eklendi'] });
+    if (typeof storeCari === 'function') storeCari(d);
+    document.getElementById('pcari-extra-modal')?.remove();
+    window.toast?.('Satıcı bilgileri kaydedildi ✓', 'ok');
+    if (typeof renderCari === 'function') renderCari();
+  } catch(e) {
+    console.warn('[PCARI-001 save]', e.message);
+    window.toast?.('Kayıt hatası: ' + e.message, 'err');
+  }
 };
 
 /**
