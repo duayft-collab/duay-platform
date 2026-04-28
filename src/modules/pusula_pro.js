@@ -3052,7 +3052,14 @@ window._ppOdemeModalAc = function(id, defaultTip) {
   ic += '</div>';
   ic += _ppOdmFld('ppodm-sigorta-sirket', 'SİGORTA ŞİRKETİ', 'Anadolu, Aksigorta...', v.sigortaSirket);
   ic += '</div>';
-  ic += '<div id="ppodm-other-placeholder" style="display:' + ((['abonelik','kira','fatura','egitim','servis','sigorta'].indexOf(v.tip) >= 0) ? 'none' : 'block') + ';padding:10px 12px;background:var(--s2);border:0.5px dashed var(--b);border-radius:5px;font-size:var(--pp-meta);color:var(--t3)">ⓘ Bu tipe özel alanlar PP-MODAL-CONDITIONAL-003 talimatında (kredi + diger)</div>';
+  /* PP-MODAL-CONDITIONAL-003: kredi tipine özel alanlar */
+  ic += '<div id="ppodm-kredi-fields" style="display:' + (v.tip === 'kredi' ? 'block' : 'none') + ';flex-direction:column;gap:12px">';
+  ic += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">';
+  ic += _ppOdmFld('ppodm-kredi-banka', 'BANKA / KURUM', 'Garanti, Akbank...', v.krediBanka);
+  ic += _ppOdmFld('ppodm-kredi-kalantaksit', 'KALAN TAKSİT', '0', v.krediKalanTaksit, 'number');
+  ic += _ppOdmFld('ppodm-kredi-faiz', 'FAİZ ORANI (%)', '0.00', v.krediFaiz, 'number');
+  ic += '</div></div>';
+  ic += '<div id="ppodm-other-placeholder" style="display:' + ((['abonelik','kira','fatura','egitim','servis','sigorta','kredi'].indexOf(v.tip) >= 0) ? 'none' : 'block') + ';padding:10px 12px;background:var(--s2);border:0.5px dashed var(--b);border-radius:5px;font-size:var(--pp-meta);color:var(--t3)">ⓘ Bu tipte özel alan yok, ortak bilgiler yeterli</div>';
   ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
   ic += _ppOdmSel('ppodm-kategori', 'KATEGORİ', ['SaaS','Altyapı','Lisans','Hizmet','Vergi','Diğer'], v.kategori || 'SaaS');
   ic += _ppOdmSel('ppodm-onem', 'ÖNEM', ['kritik','onemli','opsiyonel'], v.onem || 'onemli');
@@ -3135,7 +3142,10 @@ window._ppOdemeTipSec = function(tip) {
   if (egitimFields) egitimFields.style.display = (tip === 'egitim') ? 'block' : 'none';
   if (servisFields) servisFields.style.display = (tip === 'servis') ? 'block' : 'none';
   if (sigortaFields) sigortaFields.style.display = (tip === 'sigorta') ? 'block' : 'none';
-  if (otherPh) otherPh.style.display = ((['abonelik','kira','fatura','egitim','servis','sigorta'].indexOf(tip) >= 0) ? 'none' : 'block');
+  /* PP-MODAL-CONDITIONAL-003: kredi toggle */
+  var krediFields = document.getElementById('ppodm-kredi-fields');
+  if (krediFields) krediFields.style.display = (tip === 'kredi') ? 'block' : 'none';
+  if (otherPh) otherPh.style.display = ((['abonelik','kira','fatura','egitim','servis','sigorta','kredi'].indexOf(tip) >= 0) ? 'none' : 'block');
 };
 
 // Tutar yapısı seç (chip click handler)
@@ -3223,6 +3233,10 @@ window._ppOdemeModalKaydet = function() {
     sigortaPolice: g('ppodm-sigorta-police'),
     sigortaTipi: g('ppodm-sigorta-tipi') || 'kasko',
     sigortaSirket: g('ppodm-sigorta-sirket'),
+    /* PP-MODAL-CONDITIONAL-003: kredi tipine özel field'lar */
+    krediBanka: g('ppodm-kredi-banka'),
+    krediKalanTaksit: parseFloat(g('ppodm-kredi-kalantaksit')) || 0,
+    krediFaiz: parseFloat(g('ppodm-kredi-faiz')) || 0,
     kategori: g('ppodm-kategori') || 'SaaS',
     onem: g('ppodm-onem') || 'onemli',
     tutarYapisi: g('ppodm-tutarYapisi') || 'sabit',
