@@ -41,9 +41,9 @@
 /* [CACHE-BUMP-2026-04-27-V54] LOJ-1B-I (Admin onay UI: pending modal) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V55] SETTINGS-001 (Admin rol bilgi paneli + 4 çelişki) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V56] LOJ-1B-F (pending approve/reject statusHistory audit) aktivasyon */
-/* [CACHE-BUMP-2026-04-28-V69] AT-SCHEMA-BRIDGE-001 (Alış Teklifi schema bridge + _saV2 export) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v69';
-const CACHE_VERSION = '69.0.0';
+/* [CACHE-BUMP-2026-04-28-V70] PP-GOREV-NOTIF-LINK-002 (setInterval limit 30 → 60, yavaş cihaz desteği) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v70';
+const CACHE_VERSION = '70.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [

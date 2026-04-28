@@ -2678,7 +2678,7 @@ window._goToTask = function(tid) {
       clearInterval(interval);
       window.openPusDetail(tid);
     }
-    if (attempts > 30) clearInterval(interval);
+    if (attempts > 60) clearInterval(interval); /* PP-GOREV-NOTIF-LINK-002: 30 → 60 (12sn limit, yavaş cihaz desteği) */
   }, 200);
 };
 
