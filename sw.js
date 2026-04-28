@@ -41,9 +41,9 @@
 /* [CACHE-BUMP-2026-04-27-V54] LOJ-1B-I (Admin onay UI: pending modal) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V55] SETTINGS-001 (Admin rol bilgi paneli + 4 çelişki) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V56] LOJ-1B-F (pending approve/reject statusHistory audit) aktivasyon */
-/* [CACHE-BUMP-2026-04-28-V61] SEC-FIX-SW-001 (Firebase tam SW bypass — admin real-time sync) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v61';
-const CACHE_VERSION = '61.0.0';
+/* [CACHE-BUMP-2026-04-28-V62] URUN-RENDER-FIX-001 (ürün field schema bridge — duayName/urunAdi mirror) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v62';
+const CACHE_VERSION = '62.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
