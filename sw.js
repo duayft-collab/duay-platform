@@ -43,8 +43,9 @@
 /* [CACHE-BUMP-2026-04-27-V56] LOJ-1B-F (pending approve/reject statusHistory audit) aktivasyon */
 /* [CACHE-BUMP-2026-04-28-V75] PP-MODAL-CONDITIONAL-003 (Kredi + Diger placeholder, 8 TİP TAMAMLANDI) aktivasyon */
 /* [CACHE-BUMP-2026-04-28-V76] SW-PRECACHE-AUTOSYNC-001 (PRECACHE_URLS otomatik senkron) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v76';
-const CACHE_VERSION = '76.0.0';
+/* [CACHE-BUMP-2026-04-28-V77] DEAD-CORE-CLEANUP-001 (7 dead file silindi + storage_audit taşındı) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v77';
+const CACHE_VERSION = '77.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
@@ -58,11 +59,6 @@ const PRECACHE_URLS = [
   '/src/i18n/translations.js',
   '/src/core/idb.js',
   '/src/core/smart_storage.js',
-  '/src/core/module_async_helpers.js',
-  '/src/core/event_bus.js',
-  '/src/core/events.js',
-  '/src/core/state_machine.js',
-  '/src/core/task_engine.js',
   '/src/core/database.js',
   '/src/modules/storage_monitor.js',
   '/src/modules/form_draft_engine.js',
