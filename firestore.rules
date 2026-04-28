@@ -6,19 +6,19 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
+    // [SEC-004] public create kapatıldı — kod tarafı kullanmıyor, anonim spam riski
     match /ihracat_uploads/{doc} {
-      allow create: if true;
-      allow read, update, delete: if request.auth != null;
+      allow read, write: if request.auth != null;
     }
 
+    // [SEC-004] public create kapatıldı — kod tarafı kullanmıyor, sahte teklif riski
     match /ihracat_teklifler/{doc} {
-      allow create: if true;
-      allow read, update, delete: if request.auth != null;
+      allow read, write: if request.auth != null;
     }
 
+    // [SEC-004] public read+create kapatıldı — PII (davetiye email/firma) sızıntı riski
     match /ihracat_teklif_davetler/{doc} {
-      allow read, create: if true;
-      allow update, delete: if request.auth != null;
+      allow read, write: if request.auth != null;
     }
   }
 }
