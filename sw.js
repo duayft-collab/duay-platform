@@ -41,9 +41,9 @@
 /* [CACHE-BUMP-2026-04-27-V54] LOJ-1B-I (Admin onay UI: pending modal) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V55] SETTINGS-001 (Admin rol bilgi paneli + 4 çelişki) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V56] LOJ-1B-F (pending approve/reject statusHistory audit) aktivasyon */
-/* [CACHE-BUMP-2026-04-28-V68] PP-GOREV-NOTIF-LINK-001 (Bildirim mention click → görev edit modal) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v68';
-const CACHE_VERSION = '68.0.0';
+/* [CACHE-BUMP-2026-04-28-V69] AT-SCHEMA-BRIDGE-001 (Alış Teklifi schema bridge + _saV2 export) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v69';
+const CACHE_VERSION = '69.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [

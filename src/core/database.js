@@ -2039,8 +2039,10 @@ function storeNavlunSatis(d) { var _now2=new Date().toISOString(); d=Array.isArr
 /** @param {Array} d */ function storeUrunler(d) { /* [URUN-RENDER-FIX-001] yazma öncesi field bridge */ d = Array.isArray(d) ? d.map(window._normalizeUrunFields || function(x){return x;}) : d; var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; if(Array.isArray(d) && d.length > 2000) { var aktif = d.filter(function(r){return !r.isDeleted;}); var silinen = d.filter(function(r){return r.isDeleted;}).sort(function(a,b){return (b.deletedAt||'')>(a.deletedAt||'')?1:-1;}).slice(0,200); d = aktif.concat(silinen); } /* URUN-BASE64-STRIP-001: base64 görsel sadece Firestore'a gitsin, localStorage'a değil */ var dLocal = d.map(function(u) { if (u && typeof u.image === 'string' && u.image.startsWith('data:')) { var copy = Object.assign({}, u); copy._hasImage = true; delete copy.image; return copy; } return u; }); _write(KEYS.urunler, dLocal); var _fp = _fsPath('urunler'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadIhracatListesi() { var d = _read(KEYS.ihracatListesi); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array} d */ function storeIhracatListesi(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; _write(KEYS.ihracatListesi, d); var _fp = _fsPath('ihracatListesi'); if (_fp) _syncFirestore(_fp, d); }
-/** @returns {Array} */ function loadAlisTeklifleri() { var d = _read(KEYS.alisTeklifleri); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.filter(function(k) { return !k.isDeleted; })); }
+/** @returns {Array} */ function loadAlisTeklifleri() { var d = _read(KEYS.alisTeklifleri); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(window._normalizeAlisTeklifFields || function(x){return x;}).filter(function(k) { return !k.isDeleted; })); /* [AT-SCHEMA-BRIDGE-001] eski LS kayıtları için okuma anında bridge */ }
 /** @param {Array} d */ function storeAlisTeklifleri(d) {
+  /* [AT-SCHEMA-BRIDGE-001] yazma öncesi field bridge */
+  if (Array.isArray(d)) d = d.map(window._normalizeAlisTeklifFields || function(x){return x;});
   /* TOMBSTONE-PRESERVE-001: mevcut localStorage'daki tombstone'lar store'da kaybolmasın */
   if (Array.isArray(d)) {
     try {
@@ -4011,6 +4013,26 @@ window._normalizeUrunFields = function(u) {
   return u;
 };
 // [URUN-RENDER-FIX-001 END]
+
+// [AT-SCHEMA-BRIDGE-001 START] AlışTeklifi schema bridge — satirlar↔urunler mirror + standartAdi↔urunAdi
+// app_patch.js 'satirlar' yazıyor, satin_alma_v2 'urunler' yazıyor — render fn'leri sadece 'urunler' okuyor.
+// Idempotent: sadece eksik field doldurulur. Mevcut değerlere dokunulmaz.
+window._normalizeAlisTeklifFields = function(t) {
+  if (!t || typeof t !== 'object') return t;
+  // Top-level: satirlar ↔ urunler two-way mirror
+  if (Array.isArray(t.satirlar) && !Array.isArray(t.urunler)) t.urunler = t.satirlar;
+  if (Array.isArray(t.urunler) && !Array.isArray(t.satirlar)) t.satirlar = t.urunler;
+  // Alt array içi: standartAdi ↔ urunAdi mirror (app_patch satirlar.standartAdi, render urunler.urunAdi)
+  if (Array.isArray(t.urunler)) {
+    t.urunler.forEach(function(u) {
+      if (!u || typeof u !== 'object') return;
+      if (u.standartAdi && !u.urunAdi)  u.urunAdi  = u.standartAdi;
+      if (u.urunAdi  && !u.standartAdi) u.standartAdi = u.urunAdi;
+    });
+  }
+  return t;
+};
+// [AT-SCHEMA-BRIDGE-001 END]
 
 window._migrateRecord = function(kayit) {
   if (!kayit || typeof kayit !== 'object') return kayit;

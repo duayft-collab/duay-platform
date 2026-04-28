@@ -7,6 +7,10 @@
 function _saV2IlkUrun(t) { return (t.urunler && t.urunler.length) ? t.urunler[0] : t; }
 function _saV2UrunAdi(t) { var u = _saV2IlkUrun(t); return u.urunAdi || u.turkceAdi || t.urunAdi || '\u2014'; }
 function _saV2DuayKodu(t) { var u = _saV2IlkUrun(t); return u.duayKodu || t.duayKodu || '\u2014'; }
+/* [AT-SCHEMA-BRIDGE-001] window export — callsite'lerin window._saV2X?.() pattern'i çalışsın */
+window._saV2IlkUrun = _saV2IlkUrun;
+window._saV2UrunAdi = _saV2UrunAdi;
+window._saV2DuayKodu = _saV2DuayKodu;
 function _saV2AlisF(t) { if (t.toplamTutar) return parseFloat(t.toplamTutar) || 0; var u = _saV2IlkUrun(t); return parseFloat(u.alisF || t.alisF) || 0; }
 function _saV2Para(t) { if (t.toplamPara) return t.toplamPara; var u = _saV2IlkUrun(t); return u.para || t.para || 'USD'; }
 function _saV2Miktar(t) { if (t.urunler && t.urunler.length) return t.urunler.reduce(function(s, u) { return s + (parseFloat(u.miktar) || 0); }, 0); return parseFloat(t.miktar) || 0; }
