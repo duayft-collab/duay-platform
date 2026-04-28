@@ -41,9 +41,9 @@
 /* [CACHE-BUMP-2026-04-27-V54] LOJ-1B-I (Admin onay UI: pending modal) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V55] SETTINGS-001 (Admin rol bilgi paneli + 4 çelişki) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V56] LOJ-1B-F (pending approve/reject statusHistory audit) aktivasyon */
-/* [CACHE-BUMP-2026-04-28-V71] PP-GOREV-VISUAL-001 (Görev modal emoji picker + kart render emoji prefix) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v71';
-const CACHE_VERSION = '71.0.0';
+/* [CACHE-BUMP-2026-04-28-V72] PP-GOREV-VISUAL-002 (Görev modal hero banner gradient + öncelik sync) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v72';
+const CACHE_VERSION = '72.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [

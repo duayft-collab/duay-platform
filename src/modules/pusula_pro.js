@@ -174,6 +174,22 @@ window._ppOncelikSec = function(btn, val) {
   btn.style.background = r2 || 'var(--s2)'; btn.style.color = r2 ? '#fff' : 'var(--t)';
   var inp = document.getElementById('ppf-oncelik');
   if (inp) inp.value = val;
+  /* PP-GOREV-VISUAL-002: hero banner gradient + label sync */
+  var hero = document.getElementById('pp-gorev-hero');
+  var heroLabel = document.getElementById('pp-gorev-hero-label');
+  if (hero) {
+    var grads = {
+      kritik: 'linear-gradient(135deg, #FCEBEB 0%, #F8D7DA 100%)',
+      yuksek: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)',
+      normal: 'linear-gradient(135deg, #E6F1FB 0%, #CCE0F4 100%)',
+      dusuk:  'linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%)'
+    };
+    hero.style.background = grads[val] || grads.normal;
+  }
+  if (heroLabel) {
+    var labels = { kritik: 'KRİTİK ÖNCELİK', yuksek: 'YÜKSEK ÖNCELİK', normal: 'NORMAL ÖNCELİK', dusuk: 'DÜŞÜK ÖNCELİK' };
+    heroLabel.textContent = labels[val] || labels.normal;
+  }
 };
 
 /* PUSULA-FORM-V2-001: Etiket ekle/kaldır */
@@ -1139,6 +1155,10 @@ window._ppYeniGorev = function() {
     +'<button onclick="event.stopPropagation();window._ppSablonYonet()" style="font-size:var(--pp-meta);padding:4px 10px;border:0.5px solid var(--b);border-radius:var(--pp-r-sm);background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">⚙ Yönet</button>'
     +'</div>'
     +'<button onclick="event.stopPropagation();window._ppDuzenleHedef=null;document.getElementById(\'pp-gorev-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1;flex-shrink:0">×</button></div>'
+    /* PP-GOREV-VISUAL-002: hero banner — öncelik bazlı gradient + label */
+    +'<div id="pp-gorev-hero" style="height:50px;background:linear-gradient(135deg, #E6F1FB 0%, #CCE0F4 100%);display:flex;align-items:center;justify-content:flex-end;padding:0 20px;border-bottom:0.5px solid var(--b)">'
+    +'<span id="pp-gorev-hero-label" style="font-size:var(--pp-meta);color:var(--t2);font-weight:500;letter-spacing:.06em">NORMAL ÖNCELİK</span>'
+    +'</div>'
     +'<div style="padding:20px;display:flex;flex-direction:column;gap:14px">'
     /* PP-GOREV-VISUAL-001: emoji picker chip row */
     +'<div style="display:flex;align-items:center;gap:6px;padding:4px 0">'
@@ -2073,6 +2093,10 @@ window._ppGorevDuzenle = function(id) {
     if (typeof window._ppEmojiSec === 'function') window._ppEmojiSec(t.emoji || '📋');
     var d = document.getElementById('ppf-departman'); if (d) d.value = t.departman || '';
     var o = document.getElementById('ppf-oncelik'); if (o) o.value = t.oncelik || 'normal';
+    /* PP-GOREV-VISUAL-002: hero banner preload (öncelik sync) */
+    var _onc = t.oncelik || 'normal';
+    var oncelikBtn = document.querySelector('#ppf-oncelik-pills button[data-val="' + _onc + '"]');
+    if (oncelikBtn && typeof window._ppOncelikSec === 'function') window._ppOncelikSec(oncelikBtn, _onc);
     var s = document.getElementById('ppf-durum'); if (s) s.value = t.durum || 'plan';
     var bt = document.getElementById('ppf-basT'); if (bt) bt.value = t.basT || '';
     var bit = document.getElementById('ppf-bitT'); if (bit) bit.value = t.bitTarih || '';
