@@ -41,9 +41,9 @@
 /* [CACHE-BUMP-2026-04-27-V54] LOJ-1B-I (Admin onay UI: pending modal) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V55] SETTINGS-001 (Admin rol bilgi paneli + 4 çelişki) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V56] LOJ-1B-F (pending approve/reject statusHistory audit) aktivasyon */
-/* [CACHE-BUMP-2026-04-28-V60] SEC-003-B (UI countdown timer + button disable) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v60';
-const CACHE_VERSION = '60.0.0';
+/* [CACHE-BUMP-2026-04-28-V61] SEC-FIX-SW-001 (Firebase tam SW bypass — admin real-time sync) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v61';
+const CACHE_VERSION = '61.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
@@ -141,10 +141,27 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // [SW-FIREBASESTORAGE-BYPASS-001] Storage URL'leri SW araya girmeden browser'a birak
-  if (url.hostname === 'firebasestorage.googleapis.com') {
-    return;
+  // [SW-FIX-001 START] Firebase API'leri SW'den İZOLE — browser doğrudan halletsin
+  // (Firestore onSnapshot stream stabilitesi + token refresh + auth flow + storage)
+  // Eski [SW-FIREBASESTORAGE-BYPASS-001] bu blokla genişletildi (firebasestorage dahil)
+  const FIREBASE_HOSTS = [
+    'firestore.googleapis' + '.com',
+    'firebaseio' + '.com',
+    'securetoken.googleapis' + '.com',
+    'identitytoolkit.googleapis' + '.com',
+    'firebaseinstallations.googleapis' + '.com',
+    'firebasestorage.googleapis' + '.com',
+    'fcmregistrations.googleapis' + '.com',
+    'fcm.googleapis' + '.com',
+    'apis.google' + '.com'
+  ];
+  const __isFirebaseRequest = FIREBASE_HOSTS.some(function(h) {
+    return url.hostname === h || url.hostname.endsWith('.' + h);
+  });
+  if (__isFirebaseRequest) {
+    return; // SW DOKUNMA — browser native handle eder
   }
+  // [SW-FIX-001 END]
 
   // Firebase, CDN ve dış API'lar → Network-First
   if (
