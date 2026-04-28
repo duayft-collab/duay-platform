@@ -520,6 +520,15 @@
       if (idx !== -1) {
         Object.assign(list[idx], action.payload);
         list[idx].updatedAt = new Date().toISOString();
+        /* LOJ-1B-F: Approved update audit log */
+        if (!Array.isArray(list[idx].statusHistory)) list[idx].statusHistory = [];
+        list[idx].statusHistory.push({
+          type: 'approved_update',
+          by: (window.CU && window.CU() && (window.CU().id || window.CU().uid)) || null,
+          requestedBy: action.requestedBy || null,
+          fields: Object.keys(action.payload),
+          at: new Date().toISOString()
+        });
         if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(list);
         ok = true;
       }
@@ -545,6 +554,21 @@
     if (ai === -1) { window.toast?.('Talep bulunamadı', 'err'); return; }
     if (actions[ai].status !== 'pending') { window.toast?.('Talep zaten incelenmiş', 'warn'); return; }
     var cu = (typeof window.CU === 'function' ? window.CU() : null) || {};
+    /* LOJ-1B-F: Rejected action audit log — ed bulunduysa statusHistory'ye yaz */
+    var __action = actions[ai];
+    var __edList = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+    var __edIdx = -1;
+    for (var __k = 0; __k < __edList.length; __k++) { if (__edList[__k].id === __action.edId) { __edIdx = __k; break; } }
+    if (__edIdx !== -1) {
+      if (!Array.isArray(__edList[__edIdx].statusHistory)) __edList[__edIdx].statusHistory = [];
+      __edList[__edIdx].statusHistory.push({
+        type: 'rejected_' + __action.action,
+        by: cu.id || cu.uid || null,
+        requestedBy: __action.requestedBy || null,
+        at: new Date().toISOString()
+      });
+      if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(__edList);
+    }
     actions[ai].status = 'rejected';
     actions[ai].reviewedBy = cu.id || cu.uid || null;
     actions[ai].reviewedByName = cu.name || cu.displayName || '—';
