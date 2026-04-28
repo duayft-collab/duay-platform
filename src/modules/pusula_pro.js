@@ -2794,7 +2794,10 @@ window._ppOdemePanelRender = function(body, h) {
     h += '<div style="font-size:var(--pp-meta);color:var(--t2)">'+_ppEsc(o.tutar?(o.tutar+' '+o.para):'—')+'</div>';
     h += '<div style="font-size:var(--pp-meta);color:var(--t3)">'+sonraki+'</div>';
     h += '<span style="font-size:var(--pp-meta);padding:2px 6px;border-radius:3px;background:'+kBg+';color:'+kRenk+';font-weight:500">'+kLabel+'</span>';
-    h += '<div style="display:flex;gap:3px;justify-content:flex-end" onclick="event.stopPropagation()"><button onclick="event.stopPropagation();window._ppOdemeSil(\''+o.id+'\')" style="font-size:var(--pp-meta);padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--pp-err)">×</button></div>';
+    h += '<div style="display:flex;gap:3px;justify-content:flex-end" onclick="event.stopPropagation()">'
+       + '<button onclick="event.stopPropagation();window._ppOdemeModalAc(\''+o.id+'\', \''+(o.tip||'fatura')+'\')" style="font-size:var(--pp-meta);padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t2)" title="Düzenle">✎</button>'
+       + '<button onclick="event.stopPropagation();window._ppOdemeSil(\''+o.id+'\')" style="font-size:var(--pp-meta);padding:3px 6px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--pp-err)" title="Sil">×</button>'
+       + '</div>';
     h += '</div>';
   });
   h += '</div>';
@@ -2803,14 +2806,8 @@ window._ppOdemePanelRender = function(body, h) {
 };
 
 window._ppOdemeYeniAc = function() {
-  var baslik=prompt('Ödeme adı:'); if(!baslik||!baslik.trim()) return;
-  var kategori=prompt('Kategori (Kira/Fatura/Hizmet/Vergi):')||'Fatura';
-  var tutar=prompt('Tutar (opsiyonel):')||'';
-  var periyotDetay=prompt('Ne zaman? (örn: Her ayın 15. günü):')||'';
-  var yeni={id:'OD-'+Date.now(),baslik:baslik.trim(),kategori:kategori,tutar:tutar,para:'TRY',periyot:'Aylık',periyotDetay:periyotDetay,sorumlu:'',oncelik:'Normal',hatirlatmaGun:3,durum:'active',createdAt:_ppNow()};
-  yeni.sonrakiCalisma=window._ppTakvimSonrakiHesapla?.(yeni)||null;
-  var liste=_ppOdemeLoad(); liste.unshift(yeni); _ppOdemeStore(liste);
-  window.toast?.('Ödeme eklendi','ok'); window._ppModRender();
+  // PP-MODAL-MERGE-001: prompt() yerine birleşik modal, default tip 'fatura'
+  return window._ppOdemeModalAc(null, 'fatura');
 };
 
 window._ppOdemeSil = function(id) {
@@ -2865,8 +2862,10 @@ window._ppAbonelikPanelRender = function(body, h) {
   body.innerHTML = h;
 };
 
-// [PP-ABN-MODAL-001 START] Abonelik ekleme/duzenleme modal
-// _ppVadeRenkHesapla: PP-ABN-001 4-kademe mantik (helper, sadece modal canli onizleme kullanir)
+// [PP-MODAL-MERGE-001 START] Birleşik ödeme modal — 8 tip, conditional alanlar, yıllık hesap
+// PP-ABN-MODAL-001'i genişletir. Geriye uyum: _ppAbonelikModalAc/_ppAbonelikYeniAc wrapper'ları korunur.
+
+// _ppVadeRenkHesapla: 4-kademe vade renk helper (PP-ABN-001 mantığı)
 window._ppVadeRenkHesapla = function(yenileme) {
   if (!yenileme || yenileme === '—') return { renk: 'var(--t3)', bg: 'transparent', label: '—' };
   var bugun = (typeof _ppToday === 'function') ? _ppToday() : new Date().toISOString().slice(0,10);
@@ -2879,123 +2878,211 @@ window._ppVadeRenkHesapla = function(yenileme) {
   return { renk: '#16A34A', bg: '#DCFCE7', label: '🟢 ' + kalan + ' gun' };
 };
 
-// Modal-icin field/select helper'lari (IIFE scope, modul-icin)
-function _ppAbnFld(id, lbl, ph, val, tip) {
-  var esc = window._ppEsc || function(s){ return String(s||'').replace(/[<>&"']/g, function(m){ return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'})[m]; }); };
+// Field/Select helper'ları (rename: _ppAbn → _ppOdm, IIFE scope)
+function _ppOdmFld(id, lbl, ph, val, tip) {
+  var esc = window._ppEsc || function(s){ return String(s||'').replace(/[<>&"']/g, function(m){ return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[m]; }); };
   return '<div><div style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">' + lbl + '</div>'
        + '<input id="' + id + '" type="' + (tip || 'text') + '" placeholder="' + (ph || '') + '" value="' + esc(val||'') + '" '
+       + (id === 'ppodm-tutar' ? 'oninput="window._ppOdemeYillikHesap()" ' : '')
        + 'style="width:100%;font-size:var(--pp-body);padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box"></div>';
 }
-function _ppAbnSel(id, lbl, opts, sel, oninput) {
+function _ppOdmSel(id, lbl, opts, sel) {
   var optHtml = opts.map(function(o) { return '<option value="' + o + '"' + (o === sel ? ' selected' : '') + '>' + o + '</option>'; }).join('');
   return '<div><div style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">' + lbl + '</div>'
-       + '<select id="' + id + '"' + (oninput ? ' oninput="' + oninput + '"' : '') + ' style="width:100%;font-size:var(--pp-body);padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">' + optHtml + '</select></div>';
+       + '<select id="' + id + '"' + ((id === 'ppodm-periyot' || id === 'ppodm-para') ? ' onchange="window._ppOdemeYillikHesap()"' : '') + ' style="width:100%;font-size:var(--pp-body);padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">' + optHtml + '</select></div>';
 }
 
-window._ppAbonelikModalAc = function(id) {
-  var mevcut = id ? (_ppAbonelikLoad().find(function(x){ return x.id === id && !x.isDeleted; })) : null;
-  var v = mevcut || { id:'', baslik:'', kategori:'SaaS', tutar:'', para:'USD', periyot:'Aylık', yenileme:'', hatirlatmaGun:14, onem:'onemli', not:'' };
-  document.getElementById('ppabn-form-modal')?.remove();
+window._ppOdemeModalAc = function(id, defaultTip) {
+  // Edit ise mevcut kayıttan tipi çek (tip değişimini engelle, kayıt iki LS'den birinde)
+  var mevcut = null;
+  if (id) {
+    var aboneList = (typeof _ppAbonelikLoad === 'function') ? _ppAbonelikLoad() : [];
+    var odmList = (typeof _ppOdemeLoad === 'function') ? _ppOdemeLoad() : [];
+    mevcut = aboneList.find(function(x){ return x.id === id && !x.isDeleted; }) || odmList.find(function(x){ return x.id === id && !x.isDeleted; });
+  }
+  var v = mevcut || {
+    id: '', baslik: '', tip: (defaultTip || 'abonelik'),
+    saglayici: '', plan: '', faydalanan: '',
+    kategori: 'SaaS', onem: 'onemli',
+    tutarYapisi: 'sabit', tutar: '', para: 'USD',
+    periyot: 'Aylik', odemeYontemi: 'kart', bankaTag: '',
+    hatirlatmaGun: 14, yenileme: '', etiketler: '', not: ''
+  };
+  if (mevcut && !v.tip) v.tip = (id.indexOf('AB-') === 0) ? 'abonelik' : 'fatura';
+  var isEdit = !!id;
+
+  document.getElementById('ppodm-form-modal')?.remove();
   var modal = document.createElement('div');
-  modal.id = 'ppabn-form-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
-  modal.onclick = function(e) { if (e.target === modal) window._ppAbonelikModalKapat(); };
-  // ESC handler — modal kapaninca temizle
-  window._ppAbnModalEscHandler = function(e) { if (e.key === 'Escape') window._ppAbonelikModalKapat(); };
-  document.addEventListener('keydown', window._ppAbnModalEscHandler);
-  var esc = window._ppEsc || function(s){ return String(s||'').replace(/[<>&"']/g, function(m){ return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'})[m]; }); };
-  var baslikUstu = id ? 'Aboneligi Duzenle: ' + esc(v.baslik) : 'Yeni Abonelik';
-  var saveTxt = id ? 'Guncelle' : 'Kaydet';
-  var ic = '<div style="background:var(--sf);border-radius:var(--pp-r-md);border:0.5px solid var(--b);width:560px;max-height:90vh;overflow-y:auto">';
+  modal.id = 'ppodm-form-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto';
+  modal.onclick = function(e) { if (e.target === modal) window._ppOdemeModalKapat(); };
+
+  // ESC handler — modal kapanınca temizle
+  window._ppOdmModalEscHandler = function(e) { if (e.key === 'Escape') window._ppOdemeModalKapat(); };
+  document.addEventListener('keydown', window._ppOdmModalEscHandler);
+
+  var esc = window._ppEsc || function(s){ return String(s||'').replace(/[<>&"']/g, function(m){ return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[m]; }); };
+  var baslikUstu = isEdit ? 'Düzenle: ' + esc(v.baslik) : 'Yeni Ödeme';
+  var saveTxt = isEdit ? 'Güncelle' : 'Kaydet';
+
+  // 8 tip chip data
+  var tipler = [
+    { tip: 'abonelik', label: 'Abonelik' },
+    { tip: 'fatura',   label: 'Fatura' },
+    { tip: 'egitim',   label: 'Eğitim' },
+    { tip: 'servis',   label: 'Servis' },
+    { tip: 'kira',     label: 'Kira' },
+    { tip: 'sigorta',  label: 'Sigorta' },
+    { tip: 'kredi',    label: 'Kredi' },
+    { tip: 'diger',    label: 'Diğer' }
+  ];
+  var chipBtnStyleNormal = 'padding:8px 4px;border:1.5px solid var(--b);border-radius:6px;background:var(--s2);cursor:pointer;font-family:inherit;font-size:var(--pp-meta);font-weight:400;color:var(--t2);transition:all .15s';
+  var chipBtnStyleActive = 'padding:8px 4px;border:1.5px solid var(--t);border-radius:6px;background:var(--sf);cursor:pointer;font-family:inherit;font-size:var(--pp-meta);font-weight:600;color:var(--t);transition:all .15s';
+  var chipDisabledExtra = isEdit ? ';opacity:.6;cursor:not-allowed;pointer-events:none' : '';
+  var chipsHtml = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">';
+  tipler.forEach(function(t) {
+    var aktif = (v.tip === t.tip);
+    var stil = (aktif ? chipBtnStyleActive : chipBtnStyleNormal) + (isEdit && !aktif ? chipDisabledExtra : '');
+    chipsHtml += '<button class="ppodm-tip-chip" data-tip="' + t.tip + '" '
+              + (isEdit ? '' : 'onclick="event.stopPropagation();window._ppOdemeTipSec(\'' + t.tip + '\')" ')
+              + 'style="' + stil + '">' + t.label + '</button>';
+  });
+  chipsHtml += '</div>';
+
+  // Tutar yapısı 2 chip
+  var yapiStilNormal = 'padding:5px 12px;border:1px solid var(--b);border-radius:4px;background:var(--s2);cursor:pointer;font-family:inherit;font-size:var(--pp-meta);color:var(--t2)';
+  var yapiStilActive = 'padding:5px 12px;border:1px solid var(--t);border-radius:4px;background:var(--sf);cursor:pointer;font-family:inherit;font-size:var(--pp-meta);font-weight:600;color:var(--t)';
+  var yapiHtml = '<div style="display:flex;gap:6px;align-items:center">'
+    + '<button class="ppodm-yapi-chip" data-yapi="sabit" onclick="event.stopPropagation();window._ppOdemeYapiSec(\'sabit\')" style="' + (v.tutarYapisi === 'sabit' ? yapiStilActive : yapiStilNormal) + '">Sabit</button>'
+    + '<button class="ppodm-yapi-chip" data-yapi="degisken" onclick="event.stopPropagation();window._ppOdemeYapiSec(\'degisken\')" style="' + (v.tutarYapisi === 'degisken' ? yapiStilActive : yapiStilNormal) + '">Değişken</button>'
+    + '<input type="hidden" id="ppodm-tutarYapisi" value="' + esc(v.tutarYapisi || 'sabit') + '">'
+    + '</div>';
+
+  var ic = '<div style="background:var(--sf);border-radius:var(--pp-r-md);border:0.5px solid var(--b);width:600px;max-height:90vh;overflow-y:auto;margin:auto">';
   ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)">';
   ic += '<div style="font-size:14px;font-weight:500;color:var(--t)">' + baslikUstu + '</div>';
-  ic += '<button onclick="event.stopPropagation();window._ppAbonelikModalKapat()" style="font-size:22px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">×</button>';
+  ic += '<button onclick="event.stopPropagation();window._ppOdemeModalKapat()" style="font-size:22px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1">×</button>';
   ic += '</div>';
   ic += '<div style="padding:20px;display:flex;flex-direction:column;gap:12px">';
-  ic += '<input type="hidden" id="ppabn-id" value="' + esc(v.id||'') + '">';
-  ic += _ppAbnFld('ppabn-baslik', 'BASLIK *', 'Google Workspace, Claude, Domain...', v.baslik);
-  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  ic += _ppAbnSel('ppabn-kategori', 'KATEGORI', ['SaaS','Altyapi','Lisans','Diger'], v.kategori);
-  ic += _ppAbnSel('ppabn-onem', 'ONEM', ['kritik','onemli','opsiyonel'], v.onem || 'onemli');
-  ic += '</div>';
-  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  ic += _ppAbnFld('ppabn-tutar', 'TUTAR', '0.00', v.tutar, 'number');
-  ic += _ppAbnSel('ppabn-para', 'PARA', ['TRY','USD','EUR','GBP'], v.para);
-  ic += '</div>';
-  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-  ic += _ppAbnSel('ppabn-periyot', 'PERIYOT', ['Aylik','Yillik','Haftalik','3 Ayda 1','6 Ayda 1'], v.periyot);
-  ic += _ppAbnFld('ppabn-hatirlatmaGun', 'HATIRLATMA (gun)', '14', String(v.hatirlatmaGun || 14), 'number');
-  ic += '</div>';
-  ic += '<div><div style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);margin-bottom:4px">YENILEME TARIHI</div>';
-  ic += '<div style="display:flex;gap:8px;align-items:center">';
-  ic += '<input id="ppabn-yenileme" type="date" value="' + esc(v.yenileme || '') + '" oninput="window._ppAbnVadeOnizle()" style="flex:1;font-size:var(--pp-body);padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">';
-  ic += '<span id="ppabn-vade-onizle" style="font-size:var(--pp-meta);padding:4px 8px;border-radius:3px;font-weight:500"></span>';
+  ic += '<input type="hidden" id="ppodm-id" value="' + esc(v.id || '') + '">';
+  ic += '<input type="hidden" id="ppodm-tip" value="' + esc(v.tip) + '">';
+  ic += '<div><div style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:6px">TİP' + (isEdit ? ' (düzenleme sırasında değiştirilemez)' : '') + '</div>' + chipsHtml + '</div>';
+  ic += _ppOdmFld('ppodm-baslik', 'BAŞLIK *', 'Google Workspace, Elektrik, Sigorta...', v.baslik);
+  ic += '<div id="ppodm-abonelik-fields" style="display:' + (v.tip === 'abonelik' ? 'block' : 'none') + ';flex-direction:column;gap:12px">';
+  ic += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">';
+  ic += _ppOdmFld('ppodm-saglayici', 'SAĞLAYICI', 'Google, Anthropic...', v.saglayici);
+  ic += _ppOdmFld('ppodm-plan', 'PLAN', 'Pro, Team, Enterprise', v.plan);
+  ic += _ppOdmFld('ppodm-faydalanan', 'FAYDALANAN', 'Tüm ekip, Baran...', v.faydalanan);
   ic += '</div></div>';
+  ic += '<div id="ppodm-other-placeholder" style="display:' + (v.tip === 'abonelik' ? 'none' : 'block') + ';padding:10px 12px;background:var(--s2);border:0.5px dashed var(--b);border-radius:5px;font-size:var(--pp-meta);color:var(--t3)">ⓘ Bu tipe özel alanlar yarın eklenecek (PP-MODAL-CONDITIONAL-001)</div>';
+  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  ic += _ppOdmSel('ppodm-kategori', 'KATEGORİ', ['SaaS','Altyapı','Lisans','Hizmet','Vergi','Diğer'], v.kategori || 'SaaS');
+  ic += _ppOdmSel('ppodm-onem', 'ÖNEM', ['kritik','onemli','opsiyonel'], v.onem || 'onemli');
+  ic += '</div>';
+  ic += '<div><div style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">TUTAR YAPISI</div>' + yapiHtml + '</div>';
+  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  ic += _ppOdmFld('ppodm-tutar', 'TUTAR', '0.00', v.tutar, 'number');
+  ic += _ppOdmSel('ppodm-para', 'PARA', ['TRY','USD','EUR','GBP'], v.para || 'USD');
+  ic += '</div>';
+  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  ic += _ppOdmSel('ppodm-periyot', 'PERİYOT', ['Aylik','Yillik','Haftalik','3 Ayda 1','6 Ayda 1'], v.periyot || 'Aylik');
+  ic += _ppOdmFld('ppodm-hatirlatmaGun', 'HATIRLATMA (gün)', '14', String(v.hatirlatmaGun || 14), 'number');
+  ic += '</div>';
+  ic += '<div><div style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">YENİLEME / VADE TARİHİ</div>';
+  ic += '<div style="display:flex;gap:8px;align-items:center">';
+  ic += '<input id="ppodm-yenileme" type="date" value="' + esc(v.yenileme || '') + '" oninput="window._ppOdemeVadeOnizle()" style="flex:1;font-size:var(--pp-body);padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box">';
+  ic += '<span id="ppodm-vade-onizle" style="font-size:var(--pp-meta);padding:4px 8px;border-radius:3px;font-weight:500"></span>';
+  ic += '</div></div>';
+  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  ic += _ppOdmSel('ppodm-odemeYontemi', 'ÖDEME YÖNTEMİ', ['otomatik','kart','eft','nakit'], v.odemeYontemi || 'kart');
+  ic += _ppOdmFld('ppodm-bankaTag', 'BANKA / KART', 'Garanti Bonus, Akbank...', v.bankaTag);
+  ic += '</div>';
+  ic += _ppOdmFld('ppodm-etiketler', 'ETİKETLER (virgülle ayır)', 'kira, sigorta, ev', v.etiketler);
   ic += '<div><div style="font-size:var(--pp-meta);font-weight:500;color:var(--t3);margin-bottom:4px">NOT</div>';
-  ic += '<textarea id="ppabn-not" rows="2" placeholder="Opsiyonel" style="width:100%;font-size:var(--pp-body);padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box;resize:vertical">' + esc(v.not || '') + '</textarea></div>';
+  ic += '<textarea id="ppodm-not" rows="2" placeholder="Opsiyonel" style="width:100%;font-size:var(--pp-body);padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit;box-sizing:border-box;resize:vertical">' + esc(v.not || '') + '</textarea></div>';
+  ic += '<div style="background:var(--s2);border:0.5px dashed var(--b);border-radius:5px;padding:12px;text-align:center">';
+  ic += '<div style="font-size:var(--pp-meta);color:var(--t3)">⊕ Ek dosya alanı</div>';
+  ic += '<div style="font-size:var(--pp-meta);color:var(--t3);margin-top:4px">PP-EK-001 ile yarın aktif olacak</div>';
+  ic += '</div>';
   ic += '</div>';
   ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:0.5px solid var(--b);background:var(--s2)">';
-  ic += '<div style="font-size:var(--pp-meta);color:var(--t3)">* Baslik zorunlu</div>';
+  ic += '<div style="display:flex;flex-direction:column;gap:2px">';
+  ic += '<div style="font-size:var(--pp-meta);color:var(--t3)">* Başlık zorunlu</div>';
+  ic += '<div id="ppodm-yillik" style="font-size:var(--pp-meta);color:var(--t2);font-weight:500"></div>';
+  ic += '</div>';
   ic += '<div style="display:flex;gap:8px">';
-  if (id) ic += '<button onclick="event.stopPropagation();window._ppAbonelikModalKapat();window._ppAbonelikSil(\'' + esc(v.id) + '\')" style="font-size:var(--pp-body);padding:7px 14px;border:0.5px solid #DC2626;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:#DC2626">Sil</button>';
-  ic += '<button onclick="event.stopPropagation();window._ppAbonelikModalKapat()" style="font-size:var(--pp-body);padding:7px 14px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">Iptal</button>';
-  ic += '<button onclick="event.stopPropagation();window._ppAbonelikModalKaydet()" style="font-size:var(--pp-body);padding:7px 18px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">' + saveTxt + '</button>';
+  if (isEdit) ic += '<button onclick="event.stopPropagation();window._ppOdemeModalKapat();window._ppOdmSilDelegate(\'' + esc(v.id) + '\', \'' + esc(v.tip) + '\')" style="font-size:var(--pp-body);padding:7px 14px;border:0.5px solid #DC2626;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:#DC2626">Sil</button>';
+  ic += '<button onclick="event.stopPropagation();window._ppOdemeModalKapat()" style="font-size:var(--pp-body);padding:7px 14px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;color:var(--t2)">İptal</button>';
+  ic += '<button onclick="event.stopPropagation();window._ppOdemeModalKaydet()" style="font-size:var(--pp-body);padding:7px 18px;border:none;border-radius:5px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">' + saveTxt + '</button>';
   ic += '</div></div></div>';
+
   /* XSS-RISK: _ppEsc() zorunlu — kullanici verisi esc() ile gecirildi */
   modal.innerHTML = ic;
   document.body.appendChild(modal);
   setTimeout(function() {
-    document.getElementById('ppabn-baslik')?.focus();
-    window._ppAbnVadeOnizle();
+    document.getElementById('ppodm-baslik')?.focus();
+    window._ppOdemeVadeOnizle();
+    window._ppOdemeYillikHesap();
   }, 100);
 };
 
-window._ppAbonelikModalKaydet = function() {
-  var g = function(id) { return (document.getElementById(id)?.value || '').trim(); };
-  var baslik = g('ppabn-baslik');
-  if (!baslik) { window.toast?.('Baslik zorunlu', 'err'); return; }
-  var id = g('ppabn-id');
-  var liste = _ppAbonelikLoad();
-  var entry = {
-    baslik: baslik,
-    kategori: g('ppabn-kategori') || 'SaaS',
-    onem: g('ppabn-onem') || 'onemli',
-    tutar: g('ppabn-tutar'),
-    para: g('ppabn-para') || 'USD',
-    periyot: g('ppabn-periyot') || 'Aylik',
-    hatirlatmaGun: parseInt(g('ppabn-hatirlatmaGun')) || 14,
-    yenileme: g('ppabn-yenileme'),
-    not: g('ppabn-not'),
-    durum: 'active'
-  };
-  if (id) {
-    var i = liste.findIndex(function(x){ return x.id === id; });
-    if (i === -1) { window.toast?.('Kayit bulunamadi', 'err'); return; }
-    Object.assign(liste[i], entry, { updatedAt: _ppNow() });
-    window.toast?.('Abonelik guncellendi', 'ok');
+// Sil delegate (tipe göre _ppAbonelikSil veya _ppOdemeSil çağır)
+window._ppOdmSilDelegate = function(id, tip) {
+  if (tip === 'abonelik') return window._ppAbonelikSil?.(id);
+  return window._ppOdemeSil?.(id);
+};
+
+// Tip seçimi (chip click handler)
+window._ppOdemeTipSec = function(tip) {
+  var hidden = document.getElementById('ppodm-tip');
+  if (hidden) hidden.value = tip;
+  document.querySelectorAll('.ppodm-tip-chip').forEach(function(btn) {
+    var aktif = (btn.dataset.tip === tip);
+    btn.style.cssText = aktif
+      ? 'padding:8px 4px;border:1.5px solid var(--t);border-radius:6px;background:var(--sf);cursor:pointer;font-family:inherit;font-size:var(--pp-meta);font-weight:600;color:var(--t);transition:all .15s'
+      : 'padding:8px 4px;border:1.5px solid var(--b);border-radius:6px;background:var(--s2);cursor:pointer;font-family:inherit;font-size:var(--pp-meta);font-weight:400;color:var(--t2);transition:all .15s';
+  });
+  var aboneFields = document.getElementById('ppodm-abonelik-fields');
+  var otherPh = document.getElementById('ppodm-other-placeholder');
+  if (aboneFields) aboneFields.style.display = (tip === 'abonelik') ? 'block' : 'none';
+  if (otherPh) otherPh.style.display = (tip === 'abonelik') ? 'none' : 'block';
+};
+
+// Tutar yapısı seç (chip click handler)
+window._ppOdemeYapiSec = function(yapi) {
+  var hidden = document.getElementById('ppodm-tutarYapisi');
+  if (hidden) hidden.value = yapi;
+  document.querySelectorAll('.ppodm-yapi-chip').forEach(function(btn) {
+    var aktif = (btn.dataset.yapi === yapi);
+    btn.style.cssText = aktif
+      ? 'padding:5px 12px;border:1px solid var(--t);border-radius:4px;background:var(--sf);cursor:pointer;font-family:inherit;font-size:var(--pp-meta);font-weight:600;color:var(--t)'
+      : 'padding:5px 12px;border:1px solid var(--b);border-radius:4px;background:var(--s2);cursor:pointer;font-family:inherit;font-size:var(--pp-meta);color:var(--t2)';
+  });
+};
+
+// Yıllık tasarruf hesabı (Intl + sembol)
+window._ppOdemeYillikHesap = function() {
+  var tutar = parseFloat(document.getElementById('ppodm-tutar')?.value) || 0;
+  var periyot = document.getElementById('ppodm-periyot')?.value || 'Aylik';
+  var para = document.getElementById('ppodm-para')?.value || 'USD';
+  var katsayi = ({ 'Aylik':12, 'Yillik':1, 'Haftalik':52, '3 Ayda 1':4, '6 Ayda 1':2 })[periyot] || 1;
+  var yillik = tutar * katsayi;
+  var SEMBOL = { USD:'$', EUR:'€', TRY:'₺', GBP:'£' };
+  var span = document.getElementById('ppodm-yillik');
+  if (!span) return;
+  if (yillik > 0) {
+    var fmt = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 });
+    span.textContent = 'Yıllık ~' + (SEMBOL[para] || '') + fmt.format(yillik) + ' ' + para;
   } else {
-    entry.id = 'AB-' + Date.now();
-    entry.createdAt = _ppNow();
-    liste.unshift(entry);
-    window.toast?.('Abonelik eklendi', 'ok');
-  }
-  _ppAbonelikStore(liste);
-  window._ppAbonelikModalKapat();
-  window._ppModRender();
-};
-
-window._ppAbonelikModalKapat = function() {
-  document.getElementById('ppabn-form-modal')?.remove();
-  if (window._ppAbnModalEscHandler) {
-    document.removeEventListener('keydown', window._ppAbnModalEscHandler);
-    window._ppAbnModalEscHandler = null;
+    span.textContent = '';
   }
 };
 
-window._ppAbnVadeOnizle = function() {
-  var yenileme = document.getElementById('ppabn-yenileme')?.value || '';
+// Vade renk önizleme (yenileme oninput)
+window._ppOdemeVadeOnizle = function() {
+  var yenileme = document.getElementById('ppodm-yenileme')?.value || '';
   var rd = window._ppVadeRenkHesapla(yenileme);
-  var span = document.getElementById('ppabn-vade-onizle');
+  var span = document.getElementById('ppodm-vade-onizle');
   if (span) {
     span.textContent = rd.label;
     span.style.background = rd.bg;
@@ -3003,11 +3090,99 @@ window._ppAbnVadeOnizle = function() {
   }
 };
 
-// Geriye uyum: prompt() yerine modal calistir
-window._ppAbonelikYeniAc = function() {
-  window._ppAbonelikModalAc(null);
+// Form submit (tipe göre LS key seç)
+window._ppOdemeModalKaydet = function() {
+  var g = function(id) { return (document.getElementById(id)?.value || '').trim(); };
+  var baslik = g('ppodm-baslik');
+  if (!baslik) { window.toast?.('Başlık zorunlu', 'err'); return; }
+  var id = g('ppodm-id');
+  var tip = g('ppodm-tip') || 'abonelik';
+
+  // Edit modunda tip mevcut kayıttan zorla okun (UI bypass koruma)
+  if (id) {
+    var aboneList = (typeof _ppAbonelikLoad === 'function') ? _ppAbonelikLoad() : [];
+    var odmList = (typeof _ppOdemeLoad === 'function') ? _ppOdemeLoad() : [];
+    var existing = aboneList.find(function(x){ return x.id === id; }) || odmList.find(function(x){ return x.id === id; });
+    if (existing && existing.tip) tip = existing.tip;
+    else if (existing) tip = (id.indexOf('AB-') === 0) ? 'abonelik' : 'fatura';
+  }
+
+  var entry = {
+    tip: tip,
+    baslik: baslik,
+    saglayici: g('ppodm-saglayici'),
+    plan: g('ppodm-plan'),
+    faydalanan: g('ppodm-faydalanan'),
+    kategori: g('ppodm-kategori') || 'SaaS',
+    onem: g('ppodm-onem') || 'onemli',
+    tutarYapisi: g('ppodm-tutarYapisi') || 'sabit',
+    tutar: g('ppodm-tutar'),
+    para: g('ppodm-para') || 'USD',
+    periyot: g('ppodm-periyot') || 'Aylik',
+    odemeYontemi: g('ppodm-odemeYontemi') || 'kart',
+    bankaTag: g('ppodm-bankaTag'),
+    hatirlatmaGun: parseInt(g('ppodm-hatirlatmaGun')) || 14,
+    yenileme: g('ppodm-yenileme'),
+    etiketler: g('ppodm-etiketler'),
+    not: g('ppodm-not'),
+    durum: 'active'
+  };
+
+  if (tip === 'abonelik') {
+    var liste = _ppAbonelikLoad();
+    if (id) {
+      var i = liste.findIndex(function(x){ return x.id === id; });
+      if (i === -1) { window.toast?.('Kayıt bulunamadı', 'err'); return; }
+      Object.assign(liste[i], entry, { updatedAt: _ppNow() });
+      window.toast?.('Abonelik güncellendi', 'ok');
+    } else {
+      entry.id = 'AB-' + Date.now();
+      entry.createdAt = _ppNow();
+      liste.unshift(entry);
+      window.toast?.('Abonelik eklendi', 'ok');
+    }
+    _ppAbonelikStore(liste);
+  } else {
+    var liste2 = _ppOdemeLoad();
+    if (id) {
+      var i2 = liste2.findIndex(function(x){ return x.id === id; });
+      if (i2 === -1) { window.toast?.('Kayıt bulunamadı', 'err'); return; }
+      Object.assign(liste2[i2], entry, { updatedAt: _ppNow() });
+      window.toast?.('Ödeme güncellendi', 'ok');
+    } else {
+      entry.id = 'OD-' + Date.now();
+      entry.createdAt = _ppNow();
+      // Mevcut _ppOdeme şeması ile uyumlu defaults
+      entry.sorumlu = '';
+      entry.oncelik = 'Normal';
+      entry.periyotDetay = '';
+      liste2.unshift(entry);
+      window.toast?.('Ödeme eklendi', 'ok');
+    }
+    _ppOdemeStore(liste2);
+  }
+
+  window._ppOdemeModalKapat();
+  window._ppModRender();
 };
-// [PP-ABN-MODAL-001 END]
+
+// Modal kapat (ESC + cleanup)
+window._ppOdemeModalKapat = function() {
+  document.getElementById('ppodm-form-modal')?.remove();
+  if (window._ppOdmModalEscHandler) {
+    document.removeEventListener('keydown', window._ppOdmModalEscHandler);
+    window._ppOdmModalEscHandler = null;
+  }
+};
+
+// === Geriye uyum wrapper'ları ===
+window._ppAbonelikModalAc = function(id) {
+  return window._ppOdemeModalAc(id, 'abonelik');
+};
+window._ppAbonelikYeniAc = function() {
+  return window._ppOdemeModalAc(null, 'abonelik');
+};
+// [PP-MODAL-MERGE-001 END]
 
 window._ppAbonelikSil = function(id) {
   window.confirmModal('Bu aboneli\u011fi silmek istedi\u011finizden emin misiniz?',{confirmText:'Sil',danger:true,onConfirm:function(){
