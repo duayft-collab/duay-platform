@@ -190,7 +190,84 @@ function listenAuthState(onIn, onOut) {
 // BÖLÜM 3 — GİRİŞ
 // ════════════════════════════════════════════════════════════════
 
+// [SEC-003 START] Brute-force koruması — 5 başarısız giriş → 15dk kilit (K02 uyumu)
+const LOGIN_ATTEMPTS_KEY = 'ak_login_attempts_v1';
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_LOCK_MS = 15 * 60 * 1000;          // 15 dakika
+const LOGIN_RESET_MS = 24 * 60 * 60 * 1000;    // 24 saat sonra otomatik counter sıfırlama
+
+function _loginAttemptGet(email) {
+  try {
+    var d = JSON.parse(localStorage.getItem(LOGIN_ATTEMPTS_KEY) || '{}');
+    var rec = d[email];
+    if (!rec) return { count: 0, firstAt: 0, lockUntil: 0 };
+    // 24h auto-reset (kilit aktif değilse + 24h+ geçmişse)
+    if (rec.firstAt && rec.lockUntil <= Date.now() && (Date.now() - rec.firstAt > LOGIN_RESET_MS)) {
+      delete d[email];
+      localStorage.setItem(LOGIN_ATTEMPTS_KEY, JSON.stringify(d));
+      return { count: 0, firstAt: 0, lockUntil: 0 };
+    }
+    return rec;
+  } catch(e) { return { count: 0, firstAt: 0, lockUntil: 0 }; }
+}
+
+function _loginAttemptInc(email) {
+  try {
+    var d = JSON.parse(localStorage.getItem(LOGIN_ATTEMPTS_KEY) || '{}');
+    var rec = d[email] || { count: 0, firstAt: Date.now(), lockUntil: 0 };
+    rec.count = (rec.count || 0) + 1;
+    if (!rec.firstAt) rec.firstAt = Date.now();
+    if (rec.count >= LOGIN_MAX_ATTEMPTS) {
+      rec.lockUntil = Date.now() + LOGIN_LOCK_MS;
+    }
+    d[email] = rec;
+    localStorage.setItem(LOGIN_ATTEMPTS_KEY, JSON.stringify(d));
+    return rec;
+  } catch(e) { return null; }
+}
+
+function _loginAttemptReset(email) {
+  try {
+    var d = JSON.parse(localStorage.getItem(LOGIN_ATTEMPTS_KEY) || '{}');
+    delete d[email];
+    localStorage.setItem(LOGIN_ATTEMPTS_KEY, JSON.stringify(d));
+  } catch(e) {}
+}
+
+// Login result post-processor: ok=true → counter reset, ok=false → counter inc + lock kontrolü
+function _sec003PostProcess(result, email) {
+  if (!result) return result;
+  if (result.ok) {
+    _loginAttemptReset(email);
+    return result;
+  }
+  var rec = _loginAttemptInc(email);
+  if (!rec) return result;
+  if (rec.count >= LOGIN_MAX_ATTEMPTS) {
+    result.error = 'Çok fazla başarısız deneme. 15 dakika sonra tekrar deneyin.';
+    result.lockUntil = rec.lockUntil;
+    result.remainingMs = rec.lockUntil - Date.now();
+  } else {
+    var kalan = LOGIN_MAX_ATTEMPTS - rec.count;
+    result.error = (result.error || 'Giriş hatası.') + ' (Kalan deneme: ' + kalan + ')';
+  }
+  return result;
+}
+// [SEC-003 END]
+
 async function login(email, password) {
+  // [SEC-003 START] Email normalize + lockout pre-check
+  email = ((email || '') + '').toLowerCase().trim();
+  var __sec003_rec = _loginAttemptGet(email);
+  if (__sec003_rec.lockUntil > Date.now()) {
+    return {
+      ok: false,
+      error: 'Çok fazla başarısız deneme. 15 dakika sonra tekrar deneyin.',
+      lockUntil: __sec003_rec.lockUntil,
+      remainingMs: __sec003_rec.lockUntil - Date.now()
+    };
+  }
+  // [SEC-003 END]
   console.log('[AUTH] login başladı. FB_AUTH:', !!FB_AUTH, '| FB_DB:', !!FB_DB);
   // Firebase varsa önce dene
   if (FB_AUTH) {
@@ -199,18 +276,18 @@ async function login(email, password) {
       console.log('[AUTH] Firebase signIn başarılı. currentUser:', FB_AUTH.currentUser?.email);
       // Firebase başarılı — CU'yu platform tablosundan çöz
       const fbEmail = FB_AUTH.currentUser?.email || email;
-      return await _localLogin(fbEmail, password, true); // skipPwCheck=true
+      return _sec003PostProcess(await _localLogin(fbEmail, password, true), email); // skipPwCheck=true
     } catch (e) {
       console.warn('[AUTH] Firebase signIn başarısız:', e.code, '→ yerel login deneniyor');
       // Firebase başarısız → yerel dene
       const local = await _localLogin(email, password);
-      if (local.ok) { console.log('[AUTH] Yerel login başarılı (Firebase Auth token YOK)'); return local; }
-      return { ok: false, error: _translateFirebaseError(e.code) };
+      if (local.ok) { console.log('[AUTH] Yerel login başarılı (Firebase Auth token YOK)'); return _sec003PostProcess(local, email); }
+      return _sec003PostProcess({ ok: false, error: _translateFirebaseError(e.code) }, email);
     }
   }
   console.warn('[AUTH] FB_AUTH yok → direkt yerel login');
   // Firebase yok → direkt yerel
-  return await _localLogin(email, password);
+  return _sec003PostProcess(await _localLogin(email, password), email);
 }
 
 /**
