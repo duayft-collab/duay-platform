@@ -1467,6 +1467,8 @@ window._ppGorevKaydet = function() {
       }
     });
   } catch(_ne) { console.warn('[PP-NOTIF]', _ne.message); }
+  /* PP-GOREV-NOTIF-001: aciklama HTML'inde @mention varsa bildirim gönder */
+  try { window._ppGorevMentionNotifGonder?.(yeni.id, yeni.baslik || '', yeni.aciklama || ''); } catch(_mne) { console.warn('[PP-MENTION-NOTIF]', _mne.message); }
   // PUSULA-TEKRAR-001: tekrar varsa bir sonraki tarihli klon yarat
   if(yeni.tekrar && yeni.bitTarih) {
     var _sonrakiTarih = function(tarih, tekrar) {
@@ -3286,6 +3288,43 @@ window._ppGorevMentionInsert = function(username) {
 
 window._ppGorevMentionKapat = function() {
   document.getElementById('pp-mention-dropdown')?.remove();
+};
+
+// PP-GOREV-NOTIF-001: aciklama HTML'inden mention parse + addNotif dispatch
+window._ppGorevMentionParse = function(html) {
+  if (!html || typeof html !== 'string') return [];
+  var labels = [];
+  var regex = /<span[^>]*class="[^"]*pp-mention[^"]*"[^>]*>@([^<]+)<\/span>/g;
+  var m;
+  while ((m = regex.exec(html)) !== null) {
+    var label = m[1] && m[1].trim();
+    if (label && labels.indexOf(label) < 0) labels.push(label);
+  }
+  return labels;
+};
+
+window._ppGorevMentionNotifGonder = function(taskId, taskBaslik, aciklamaHtml) {
+  if (typeof window.addNotif !== 'function') return;
+  var labels = window._ppGorevMentionParse(aciklamaHtml);
+  if (!labels.length) return;
+  var users = (typeof window.loadUsers === 'function' ? window.loadUsers() : [])
+    .filter(function(u) { return !u.isDeleted; });
+  var cu = (typeof window.CU === 'function' ? window.CU() : null) || {};
+  var cuName = cu.displayName || cu.name || cu.email || 'Birisi';
+  var cuId = cu.uid || cu.id || cu.email || '';
+  labels.forEach(function(label) {
+    var matched = users.find(function(u) {
+      var ulabel = u.displayName || u.ad || u.name || u.email || '';
+      return ulabel === label;
+    });
+    if (!matched) return;
+    var targetUid = matched.uid || matched.id || matched.email;
+    if (!targetUid || String(targetUid) === String(cuId)) return;
+    var msg = cuName + ' sizi bir görevde bahsetti: ' + (taskBaslik || '');
+    try {
+      window.addNotif('💬', msg, 'info', 'pusula', targetUid, taskId);
+    } catch(e) { console.warn('[PP-MENTION-NOTIF-FAIL]', e.message); }
+  });
 };
 // [PP-GOREV-MENTION-001 END]
 
