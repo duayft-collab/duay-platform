@@ -1197,7 +1197,7 @@ window._ppYeniGorev = function() {
     +'<button type="button" onclick="event.stopPropagation();document.execCommand(\'insertUnorderedList\')" style="font-size:var(--pp-body);padding:3px 7px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf);cursor:pointer;font-family:inherit">• Liste</button>'
     +'<button type="button" onclick="event.stopPropagation();document.execCommand(\'insertOrderedList\')" style="font-size:var(--pp-body);padding:3px 7px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf);cursor:pointer;font-family:inherit">1. Liste</button>'
     +'</div>'
-    +'<div id="ppf-aciklama" contenteditable="true" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="min-height:80px;padding:10px;border:0.5px solid var(--b);border-radius:0 0 6px 6px;background:var(--s2);font-size:var(--pp-body);color:var(--t);line-height:1.6;outline:none;font-family:inherit"></div>'
+    +'<div id="ppf-aciklama" contenteditable="true" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" oninput="window._ppGorevMentionDetect?.(event)" onblur="setTimeout(function(){window._ppGorevMentionKapat?.();},200)" style="min-height:80px;padding:10px;border:0.5px solid var(--b);border-radius:0 0 6px 6px;background:var(--s2);font-size:var(--pp-body);color:var(--t);line-height:1.6;outline:none;font-family:inherit"></div>'
     +'</div>'
     /* PUSULA-FORM-V2-001: Etiket sistemi */
     +'<div><div style="font-size:var(--pp-body);color:var(--t3);margin-bottom:7px;font-weight:500">ETİKETLER</div>'
@@ -3183,6 +3183,111 @@ window._ppAbonelikYeniAc = function() {
   return window._ppOdemeModalAc(null, 'abonelik');
 };
 // [PP-MODAL-MERGE-001 END]
+
+// [PP-GOREV-MENTION-001 START] @Mention autocomplete (ppf-aciklama contenteditable için)
+// Caret pozisyonunda son @<query> yakala, loadUsers() filter, click ile <span class="pp-mention"> insert.
+
+window._ppGorevMentionDetect = function(ev) {
+  try {
+    var el = document.getElementById('ppf-aciklama');
+    if (!el) return;
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) { window._ppGorevMentionKapat(); return; }
+    var range = sel.getRangeAt(0);
+    var textNode = range.startContainer;
+    if (textNode.nodeType !== 3) { window._ppGorevMentionKapat(); return; }
+    var text = textNode.textContent.slice(0, range.startOffset);
+    var match = /@(\w*)$/.exec(text);
+    if (match) {
+      window._ppGorevMentionDropdownAc(match[1], el);
+    } else {
+      window._ppGorevMentionKapat();
+    }
+  } catch(e) { console.warn('[PP-MENTION]', e.message); }
+};
+
+window._ppGorevMentionDropdownAc = function(query, anchorEl) {
+  var users = (typeof window.loadUsers === 'function' ? window.loadUsers() : [])
+    .filter(function(u) { return !u.isDeleted; })
+    .map(function(u) {
+      return {
+        key: u.uid || u.id || u.email || '',
+        label: u.displayName || u.ad || u.name || u.email || '?',
+        email: u.email || ''
+      };
+    });
+  var q = (query || '').toLowerCase();
+  var filtered = q
+    ? users.filter(function(u) { return u.label.toLowerCase().indexOf(q) >= 0 || u.email.toLowerCase().indexOf(q) >= 0; })
+    : users.slice(0, 8);
+  filtered = filtered.slice(0, 8);
+
+  var existing = document.getElementById('pp-mention-dropdown');
+  if (existing) existing.remove();
+
+  if (!filtered.length) return;
+
+  var dropdown = document.createElement('div');
+  dropdown.id = 'pp-mention-dropdown';
+  dropdown.className = 'pp-mention-dropdown';
+  var rect = anchorEl.getBoundingClientRect();
+  dropdown.style.cssText = 'position:fixed;top:' + (rect.bottom + 4) + 'px;left:' + rect.left + 'px;width:240px;max-height:200px;overflow-y:auto;background:var(--sf);border:0.5px solid var(--b);border-radius:6px;box-shadow:var(--pp-shadow-lg);z-index:10000;font-family:inherit';
+
+  var esc = window._ppEsc || function(s){ return String(s||'').replace(/[<>&"']/g, function(m){ return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[m]; }); };
+  var html = '';
+  filtered.forEach(function(u) {
+    html += '<div class="pp-mention-item" onmousedown="event.preventDefault();window._ppGorevMentionInsert(\'' + esc(u.label).replace(/'/g, '&#39;') + '\')" '
+         + 'style="padding:7px 10px;cursor:pointer;font-size:var(--pp-body);color:var(--t);border-bottom:0.5px solid var(--b)" '
+         + 'onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'
+         + '<div style="font-weight:500">' + esc(u.label) + '</div>'
+         + (u.email ? '<div style="font-size:var(--pp-meta);color:var(--t3)">' + esc(u.email) + '</div>' : '')
+         + '</div>';
+  });
+  dropdown.innerHTML = html;
+  document.body.appendChild(dropdown);
+};
+
+window._ppGorevMentionInsert = function(username) {
+  try {
+    var el = document.getElementById('ppf-aciklama');
+    if (!el) return;
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    var textNode = range.startContainer;
+    if (textNode.nodeType !== 3) { window._ppGorevMentionKapat(); return; }
+    var caret = range.startOffset;
+    var text = textNode.textContent.slice(0, caret);
+    var match = /@(\w*)$/.exec(text);
+    if (!match) { window._ppGorevMentionKapat(); return; }
+    var startOffset = caret - match[0].length;
+    var deleteRange = document.createRange();
+    deleteRange.setStart(textNode, startOffset);
+    deleteRange.setEnd(textNode, caret);
+    deleteRange.deleteContents();
+    var mention = document.createElement('span');
+    mention.className = 'pp-mention';
+    mention.contentEditable = 'false';
+    mention.style.cssText = 'background:#E6F1FB;color:#3B82F6;padding:1px 5px;border-radius:3px;font-weight:500';
+    mention.textContent = '@' + username;
+    deleteRange.insertNode(mention);
+    var space = document.createTextNode(' ');
+    if (mention.nextSibling) mention.parentNode.insertBefore(space, mention.nextSibling);
+    else mention.parentNode.appendChild(space);
+    var newRange = document.createRange();
+    newRange.setStart(space, 1);
+    newRange.setEnd(space, 1);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+    el.focus();
+    window._ppGorevMentionKapat();
+  } catch(e) { console.warn('[PP-MENTION-INSERT]', e.message); window._ppGorevMentionKapat(); }
+};
+
+window._ppGorevMentionKapat = function() {
+  document.getElementById('pp-mention-dropdown')?.remove();
+};
+// [PP-GOREV-MENTION-001 END]
 
 window._ppAbonelikSil = function(id) {
   window.confirmModal('Bu aboneli\u011fi silmek istedi\u011finizden emin misiniz?',{confirmText:'Sil',danger:true,onConfirm:function(){

@@ -41,9 +41,9 @@
 /* [CACHE-BUMP-2026-04-27-V54] LOJ-1B-I (Admin onay UI: pending modal) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V55] SETTINGS-001 (Admin rol bilgi paneli + 4 çelişki) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V56] LOJ-1B-F (pending approve/reject statusHistory audit) aktivasyon */
-/* [CACHE-BUMP-2026-04-28-V65] PP-MODAL-MERGE-001 (Birleşik 8 tip ödeme modal + conditional + yıllık hesap) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v65';
-const CACHE_VERSION = '65.0.0';
+/* [CACHE-BUMP-2026-04-28-V66] PP-GOREV-MENTION-001 (Görev açıklamasında @Mention autocomplete) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v66';
+const CACHE_VERSION = '66.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
