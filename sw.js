@@ -41,9 +41,9 @@
 /* [CACHE-BUMP-2026-04-27-V54] LOJ-1B-I (Admin onay UI: pending modal) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V55] SETTINGS-001 (Admin rol bilgi paneli + 4 çelişki) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V56] LOJ-1B-F (pending approve/reject statusHistory audit) aktivasyon */
-/* [CACHE-BUMP-2026-04-28-V59] SEC-003-A (auth.js brute-force koruması — 5 deneme/15dk kilit) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v59';
-const CACHE_VERSION = '59.0.0';
+/* [CACHE-BUMP-2026-04-28-V60] SEC-003-B (UI countdown timer + button disable) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v60';
+const CACHE_VERSION = '60.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
