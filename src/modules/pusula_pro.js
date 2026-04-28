@@ -3012,7 +3012,23 @@ window._ppOdemeModalAc = function(id, defaultTip) {
   ic += _ppOdmFld('ppodm-plan', 'PLAN', 'Pro, Team, Enterprise', v.plan);
   ic += _ppOdmFld('ppodm-faydalanan', 'FAYDALANAN', 'Tüm ekip, Baran...', v.faydalanan);
   ic += '</div></div>';
-  ic += '<div id="ppodm-other-placeholder" style="display:' + (v.tip === 'abonelik' ? 'none' : 'block') + ';padding:10px 12px;background:var(--s2);border:0.5px dashed var(--b);border-radius:5px;font-size:var(--pp-meta);color:var(--t3)">ⓘ Bu tipe özel alanlar yarın eklenecek (PP-MODAL-CONDITIONAL-001)</div>';
+  /* PP-MODAL-CONDITIONAL-001: kira tipine özel alanlar */
+  ic += '<div id="ppodm-kira-fields" style="display:' + (v.tip === 'kira' ? 'block' : 'none') + ';flex-direction:column;gap:12px">';
+  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  ic += _ppOdmFld('ppodm-kira-adres', 'MÜLK ADRESİ', 'Sokak/Daire bilgisi', v.kiraAdres);
+  ic += _ppOdmFld('ppodm-kira-depozito', 'DEPOZİTO', '0.00', v.kiraDepozito, 'number');
+  ic += '</div>';
+  ic += _ppOdmFld('ppodm-kira-kontratbitis', 'KONTRAT BİTİŞ', '', v.kiraKontratBitis, 'date');
+  ic += '</div>';
+  /* PP-MODAL-CONDITIONAL-001: fatura tipine özel alanlar */
+  ic += '<div id="ppodm-fatura-fields" style="display:' + (v.tip === 'fatura' ? 'block' : 'none') + ';flex-direction:column;gap:12px">';
+  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  ic += _ppOdmFld('ppodm-fatura-no', 'FATURA NO', 'F-2026-00123', v.faturaNo);
+  ic += _ppOdmFld('ppodm-fatura-donem', 'DÖNEM', 'Mart 2026', v.faturaDonem);
+  ic += '</div>';
+  ic += _ppOdmFld('ppodm-fatura-kurum', 'KURUM/ŞİRKET', 'BEDAŞ, Türk Telekom...', v.faturaKurum);
+  ic += '</div>';
+  ic += '<div id="ppodm-other-placeholder" style="display:' + ((['abonelik','kira','fatura'].indexOf(v.tip) >= 0) ? 'none' : 'block') + ';padding:10px 12px;background:var(--s2);border:0.5px dashed var(--b);border-radius:5px;font-size:var(--pp-meta);color:var(--t3)">ⓘ Bu tipe özel alanlar gelecek talimatlarda (PP-MODAL-CONDITIONAL-002+)</div>';
   ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
   ic += _ppOdmSel('ppodm-kategori', 'KATEGORİ', ['SaaS','Altyapı','Lisans','Hizmet','Vergi','Diğer'], v.kategori || 'SaaS');
   ic += _ppOdmSel('ppodm-onem', 'ÖNEM', ['kritik','onemli','opsiyonel'], v.onem || 'onemli');
@@ -3080,10 +3096,15 @@ window._ppOdemeTipSec = function(tip) {
       ? 'padding:8px 4px;border:1.5px solid var(--t);border-radius:6px;background:var(--sf);cursor:pointer;font-family:inherit;font-size:var(--pp-meta);font-weight:600;color:var(--t);transition:all .15s'
       : 'padding:8px 4px;border:1.5px solid var(--b);border-radius:6px;background:var(--s2);cursor:pointer;font-family:inherit;font-size:var(--pp-meta);font-weight:400;color:var(--t2);transition:all .15s';
   });
+  /* PP-MODAL-CONDITIONAL-001: tip-spesifik field toggle (abonelik/kira/fatura) */
   var aboneFields = document.getElementById('ppodm-abonelik-fields');
+  var kiraFields = document.getElementById('ppodm-kira-fields');
+  var faturaFields = document.getElementById('ppodm-fatura-fields');
   var otherPh = document.getElementById('ppodm-other-placeholder');
   if (aboneFields) aboneFields.style.display = (tip === 'abonelik') ? 'block' : 'none';
-  if (otherPh) otherPh.style.display = (tip === 'abonelik') ? 'none' : 'block';
+  if (kiraFields) kiraFields.style.display = (tip === 'kira') ? 'block' : 'none';
+  if (faturaFields) faturaFields.style.display = (tip === 'fatura') ? 'block' : 'none';
+  if (otherPh) otherPh.style.display = ((['abonelik','kira','fatura'].indexOf(tip) >= 0) ? 'none' : 'block');
 };
 
 // Tutar yapısı seç (chip click handler)
@@ -3151,6 +3172,14 @@ window._ppOdemeModalKaydet = function() {
     saglayici: g('ppodm-saglayici'),
     plan: g('ppodm-plan'),
     faydalanan: g('ppodm-faydalanan'),
+    /* PP-MODAL-CONDITIONAL-001: kira tipine özel field'lar */
+    kiraAdres: g('ppodm-kira-adres'),
+    kiraDepozito: g('ppodm-kira-depozito'),
+    kiraKontratBitis: g('ppodm-kira-kontratbitis'),
+    /* PP-MODAL-CONDITIONAL-001: fatura tipine özel field'lar */
+    faturaNo: g('ppodm-fatura-no'),
+    faturaDonem: g('ppodm-fatura-donem'),
+    faturaKurum: g('ppodm-fatura-kurum'),
     kategori: g('ppodm-kategori') || 'SaaS',
     onem: g('ppodm-onem') || 'onemli',
     tutarYapisi: g('ppodm-tutarYapisi') || 'sabit',
