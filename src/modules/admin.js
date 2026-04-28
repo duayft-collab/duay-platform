@@ -2326,6 +2326,43 @@ function renderSettingsAdmin(){
     vh.innerHTML=CHANGELOG.slice(0,8).map(c=>`<div class="dr"><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--ac)">${c.v}</span><span style="font-size:11px;color:var(--t2)">${window._esc(c.note)}</span><span style="font-size:10px;color:var(--t3)">${c.ts.slice(0,10)}</span></div>`).join('');
   }
   // Puantaj yetki kartı artık kullanıcı profilinde (adm-detail)
+
+  /* SETTINGS-001: Read-only rol bilgi paneli + tespit edilen çelişkiler */
+  const roleInfoEl = g('role-info-panel');
+  if (roleInfoEl) {
+    const roles = [
+      { emoji: '👑', code: 'super_admin', tr: 'Süper Admin', desc: 'Tüm sistem' },
+      { emoji: '👑', code: 'admin', tr: 'Admin', desc: 'Tüm modüller, tam yetki' },
+      { emoji: '👔', code: 'manager', tr: 'Yönetici', desc: 'Sistem genelinde yönetici' },
+      { emoji: '⭐', code: 'lead', tr: 'Takım Lideri', desc: 'Takım yöneticisi' },
+      { emoji: '🤝', code: 'asistan', tr: 'Yönetici Asistanı', desc: 'Yönetici hesabına bağlı' },
+      { emoji: '👤', code: 'staff', tr: 'Personel', desc: 'Sadece kendi kayıtları' }
+    ];
+    const celiskiler = [
+      { id: 1, baslik: 'Manager/Lead Lojistik Görünürlüğü', detay: 'Sistem genelinde yönetici, lojistik tablosunda sıradan kullanıcı (renderEdList sadece admin bypass yapıyor).' },
+      { id: 2, baslik: 'responsibleUserId Davranışı', detay: 'Lojistikte sorumlu olduğun kayıt görünür, diğer modüllerde (urunler/ihracat/alis-teklif) görünmez.' },
+      { id: 3, baslik: 'Storage vs UI Filter', detay: 'Lojistik filter sadece UI katmanında. Helper fonksiyonlar {raw:true} ile tüm kayıtlara erişebiliyor. Diğer modüllerde storage-katmanında filter var.' },
+      { id: 4, baslik: '3-Seviye Permission Runtime Eksikliği', detay: 'Modül İzinleri UI 3 seviye gösteriyor (Erişemez/Görebilir/Tam Yetki) ama canAccess() binary çalışıyor. Görebilir/Tam Yetki ayrımı runtime\'da yok.' }
+    ];
+    const rolTablosu = roles.map(r =>
+      `<tr><td style="padding:8px 12px;font-size:18px">${r.emoji}</td>` +
+      `<td style="padding:8px 12px;font-family:monospace;font-size:11px;color:var(--t3)">${r.code}</td>` +
+      `<td style="padding:8px 12px;font-weight:500">${r.tr}</td>` +
+      `<td style="padding:8px 12px;font-size:12px;color:var(--t2)">${r.desc}</td></tr>`
+    ).join('');
+    const celiskiKartlari = celiskiler.map(c =>
+      `<div style="padding:12px 14px;margin-bottom:8px;border-left:3px solid #F59E0B;background:#FEF3C7;border-radius:4px">` +
+      `<div style="font-weight:600;font-size:13px;color:#92400E;margin-bottom:4px">⚠️ Çelişki ${c.id} — ${c.baslik}</div>` +
+      `<div style="font-size:12px;color:#78350F;line-height:1.5">${c.detay}</div></div>`
+    ).join('');
+    roleInfoEl.innerHTML =
+      '<div style="margin-bottom:20px;width:100%"><h3 style="margin:0 0 8px 0;font-size:15px;color:var(--t)">🔑 Sistem Rol Tanımları</h3>' +
+      '<div style="font-size:11px;color:var(--t3);margin-bottom:12px">Read-only bilgi — kod tabanında tanımlı roller</div>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:12px"><tbody>' + rolTablosu + '</tbody></table></div>' +
+      '<div style="margin-top:24px;width:100%"><h3 style="margin:0 0 8px 0;font-size:15px;color:var(--t)">⚠️ Tespit Edilen Çelişkiler</h3>' +
+      '<div style="font-size:11px;color:var(--t3);margin-bottom:12px">Mevcut yetki sisteminde tespit edilen tutarsızlıklar (technical debt)</div>' +
+      celiskiKartlari + '</div>';
+  }
 }
 
 
