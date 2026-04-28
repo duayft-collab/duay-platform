@@ -531,7 +531,8 @@ window._ppModRender = function() {
         var _bayrak = t.oncelik==='kritik' ? '\ud83d\udd34' : t.oncelik==='yuksek' ? '\ud83d\udfe1' : t.oncelik==='normal' ? '\ud83d\udfe2' : '\u26aa';
         /* PUSULA-GOREV-GIZLILIK-001: kısıtlı görevde kilit ikon */
         var _gizliIkon = (t.paylasilanlar && t.paylasilanlar.length) ? '<span title="Kısıtlı görev" style="margin-right:3px">\ud83d\udd12</span>' : '';
-        h2 += '<div style="font-size:var(--pp-body);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:'+(t.durum==='tamamlandi'?'var(--t3)':'var(--t)')+(t.durum==='tamamlandi'?';text-decoration:line-through':'')+'"><span style="margin-right:4px;font-size:var(--pp-body)">'+_bayrak+'</span>' + _gizliIkon + hl(t.baslik||t.title||'') + '</div>';
+        /* PP-GOREV-VISUAL-001: emoji prefix başlıktan önce */
+        h2 += '<div style="font-size:var(--pp-body);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:'+(t.durum==='tamamlandi'?'var(--t3)':'var(--t)')+(t.durum==='tamamlandi'?';text-decoration:line-through':'')+'"><span style="margin-right:4px;font-size:var(--pp-body)">'+_bayrak+'</span>' + _gizliIkon + '<span style="margin-right:4px;font-size:var(--pp-body)">' + (t.emoji || '📋') + '</span>' + hl(t.baslik||t.title||'') + '</div>';
         h2 += '<div style="display:flex;align-items:center;gap:5px;margin-top:2px;min-width:0;overflow:hidden;white-space:nowrap">';  /* PUSULA-LAYOUT-FIX-001 */
         // PUSULA-JOB-BAGLANTI-001: jobId tiklanabilir → openJobIdHub aç
         if (jobId) h2 += '<span onclick="event.stopPropagation();window.openJobIdHub?.(\''+_ppEsc(jobId)+'\')" title="Job Hub aç" style="font-size:var(--pp-meta);padding:1px 6px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-weight:500;cursor:pointer;text-decoration:underline">'+_ppEsc(jobId)+'</span>';
@@ -1139,6 +1140,12 @@ window._ppYeniGorev = function() {
     +'</div>'
     +'<button onclick="event.stopPropagation();window._ppDuzenleHedef=null;document.getElementById(\'pp-gorev-modal\')?.remove()" style="font-size:20px;border:none;background:none;cursor:pointer;color:var(--t3);line-height:1;flex-shrink:0">×</button></div>'
     +'<div style="padding:20px;display:flex;flex-direction:column;gap:14px">'
+    /* PP-GOREV-VISUAL-001: emoji picker chip row */
+    +'<div style="display:flex;align-items:center;gap:6px;padding:4px 0">'
+    +'<input type="hidden" id="ppf-emoji" value="📋">'
+    +'<span style="font-size:var(--pp-meta);color:var(--t3);letter-spacing:.06em;font-weight:500;margin-right:4px">İKON</span>'
+    +['📋','🎯','🚀','💡','🐛','📞','✅','⚡'].map(function(e){var aktif=(e==='📋');return '<button class="pp-emoji-chip" data-emoji="'+e+'" type="button" onclick="event.stopPropagation();window._ppEmojiSec(\''+e+'\')" style="padding:4px 8px;border:1px solid '+(aktif?'var(--t)':'var(--b)')+';border-radius:5px;background:'+(aktif?'var(--sf)':'transparent')+';cursor:pointer;font-size:14px;font-family:inherit">'+e+'</button>';}).join('')
+    +'</div>'
     +'<input id="ppf-baslik" placeholder="Görev başlığı..." onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="font-size:15px;font-weight:500;padding:8px 0;border:none;border-bottom:2px solid var(--bm);border-radius:0;background:transparent;width:100%;color:var(--t);font-family:inherit;outline:none">'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
     +'<div><div style="font-size:var(--pp-body);color:var(--t3);margin-bottom:5px;font-weight:500">JOB ID</div>'
@@ -1374,6 +1381,8 @@ window._ppGorevKaydet = function() {
   if(!baslik){window.toast?.('Görev başlığı zorunlu','warn');return;}
   var yeni = {
     id: _ppId(),
+    /* PP-GOREV-VISUAL-001: emoji ikon (default 📋) */
+    emoji: document.getElementById('ppf-emoji')?.value || '📋',
     baslik: baslik,
     job_id: document.getElementById('ppf-job_id')?.value||'',
     departman: document.getElementById('ppf-departman')?.value||'',
@@ -2059,6 +2068,9 @@ window._ppGorevDuzenle = function(id) {
   window._ppYeniGorev();
   setTimeout(function() {
     var b = document.getElementById('ppf-baslik'); if (b) b.value = t.baslik || t.title || '';
+    /* PP-GOREV-VISUAL-001: emoji preload + chip vurgu güncelle */
+    var em = document.getElementById('ppf-emoji'); if (em) em.value = t.emoji || '📋';
+    if (typeof window._ppEmojiSec === 'function') window._ppEmojiSec(t.emoji || '📋');
     var d = document.getElementById('ppf-departman'); if (d) d.value = t.departman || '';
     var o = document.getElementById('ppf-oncelik'); if (o) o.value = t.oncelik || 'normal';
     var s = document.getElementById('ppf-durum'); if (s) s.value = t.durum || 'plan';
@@ -3289,6 +3301,17 @@ window._ppGorevMentionInsert = function(label) {
 
 window._ppGorevMentionKapat = function() {
   document.getElementById('pp-mention-dropdown')?.remove();
+};
+
+/* PP-GOREV-VISUAL-001: emoji chip seçim toggle */
+window._ppEmojiSec = function(emoji) {
+  var hidden = document.getElementById('ppf-emoji');
+  if (hidden) hidden.value = emoji;
+  document.querySelectorAll('.pp-emoji-chip').forEach(function(btn) {
+    var aktif = (btn.dataset.emoji === emoji);
+    btn.style.background = aktif ? 'var(--sf)' : 'transparent';
+    btn.style.borderColor = aktif ? 'var(--t)' : 'var(--b)';
+  });
 };
 
 // PP-GOREV-NOTIF-001: aciklama HTML'inden mention parse + addNotif dispatch
