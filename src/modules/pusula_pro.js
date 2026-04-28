@@ -3028,7 +3028,31 @@ window._ppOdemeModalAc = function(id, defaultTip) {
   ic += '</div>';
   ic += _ppOdmFld('ppodm-fatura-kurum', 'KURUM/ŞİRKET', 'BEDAŞ, Türk Telekom...', v.faturaKurum);
   ic += '</div>';
-  ic += '<div id="ppodm-other-placeholder" style="display:' + ((['abonelik','kira','fatura'].indexOf(v.tip) >= 0) ? 'none' : 'block') + ';padding:10px 12px;background:var(--s2);border:0.5px dashed var(--b);border-radius:5px;font-size:var(--pp-meta);color:var(--t3)">ⓘ Bu tipe özel alanlar gelecek talimatlarda (PP-MODAL-CONDITIONAL-002+)</div>';
+  /* PP-MODAL-CONDITIONAL-002: egitim tipine özel alanlar */
+  ic += '<div id="ppodm-egitim-fields" style="display:' + (v.tip === 'egitim' ? 'block' : 'none') + ';flex-direction:column;gap:12px">';
+  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  ic += _ppOdmFld('ppodm-egitim-kurum', 'EĞİTİM KURUMU', 'ABC Akademi, Coursera...', v.egitimKurum);
+  ic += _ppOdmFld('ppodm-egitim-katilimci', 'KATILIMCI', 'Baran A., Tüm ekip', v.egitimKatilimci);
+  ic += '</div>';
+  ic += _ppOdmSel('ppodm-egitim-sertifika', 'SERTİFİKA TİPİ', ['online','sınıf','hibrit','sertifikasız'], v.egitimSertifika || 'online');
+  ic += '</div>';
+  /* PP-MODAL-CONDITIONAL-002: servis tipine özel alanlar */
+  ic += '<div id="ppodm-servis-fields" style="display:' + (v.tip === 'servis' ? 'block' : 'none') + ';flex-direction:column;gap:12px">';
+  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  ic += _ppOdmFld('ppodm-servis-ad', 'SERVİS ADI', 'Bakım, Danışmanlık...', v.servisAd);
+  ic += _ppOdmFld('ppodm-servis-sorumlu', 'SORUMLU', 'Sorumlu kişi/ekip', v.servisSorumlu);
+  ic += '</div>';
+  ic += _ppOdmFld('ppodm-servis-kontrolgun', 'KONTROL GÜNÜ', 'Pazartesi, Her ayın 1.', v.servisKontrolGun);
+  ic += '</div>';
+  /* PP-MODAL-CONDITIONAL-002: sigorta tipine özel alanlar */
+  ic += '<div id="ppodm-sigorta-fields" style="display:' + (v.tip === 'sigorta' ? 'block' : 'none') + ';flex-direction:column;gap:12px">';
+  ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  ic += _ppOdmFld('ppodm-sigorta-police', 'POLİÇE NO', 'Z-2026-12345', v.sigortaPolice);
+  ic += _ppOdmSel('ppodm-sigorta-tipi', 'SİGORTA TİPİ', ['kasko','dask','saglik','konut','isyeri','diger'], v.sigortaTipi || 'kasko');
+  ic += '</div>';
+  ic += _ppOdmFld('ppodm-sigorta-sirket', 'SİGORTA ŞİRKETİ', 'Anadolu, Aksigorta...', v.sigortaSirket);
+  ic += '</div>';
+  ic += '<div id="ppodm-other-placeholder" style="display:' + ((['abonelik','kira','fatura','egitim','servis','sigorta'].indexOf(v.tip) >= 0) ? 'none' : 'block') + ';padding:10px 12px;background:var(--s2);border:0.5px dashed var(--b);border-radius:5px;font-size:var(--pp-meta);color:var(--t3)">ⓘ Bu tipe özel alanlar PP-MODAL-CONDITIONAL-003 talimatında (kredi + diger)</div>';
   ic += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
   ic += _ppOdmSel('ppodm-kategori', 'KATEGORİ', ['SaaS','Altyapı','Lisans','Hizmet','Vergi','Diğer'], v.kategori || 'SaaS');
   ic += _ppOdmSel('ppodm-onem', 'ÖNEM', ['kritik','onemli','opsiyonel'], v.onem || 'onemli');
@@ -3104,7 +3128,14 @@ window._ppOdemeTipSec = function(tip) {
   if (aboneFields) aboneFields.style.display = (tip === 'abonelik') ? 'block' : 'none';
   if (kiraFields) kiraFields.style.display = (tip === 'kira') ? 'block' : 'none';
   if (faturaFields) faturaFields.style.display = (tip === 'fatura') ? 'block' : 'none';
-  if (otherPh) otherPh.style.display = ((['abonelik','kira','fatura'].indexOf(tip) >= 0) ? 'none' : 'block');
+  /* PP-MODAL-CONDITIONAL-002: egitim/servis/sigorta toggle */
+  var egitimFields = document.getElementById('ppodm-egitim-fields');
+  var servisFields = document.getElementById('ppodm-servis-fields');
+  var sigortaFields = document.getElementById('ppodm-sigorta-fields');
+  if (egitimFields) egitimFields.style.display = (tip === 'egitim') ? 'block' : 'none';
+  if (servisFields) servisFields.style.display = (tip === 'servis') ? 'block' : 'none';
+  if (sigortaFields) sigortaFields.style.display = (tip === 'sigorta') ? 'block' : 'none';
+  if (otherPh) otherPh.style.display = ((['abonelik','kira','fatura','egitim','servis','sigorta'].indexOf(tip) >= 0) ? 'none' : 'block');
 };
 
 // Tutar yapısı seç (chip click handler)
@@ -3180,6 +3211,18 @@ window._ppOdemeModalKaydet = function() {
     faturaNo: g('ppodm-fatura-no'),
     faturaDonem: g('ppodm-fatura-donem'),
     faturaKurum: g('ppodm-fatura-kurum'),
+    /* PP-MODAL-CONDITIONAL-002: egitim tipine özel field'lar */
+    egitimKurum: g('ppodm-egitim-kurum'),
+    egitimKatilimci: g('ppodm-egitim-katilimci'),
+    egitimSertifika: g('ppodm-egitim-sertifika') || 'online',
+    /* PP-MODAL-CONDITIONAL-002: servis tipine özel field'lar */
+    servisAd: g('ppodm-servis-ad'),
+    servisSorumlu: g('ppodm-servis-sorumlu'),
+    servisKontrolGun: g('ppodm-servis-kontrolgun'),
+    /* PP-MODAL-CONDITIONAL-002: sigorta tipine özel field'lar */
+    sigortaPolice: g('ppodm-sigorta-police'),
+    sigortaTipi: g('ppodm-sigorta-tipi') || 'kasko',
+    sigortaSirket: g('ppodm-sigorta-sirket'),
     kategori: g('ppodm-kategori') || 'SaaS',
     onem: g('ppodm-onem') || 'onemli',
     tutarYapisi: g('ppodm-tutarYapisi') || 'sabit',

@@ -41,9 +41,9 @@
 /* [CACHE-BUMP-2026-04-27-V54] LOJ-1B-I (Admin onay UI: pending modal) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V55] SETTINGS-001 (Admin rol bilgi paneli + 4 çelişki) aktivasyon */
 /* [CACHE-BUMP-2026-04-27-V56] LOJ-1B-F (pending approve/reject statusHistory audit) aktivasyon */
-/* [CACHE-BUMP-2026-04-28-V73] PP-MODAL-CONDITIONAL-001 (Ödeme modal kira + fatura conditional alanlar) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v73';
-const CACHE_VERSION = '73.0.0';
+/* [CACHE-BUMP-2026-04-28-V74] PP-MODAL-CONDITIONAL-002 (Egitim + Servis + Sigorta conditional alanlar) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v74';
+const CACHE_VERSION = '74.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 const PRECACHE_URLS = [
