@@ -500,6 +500,122 @@
     window._edPendingActionsStore(list);
   };
 
+  /* LOJ-1B-I: Admin onay UI — pending listeyi modal'da göster, onayla/reddet */
+  window._edApprovePending = function(actionId) {
+    if (!actionId) return;
+    if (!window._edIsAdmin()) { window.toast?.('Sadece admin onaylayabilir', 'err'); return; }
+    var actions = window._edPendingActionsLoad();
+    var ai = -1;
+    for (var i = 0; i < actions.length; i++) { if (actions[i].id === actionId) { ai = i; break; } }
+    if (ai === -1) { window.toast?.('Talep bulunamadı', 'err'); return; }
+    var action = actions[ai];
+    if (action.status !== 'pending') { window.toast?.('Talep zaten incelenmiş', 'warn'); return; }
+    var ok = false;
+    if (action.action === 'delete') {
+      ok = window._edDelete(action.edId);
+    } else if (action.action === 'update' && action.payload) {
+      var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+      var idx = -1;
+      for (var j = 0; j < list.length; j++) { if (list[j].id === action.edId) { idx = j; break; } }
+      if (idx !== -1) {
+        Object.assign(list[idx], action.payload);
+        list[idx].updatedAt = new Date().toISOString();
+        if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(list);
+        ok = true;
+      }
+    }
+    if (!ok) { window.toast?.('Uygulanamadı', 'err'); return; }
+    var cu = (typeof window.CU === 'function' ? window.CU() : null) || {};
+    actions[ai].status = 'approved';
+    actions[ai].reviewedBy = cu.id || cu.uid || null;
+    actions[ai].reviewedByName = cu.name || cu.displayName || '—';
+    actions[ai].reviewedAt = new Date().toISOString();
+    window._edPendingActionsStore(actions);
+    window.toast?.('Talep onaylandı', 'ok');
+    document.getElementById('ed-pending-modal')?.remove();
+    window._edRefresh?.();
+  };
+
+  window._edRejectPending = function(actionId) {
+    if (!actionId) return;
+    if (!window._edIsAdmin()) { window.toast?.('Sadece admin reddedebilir', 'err'); return; }
+    var actions = window._edPendingActionsLoad();
+    var ai = -1;
+    for (var i = 0; i < actions.length; i++) { if (actions[i].id === actionId) { ai = i; break; } }
+    if (ai === -1) { window.toast?.('Talep bulunamadı', 'err'); return; }
+    if (actions[ai].status !== 'pending') { window.toast?.('Talep zaten incelenmiş', 'warn'); return; }
+    var cu = (typeof window.CU === 'function' ? window.CU() : null) || {};
+    actions[ai].status = 'rejected';
+    actions[ai].reviewedBy = cu.id || cu.uid || null;
+    actions[ai].reviewedByName = cu.name || cu.displayName || '—';
+    actions[ai].reviewedAt = new Date().toISOString();
+    window._edPendingActionsStore(actions);
+    window.toast?.('Talep reddedildi', 'ok');
+    document.getElementById('ed-pending-modal')?.remove();
+    if (typeof window._edPendingModalOpen === 'function') window._edPendingModalOpen();
+    window._edRefresh?.();
+  };
+
+  window._edPendingModalOpen = function() {
+    if (!window._edIsAdmin()) { window.toast?.('Yalnızca admin', 'err'); return; }
+    var ex = document.getElementById('ed-pending-modal'); if (ex) ex.remove();
+    var actions = (window._edPendingActionsLoad() || []).filter(function(a){ return a.status === 'pending'; });
+    var edList = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+    var edMap = {};
+    edList.forEach(function(e){ edMap[e.id] = e; });
+    var esc = window._uiEsc || function(s){return String(s||'');};
+    var mo = document.createElement('div');
+    mo.id = 'ed-pending-modal';
+    mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;display:flex;align-items:center;justify-content:center';
+    mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+    var rows = actions.length === 0
+      ? '<div style="padding:40px;text-align:center;color:var(--t3);font-size:13px">🎉 Bekleyen talep yok</div>'
+      : actions.map(function(a){
+          var ed = edMap[a.edId] || { productName: '(silinmiş)' };
+          var dateStr = a.requestedAt ? new Date(a.requestedAt).toLocaleString('tr-TR') : '—';
+          var actionLabel = a.action === 'delete' ? '🗑️ Sil' : '✏️ Düzenle';
+          var actionColor = a.action === 'delete' ? '#DC2626' : '#185FA5';
+          var detailBtn = a.action === 'update' && a.payload
+            ? '<button onclick="event.stopPropagation();var d=document.getElementById(\'pa-detail-' + esc(a.id) + '\');if(d)d.style.display=d.style.display===\'none\'?\'block\':\'none\';" style="font-size:10px;padding:3px 8px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit;margin-right:4px">Detay</button>'
+            : '';
+          var detailDiv = a.action === 'update' && a.payload
+            ? '<div id="pa-detail-' + esc(a.id) + '" style="display:none;margin-top:8px;padding:8px;background:var(--s2);border-radius:6px;font-size:10px;font-family:monospace;color:var(--t3);max-height:150px;overflow-y:auto">' + esc(JSON.stringify(a.payload, null, 2)) + '</div>'
+            : '';
+          return '<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px 14px;margin-bottom:8px;background:var(--sf)">'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
+              + '<div style="flex:1;min-width:0">'
+                + '<div style="font-size:13px;font-weight:500;color:var(--t)">' + esc(ed.productName || '—') + '</div>'
+                + '<div style="font-size:11px;color:var(--t3);margin-top:2px"><span style="color:' + actionColor + ';font-weight:500">' + actionLabel + '</span> · ' + esc(a.requestedByName || '—') + ' · ' + dateStr + '</div>'
+              + '</div>'
+              + '<div style="display:flex;gap:6px;flex-shrink:0">'
+                + detailBtn
+                + '<button onclick="window._edApprovePending && window._edApprovePending(\'' + esc(a.id) + '\')" style="font-size:11px;padding:5px 12px;border:none;border-radius:6px;background:#16A34A;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">✅ Onayla</button>'
+                + '<button onclick="window._edRejectPending && window._edRejectPending(\'' + esc(a.id) + '\')" style="font-size:11px;padding:5px 12px;border:none;border-radius:6px;background:#DC2626;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">❌ Reddet</button>'
+              + '</div>'
+            + '</div>'
+            + detailDiv
+          + '</div>';
+        }).join('');
+    mo.innerHTML = '<div style="background:var(--sf,#fff);color:var(--t);width:680px;max-width:92vw;max-height:90vh;overflow-y:auto;border-radius:12px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.15);font-family:inherit" onclick="event.stopPropagation()">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+        + '<div style="font-size:15px;font-weight:600;color:var(--t)">🔔 Onay Bekleyen Talepler (' + actions.length + ')</div>'
+        + '<button onclick="document.getElementById(\'ed-pending-modal\').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>'
+      + '</div>'
+      + rows
+    + '</div>';
+    document.body.appendChild(mo);
+  };
+
+  window._edPendingBtnHTML = function() {
+    if (!window._edIsAdmin?.()) return '';
+    var pc = (window._edPendingActionsLoad?.() || []).filter(function(a){return a.status === 'pending';}).length;
+    var bg = pc > 0 ? '#FEE2E2' : 'transparent';
+    var color = pc > 0 ? '#DC2626' : 'var(--t2)';
+    var border = pc > 0 ? '#DC2626' : 'var(--b)';
+    var label = pc > 0 ? '🔔 Onay (' + pc + ')' : '🔔 Onay';
+    return '<button onclick="window._edPendingModalOpen && window._edPendingModalOpen()" style="margin-left:6px;padding:5px 10px;border:0.5px solid ' + border + ';border-radius:6px;background:' + bg + ';color:' + color + ';cursor:pointer;font-size:11px;font-family:inherit" title="Onay bekleyen talepler">' + label + '</button>';
+  };
+
   /* ─── PARÇA 2: DELIVERY MANAGEMENT ──────────────────────── */
   var _edFindRaw = function(edId) {
     var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
@@ -1727,6 +1843,7 @@
       + '<div style="'+hdr+'">'
       + '<span style="font-size:13px;font-weight:500">Beklenen Teslimatlar <span style="font-weight:400;color:var(--t3);font-size:11px;margin-left:6px">'+list.length+' kayıt</span></span>'
       + '<button onclick="window._edWizardAc && window._edWizardAc()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit">+ Yeni</button>'
+      + (window._edPendingBtnHTML ? window._edPendingBtnHTML() : '')
       + '</div>'
       + filterBar
       + hdrRow + rows
