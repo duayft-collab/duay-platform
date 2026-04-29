@@ -44,7 +44,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<div style="font-size:9px;color:var(--t3);margin-top:2px">'+_saEsc(_urunAdi)+(t.urunler&&t.urunler.length>1?' · '+t.urunler.length+' ürün':'')+'</div></div>';
   ic += '<div style="display:flex;align-items:center;gap:6px">';
   /* PI-D-001: D1+D2 buton bar — alt2-v3 Apple/Corporate stili */
-  ['A','I','L','O','D1','D2'].forEach(function(d){
+  ['A','B','D1','D2'].forEach(function(d){
     var ak=(window._saV2AktifPITasarim||'A')===d;
     ic += '<button onclick="event.stopPropagation();window._saV2AktifPITasarim=\''+d+'\';window._saV2PIOnizlemeGuncelle()" class="pi-tas-btn" style="font-size:9px;padding:2px 8px;min-width:24px;border:0.5px solid var(--b);border-radius:4px;background:'+(ak?'var(--t)':'transparent')+';color:'+(ak?'var(--sf)':'var(--t2)')+';cursor:pointer;font-family:inherit">'+d+'</button>';
   });

@@ -1,7 +1,7 @@
 'use strict';
 /* ═══════════════════════════════════════════════════════════════
    src/modules/satin_alma_v2_pi.js — Proforma Invoice (PI) Modülü
-   3 tasarım: A (Corporate) / B (Modern Blue) / C (Premium Green)
+   4 tasarım: A (Corporate) / B (Modern Blue) / D1 (Apple Görselli) / D2 (Apple Görselsiz)
    3 katman: müşteriye giden / şirket içi / yönetici
    Gizli kod: 6 karakter, PI'da gri/küçük
    Adres: K. Dolap Mh. Neşeli Sk. 1/5 Eyüpsultan İSTANBUL
@@ -228,7 +228,7 @@ window._piOlustur = function(teklif, tasarim, katman, skipKontrol) {
   }
 
   /* PDF-HARMONIZE-001: V2 form (gecerlilik/teslim/odeme) ↔ inline (gecerlilikTarihi/teslimSekli/odemeKosulu)
-     şema fallback + cari lookup. _piTasarimA/B/C/I/L/O fonksiyonları teklif.* okuyor —
+     şema fallback + cari lookup. _piTasarimA/B/D1/D2 fonksiyonları teklif.* okuyor —
      üst seviyede tek truth source ile zenginleştir. */
   if (typeof window._pdfTeklifNormalize === 'function') {
     var n = window._pdfTeklifNormalize(teklif);
@@ -660,47 +660,6 @@ window._piTasarimB = function(t, bugun, satirlar, katman, gizliKod, L) {
   return h;
 };
 
-/* ── Tasarım C — Premium Green (yeşil top bar + grid layout) ─ */
-window._piTasarimC = function(t, bugun, satirlar, katman, gizliKod, L) {
-  L = L || PI_DILLER.EN;
-  var toplamSatis = satirlar.reduce(function(a, s) { return a + parseFloat(s.toplam); }, 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
-  var h = '<div style="height:6px;background:#1D9E75;margin:-32px -32px 24px"></div>';
-  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:0.5px solid #eee;padding-bottom:16px;margin-bottom:16px">';
-  h += '<div><div style="font-size:9px;font-weight:700;color:#1D9E75;text-transform:uppercase;letter-spacing:.12em;margin-bottom:5px">Proforma Invoice</div>';
-  h += '<div style="font-size:10px;color:#555;line-height:1.8">No: <strong style="font-family:monospace">' + (t.teklifId || '') + '</strong><br>Date: ' + bugun + '<br>Valid: 30 days · Rev: ' + (t.revNo || '01') + '</div></div>';
-  h += '<div style="text-align:right"><div style="font-size:18px;font-weight:700;letter-spacing:.3px">' + PI_ADRES.sirket + '</div>';
-  h += '<div style="font-size:9px;color:#888;margin-top:3px">' + PI_ADRES.adres1 + ' · ' + PI_ADRES.adres2 + '</div>';
-  h += '<div style="font-size:9px;color:#888">' + PI_ADRES.tel + ' · WA: ' + PI_ADRES.mobil + ' · ' + PI_ADRES.mail + ' · ' + PI_ADRES.web + '</div></div></div>';
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px">';
-  h += '<div style="border-left:3px solid #1D9E75;padding-left:12px">';
-  h += '<div style="font-size:8px;font-weight:700;color:#1D9E75;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">' + L.alici + '</div>';
-  h += '<div style="font-size:12px;font-weight:500">' + (t.musteriAd || '—') + '</div>';
-  h += '</div>';
-  if (t.musteriAdres) h += '<div style="font-size:10px;color:#666;margin-top:1px">' + esc(t.musteriAdres) + '</div>';
-  if (t.musteriTelefon) h += '<div style="font-size:10px;color:#666;margin-top:1px">Tel: ' + esc(t.musteriTelefon) + '</div>';
-  h += '</div>';
-  h += '<div style="border-left:3px solid #1D9E75;padding-left:12px">';
-  h += '<div style="font-size:8px;font-weight:700;color:#1D9E75;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">' + L.kosullar + '</div>';
-  h += '<div style="display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:10px">';
-  h += '<span style="color:#888">' + L.incoterms + '</span><span>' + (t.teslim || 'FOB Istanbul') + '</span>';
-  h += '<span style="color:#888">' + L.odeme + '</span><span>' + (t.odeme || '30% Advance, 70% L/C') + '</span>';
-  h += '</div></div></div>';
-  h += '<table><thead><tr style="border-bottom:1px solid #1D9E75">';
-  h += '<th style="color:#1D9E75;width:32px">#</th><th style="color:#1D9E75">' + L.urun + '</th><th style="color:#1D9E75;width:55px">' + L.miktar + '</th><th style="color:#1D9E75;width:55px">' + L.birim + '</th><th style="color:#1D9E75;width:90px;text-align:right">' + L.birimFiyat + '</th><th style="color:#1D9E75;width:100px;text-align:right">' + L.tutar + '</th>';
-  h += '</tr></thead><tbody>';
-  satirlar.forEach(function(s) { h += '<tr><td style="color:#aaa">' + s.no + '</td><td><div style="font-weight:500">' + s.ad + '</div><div style="font-size:9px;color:#888">' + s.kod + '</div>' + (s.eskiKod?'<div style="font-size:9px;color:#888">'+(L.eskiKod||'Old Code')+': '+s.eskiKod+'</div>':'') + '</td><td>' + s.miktar + '</td><td>' + esc(window._unitToEN ? window._unitToEN(s.birim) : (s.birim || '')) + '</td><td style="text-align:right">USD ' + Number(s.satisF || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</td><td style="text-align:right;font-weight:500">' + Number(s.toplam || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</td></tr>'; });
-  h += '</tbody></table>';
-  h += '<div style="border-top:1px solid #1D9E75;padding-top:12px;margin-top:0;display:flex;justify-content:space-between;align-items:baseline">';
-  h += '<div style="font-size:8px;color:#aaa">All amounts in USD</div>';
-  h += (function(){var fi = window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD'); var totalVal = (fi.grandTotal !== null ? fi.grandTotal.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) : toplamSatis); return (fi.preTotalHTML || '') + '<div style="font-size:15px;font-weight:700">' + L.toplam + ': USD ' + totalVal + '</div></div>';})();
-  h += '<div style="margin-top:24px;display:flex;justify-content:space-between;align-items:flex-end">';
-  h += '<div style="border-top:0.5px solid #aaa;width:160px;text-align:center;padding-top:5px;font-size:9px;color:#666">' + (window._piOriginator?window._piOriginator(t):'') + L.imza + '</div>';
-  h += '<div style="font-size:8px;color:#bbb">' + L.not + '</div>';
-  h += '</div>';
-  h += '<div class="gizli-kod">' + gizliKod + '</div>';
-  return h;
-};
-
 /* ── SA-V2-PIPELINE-001: Teklif Durum Pipeline ─────────────── */
 var ST_DURUMLAR = ['taslak','gonderildi','inceliyor','kabul','reddedildi','revizyon'];
 var ST_DURUM_LBL = {taslak:'Taslak',gonderildi:'Gönderildi',inceliyor:'İnceliyor',kabul:'Kabul',reddedildi:'Reddedildi',revizyon:'Revizyon İstedi'};
@@ -801,160 +760,6 @@ window._steklifRevGoster = function(encodedSnap) {
     var snap = JSON.parse(decodeURIComponent(encodedSnap));
     window.toast?.('Rev snapshot: ' + JSON.stringify(snap).slice(0, 80) + '...', 'info');
   } catch(e) { window.toast?.('Snapshot okunamadı', 'warn'); }
-};
-
-/* ── Tasarım I — Çift Şerit (Mavi accent + üst/alt şerit) ──── */
-window._piTasarimI = function(t, bugun, satirlar, katman, gizliKod, L) {
-  L = L || PI_DILLER.EN;
-  var banka = window._saV2BankaMetni?.(t.paraBirimi||'USD')||'';
-  /* SARTLAR-PI: öncelik zinciri — kayıt → modal session → global default */
-  var sartlar = (t && t.sartlar && t.sartlar.length)
-    ? t.sartlar
-    : ((window._stSartlar && window._stSartlar.length)
-        ? window._stSartlar
-        : (window._saV2Sartlar?.() || []));
-  var h = '<div style="font-family:Helvetica Neue,Helvetica,Arial,sans-serif;max-width:800px;margin:0 auto;color:#111;font-size:10px">';
-  h += '<div style="height:5px;background:#185FA5"></div>';
-  h += '<div style="padding:16px 24px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:0.5px solid #eee">';
-  h += '<div><div style="font-size:18px;font-weight:700">Duay Global LLC</div>';
-  h += '<div style="font-size:9px;color:#888;margin-top:4px">www.duaycor.com · +90 212 625 5 444 · WA: +90 532 270 5 113</div></div>';
-  h += '<div style="text-align:right"><div style="font-size:8px;letter-spacing:.15em;color:#185FA5;font-weight:600">'+(L.baslik||'PROFORMA INVOICE')+'</div>';
-  h += '<div style="font-size:14px;font-weight:700;font-family:monospace;margin-top:2px">'+(t.piNo||t.teklifNo||t.teklifId||t.id||'—')+'</div>';
-  h += '<div style="font-size:9px;color:#888;margin-top:2px">'+bugun+'</div></div>';
-  h += '</div>';
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:0.5px solid #eee">';
-  h += '<div style="padding:10px 24px;border-right:0.5px solid #eee"><div style="font-size:8px;letter-spacing:.1em;color:#185FA5;font-weight:600;margin-bottom:3px">'+L.alici+'</div>';
-  h += '<div style="font-size:11px;font-weight:600">'+(t.musteri||t.musteriAd||'—')+'</div>'
-     + (t.musteriAdres ? '<div style="font-size:9px;color:#888;margin-top:2px">' + esc(t.musteriAdres) + '</div>' : '')
-     + (t.musteriTelefon ? '<div style="font-size:9px;color:#888;margin-top:1px">Tel: ' + esc(t.musteriTelefon) + '</div>' : '')
-     + '</div>';
-  h += '<div style="padding:10px 24px;display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:9px">';
-  h += '<div><div style="color:#888">'+(L.teslim||'Delivery')+'</div><div style="font-weight:600">'+(t.teslimYeri||t.teslim||t.teslimMasraf||'—')+'</div></div>';
-  h += '<div><div style="color:#888">'+(L.gecerlilik||'Valid')+'</div><div style="font-weight:600">'+(t.gecerlilikTarihi||t.gecerlilik||'—')+'</div></div>';
-  h += '<div><div style="color:#888">'+(L.odeme||'Payment')+'</div><div>'+(t.odemeKosulu||t.odeme||'—')+'</div></div>';
-  h += '<div><div style="color:#888">'+(L.para||'Currency')+'</div><div style="font-weight:600">'+(t.paraBirimi||'USD')+'</div></div>';
-  h += '</div></div>';
-  h += '<div style="padding:0 24px"><table style="width:100%;border-collapse:collapse;margin:12px 0">';
-  h += '<thead><tr style="border-bottom:1px solid #185FA5"><th style="color:#185FA5;font-size:8px;padding:5px 4px;text-align:left">'+(L.no||'#')+'</th><th style="color:#185FA5;font-size:8px;padding:5px 4px;text-align:left">'+L.urun+'</th><th style="color:#185FA5;font-size:8px;padding:5px 4px;text-align:right">'+L.miktar+'</th><th style="color:#185FA5;font-size:8px;padding:5px 4px;text-align:right">'+L.birimFiyat+'</th><th style="color:#185FA5;font-size:8px;padding:5px 4px;text-align:right">'+L.tutar+'</th></tr></thead>';
-  var satirHTML = (typeof satirlar === 'string') ? satirlar : (Array.isArray(satirlar) ? satirlar.map(function(s){return '<tr><td style="font-size:9px;padding:4px;color:#aaa">'+s.no+'</td><td style="font-size:9px;padding:4px"><div style="font-weight:600">'+s.ad+'</div><div style="font-size:8px;color:#888">'+s.kod+'</div></td><td style="font-size:9px;padding:4px;text-align:right">'+s.miktar+' '+esc(window._unitToEN?window._unitToEN(s.birim):(s.birim||''))+'</td><td style="font-size:9px;padding:4px;text-align:right">$'+Number(s.satisF || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2})+'</td><td style="font-size:9px;padding:4px;text-align:right;font-weight:600">$'+Number(s.toplam || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2})+'</td></tr>';}).join('') : '');
-  h += '<tbody>'+satirHTML+'</tbody></table>';
-  var toplamGoster = t.genelToplam || (Array.isArray(satirlar) ? satirlar.reduce(function(a,s){return a+parseFloat(s.toplam||0);},0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '0');
-  h += '<div style="text-align:right;border-top:1px solid #185FA5;padding-top:8px;margin-bottom:16px"><span style="font-size:10px;color:#888;margin-right:8px">'+L.toplam+'</span><span style="font-size:16px;font-weight:700;color:#185FA5">'+toplamGoster+' '+(t.paraBirimi||'USD')+'</span></div>';
-  if(sartlar.length){h+='<div style="margin-bottom:12px"><div style="font-size:8px;font-weight:600;color:#185FA5;margin-bottom:4px">'+(L.sartlar||'Terms')+'</div>';sartlar.slice(0,10).forEach(function(s,i){h+='<div style="font-size:8px;color:#555;margin-bottom:2px">'+(i+1)+'. '+s+'</div>';});h+='</div>';}
-  h += '<div style="font-size:8px;color:#aaa;font-style:italic;margin-bottom:3px">'+(L.gorselNot||'Product images shown are for illustrative purposes only.')+'</div>';
-  h += '<div style="font-size:8px;color:#555;margin-bottom:16px">'+banka+'</div>';
-  h += '<div style="display:flex;justify-content:space-between"><div style="width:180px;text-align:center"><div style="border-top:0.5px solid #111;padding-top:4px;font-size:7px;letter-spacing:.1em;color:#888">'+(window._piOriginator?window._piOriginator(t):'')+L.imza+'</div></div>';
-  h += '<div style="width:180px;text-align:center"><div style="border-top:0.5px solid #111;padding-top:4px;font-size:7px;letter-spacing:.1em;color:#888">'+(L.tarihMuhur||'DATE / STAMP')+'</div></div></div>';
-  if(gizliKod) h+='<div style="text-align:center;margin-top:12px;font-size:7px;color:#ccc;font-family:monospace">'+gizliKod+'</div>';
-  h += '</div>';
-  h += '<div style="height:3px;background:#185FA5;margin-top:16px"></div>';
-  h += '</div>';
-  // [PI-STANDART-001] Standart sartlar + banka (L/O'da banka var, typeof guard)
-  if (typeof window._piStandartSartlar === 'function') h += window._piStandartSartlar(t);
-  if (typeof banka === 'undefined' && typeof window._piStandartBanka === 'function') {
-    var __std_banka = window._piStandartBanka(t);
-    if (__std_banka) h += '<div style="margin-top:10px;font-size:9.5px;color:#444">' + __std_banka + '</div>';
-  }
-  return h;
-};
-
-/* ── Tasarım L — Zarf/Klasik (Çerçeveli, ince serif) ──────── */
-window._piTasarimL = function(t, bugun, satirlar, katman, gizliKod, L) {
-  L = L || PI_DILLER.EN;
-  var banka = window._saV2BankaMetni?.(t.paraBirimi||'USD')||'';
-  /* SARTLAR-PI: öncelik zinciri — kayıt → modal session → global default */
-  var sartlar = (t && t.sartlar && t.sartlar.length)
-    ? t.sartlar
-    : ((window._stSartlar && window._stSartlar.length)
-        ? window._stSartlar
-        : (window._saV2Sartlar?.() || []));
-  var h = '<div style="font-family:Helvetica Neue,Helvetica,Arial,sans-serif;max-width:800px;margin:0 auto;color:#111;font-size:10px;padding:28px 32px;border:0.5px solid #ddd">';
-  h += '<div style="text-align:center;border-bottom:2px solid #111;padding-bottom:14px;margin-bottom:16px">';
-  h += '<div style="font-size:20px;font-weight:300;letter-spacing:.06em">DUAY GLOBAL LLC</div>';
-  h += '<div style="font-size:8px;color:#aaa;letter-spacing:.06em;margin-top:4px">www.duaycor.com · +90 212 625 5 444 · WA: +90 532 270 5 113</div>';
-  h += '</div>';
-  h += '<div style="text-align:center;margin-bottom:18px">';
-  h += '<div style="font-size:8px;letter-spacing:.2em;color:#aaa;margin-bottom:3px">'+(L.baslik||'PROFORMA INVOICE').toUpperCase()+'</div>';
-  h += '<div style="font-size:13px;font-family:monospace;font-weight:600">'+(t.piNo||t.teklifNo||t.teklifId||t.id||'—')+'</div>';
-  h += '<div style="font-size:8px;color:#aaa;margin-top:2px">'+bugun+'</div>';
-  h += '</div>';
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">';
-  h += '<div style="border:0.5px solid #ddd;padding:10px 12px;border-radius:3px"><div style="font-size:7px;letter-spacing:.1em;color:#aaa;margin-bottom:4px">'+L.alici.toUpperCase()+'</div><div style="font-weight:600;font-size:11px">'+(t.musteri||t.musteriAd||'—')+'</div>'
-       + (t.musteriAdres ? '<div style="font-size:9px;color:#888;margin-top:3px">' + esc(t.musteriAdres) + '</div>' : '')
-       + (t.musteriTelefon ? '<div style="font-size:9px;color:#888;margin-top:1px">Tel: ' + esc(t.musteriTelefon) + '</div>' : '')
-       + '</div>';
-  h += '<div style="border:0.5px solid #ddd;padding:10px 12px;border-radius:3px"><div style="font-size:7px;letter-spacing:.1em;color:#aaa;margin-bottom:4px">SHIPMENT DETAILS</div>';
-  h += '<div style="font-size:9px"><span style="color:#aaa">'+(L.teslim||'Delivery')+': </span><strong>'+(t.teslimYeri||t.teslim||'—')+'</strong></div>';
-  h += '<div style="font-size:9px"><span style="color:#aaa">'+(L.gecerlilik||'Valid')+': </span><strong>'+(t.gecerlilikTarihi||t.gecerlilik||'—')+'</strong></div>';
-  h += '<div style="font-size:9px"><span style="color:#aaa">'+(L.odeme||'Payment')+': </span>'+(t.odemeKosulu||t.odeme||'—')+'</div></div>';
-  h += '</div>';
-  h += '<table style="width:100%;border-collapse:collapse;margin-bottom:14px">';
-  h += '<thead><tr style="border-top:0.5px solid #ddd;border-bottom:0.5px solid #ddd"><th style="color:#aaa;font-size:8px;padding:5px 4px">'+(L.no||'#')+'</th><th style="color:#aaa;font-size:8px;padding:5px 4px">'+L.urun+'</th><th style="color:#aaa;font-size:8px;text-align:right;padding:5px 4px">'+L.miktar+'</th><th style="color:#aaa;font-size:8px;text-align:right;padding:5px 4px">'+L.birimFiyat+'</th><th style="color:#aaa;font-size:8px;text-align:right;padding:5px 4px">'+L.tutar+'</th></tr></thead>';
-  var satirHTML2 = (typeof satirlar === 'string') ? satirlar : (Array.isArray(satirlar) ? satirlar.map(function(s){return '<tr><td style="font-size:9px;padding:4px;color:#aaa">'+s.no+'</td><td style="font-size:9px;padding:4px"><div style="font-weight:600">'+s.ad+'</div><div style="font-size:8px;color:#888">'+s.kod+'</div></td><td style="font-size:9px;padding:4px;text-align:right">'+s.miktar+' '+esc(window._unitToEN?window._unitToEN(s.birim):(s.birim||''))+'</td><td style="font-size:9px;padding:4px;text-align:right">$'+Number(s.satisF || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2})+'</td><td style="font-size:9px;padding:4px;text-align:right;font-weight:600">$'+Number(s.toplam || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2})+'</td></tr>';}).join('') : '');
-  h += '<tbody>'+satirHTML2+'</tbody></table>';
-  var toplamGoster2 = t.genelToplam || (Array.isArray(satirlar) ? satirlar.reduce(function(a,s){return a+parseFloat(s.toplam||0);},0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '0');
-  h += '<div style="border-top:2px solid #111;padding-top:8px;text-align:right;margin-bottom:16px"><span style="font-size:8px;color:#aaa;letter-spacing:.1em;margin-right:8px">'+L.toplam.toUpperCase()+' · '+(t.paraBirimi||'USD')+'</span><span style="font-size:18px;font-weight:300">'+toplamGoster2+'</span></div>';
-  if(sartlar.length){h+='<div style="margin-bottom:12px"><div style="font-size:8px;font-weight:600;color:#555;margin-bottom:4px">'+(L.sartlar||'Terms')+'</div>';sartlar.slice(0,10).forEach(function(s,i){h+='<div style="font-size:8px;color:#555;margin-bottom:2px">'+(i+1)+'. '+s+'</div>';});h+='</div>';}
-  h += '<div style="font-size:8px;color:#aaa;font-style:italic;margin-bottom:3px">'+(L.gorselNot||'Product images shown are for illustrative purposes only.')+'</div>';
-  h += '<div style="font-size:8px;color:#555;margin-bottom:20px">'+banka+'</div>';
-  h += '<div style="display:flex;justify-content:space-between"><div style="width:180px;text-align:center"><div style="border-top:0.5px solid #111;padding-top:4px;font-size:7px;letter-spacing:.1em;color:#aaa">'+(window._piOriginator?window._piOriginator(t):'')+L.imza.toUpperCase()+'</div></div>';
-  h += '<div style="width:180px;text-align:center"><div style="border-top:0.5px solid #111;padding-top:4px;font-size:7px;letter-spacing:.1em;color:#aaa">'+(L.tarihMuhur||'DATE / STAMP').toUpperCase()+'</div></div></div>';
-  if(gizliKod) h+='<div style="text-align:center;margin-top:12px;font-size:7px;color:#ccc;font-family:monospace">'+gizliKod+'</div>';
-  h += '</div>';
-  // [PI-STANDART-001] Standart sartlar + banka (L/O'da banka var, typeof guard)
-  if (typeof window._piStandartSartlar === 'function') h += window._piStandartSartlar(t);
-  if (typeof banka === 'undefined' && typeof window._piStandartBanka === 'function') {
-    var __std_banka = window._piStandartBanka(t);
-    if (__std_banka) h += '<div style="margin-top:10px;font-size:9.5px;color:#444">' + __std_banka + '</div>';
-  }
-  return h;
-};
-
-/* ── Tasarım O — Tek Nokta Renk (Siyah çerçeve, sol border) ── */
-window._piTasarimO = function(t, bugun, satirlar, katman, gizliKod, L) {
-  L = L || PI_DILLER.EN;
-  var banka = window._saV2BankaMetni?.(t.paraBirimi||'USD')||'';
-  /* SARTLAR-PI: öncelik zinciri — kayıt → modal session → global default */
-  var sartlar = (t && t.sartlar && t.sartlar.length)
-    ? t.sartlar
-    : ((window._stSartlar && window._stSartlar.length)
-        ? window._stSartlar
-        : (window._saV2Sartlar?.() || []));
-  var h = '<div style="font-family:Helvetica Neue,Helvetica,Arial,sans-serif;max-width:800px;margin:0 auto;color:#111;font-size:10px;padding:24px 28px;border:0.5px solid #e5e5e5">';
-  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">';
-  h += '<div><div style="font-size:16px;font-weight:600">Duay Global LLC</div><div style="font-size:8px;color:#aaa;margin-top:3px">www.duaycor.com · +90 212 625 5 444 · WA: +90 532 270 5 113</div></div>';
-  h += '<div style="text-align:right"><div style="font-size:7px;letter-spacing:.15em;color:#aaa;margin-bottom:3px">'+(L.baslik||'PROFORMA INVOICE').toUpperCase()+'</div><div style="font-size:13px;font-weight:600;font-family:monospace">'+(t.piNo||t.teklifNo||t.teklifId||t.id||'—')+'</div><div style="font-size:8px;color:#aaa;margin-top:2px">'+bugun+'</div></div>';
-  h += '</div>';
-  h += '<div style="height:2px;background:#111;margin-bottom:14px"></div>';
-  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;font-size:8px">';
-  h += '<div><div style="color:#aaa;margin-bottom:2px">'+L.alici+'</div><div style="font-weight:600;font-size:9px">'+(t.musteri||t.musteriAd||'—')+'</div>'
-       + (t.musteriAdres ? '<div style="font-size:8px;color:#aaa;margin-top:2px">' + esc(t.musteriAdres) + '</div>' : '')
-       + (t.musteriTelefon ? '<div style="font-size:8px;color:#aaa">Tel: ' + esc(t.musteriTelefon) + '</div>' : '')
-       + '</div>';
-  h += '<div><div style="color:#aaa;margin-bottom:2px">'+(L.teslim||'Delivery')+'</div><div style="font-weight:600;font-size:9px">'+(t.teslimYeri||t.teslim||'—')+'</div></div>';
-  h += '<div><div style="color:#aaa;margin-bottom:2px">'+(L.gecerlilik||'Valid')+'</div><div style="font-weight:600;font-size:9px">'+(t.gecerlilikTarihi||t.gecerlilik||'—')+'</div></div>';
-  h += '<div><div style="color:#aaa;margin-bottom:2px">'+(L.odeme||'Payment')+'</div><div style="font-size:9px">'+(t.odemeKosulu||t.odeme||'—').slice(0,20)+'</div></div>';
-  h += '</div>';
-  h += '<table style="width:100%;border-collapse:collapse;margin-bottom:12px">';
-  h += '<thead><tr style="border-bottom:1px solid #111"><th style="color:#111;font-size:8px;padding:5px 4px">'+(L.no||'#')+'</th><th style="color:#111;font-size:8px;padding:5px 4px">'+L.urun+'</th><th style="color:#111;font-size:8px;text-align:right;padding:5px 4px">'+L.miktar+'</th><th style="color:#111;font-size:8px;text-align:right;padding:5px 4px">'+L.birimFiyat+'</th><th style="color:#111;font-size:8px;text-align:right;padding:5px 4px">'+L.tutar+'</th></tr></thead>';
-  var satirHTML3 = (typeof satirlar === 'string') ? satirlar : (Array.isArray(satirlar) ? satirlar.map(function(s){return '<tr><td style="font-size:9px;padding:4px;color:#aaa">'+s.no+'</td><td style="font-size:9px;padding:4px"><div style="font-weight:600">'+s.ad+'</div><div style="font-size:8px;color:#888">'+s.kod+'</div></td><td style="font-size:9px;padding:4px;text-align:right">'+s.miktar+' '+esc(window._unitToEN?window._unitToEN(s.birim):(s.birim||''))+'</td><td style="font-size:9px;padding:4px;text-align:right">$'+Number(s.satisF || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2})+'</td><td style="font-size:9px;padding:4px;text-align:right;font-weight:600">$'+Number(s.toplam || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2})+'</td></tr>';}).join('') : '');
-  h += '<tbody>'+satirHTML3+'</tbody></table>';
-  var toplamGoster3 = t.genelToplam || (Array.isArray(satirlar) ? satirlar.reduce(function(a,s){return a+parseFloat(s.toplam||0);},0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '0');
-  h += '<div style="display:flex;justify-content:flex-end;margin-bottom:14px"><div style="border-left:3px solid #111;padding-left:10px"><div style="font-size:7px;color:#aaa;letter-spacing:.12em">'+L.toplam.toUpperCase()+'</div><div style="font-size:20px;font-weight:300">'+toplamGoster3+' <span style="font-size:11px">'+(t.paraBirimi||'USD')+'</span></div></div></div>';
-  if(sartlar.length){h+='<div style="margin-bottom:12px"><div style="font-size:8px;font-weight:600;color:#555;margin-bottom:4px">'+(L.sartlar||'Terms')+'</div>';sartlar.slice(0,10).forEach(function(s,i){h+='<div style="font-size:8px;color:#555;margin-bottom:2px">'+(i+1)+'. '+s+'</div>';});h+='</div>';}
-  h += '<div style="font-size:8px;color:#ccc;font-style:italic;margin-bottom:2px">'+(L.gorselNot||'Product images shown are for illustrative purposes only.')+'</div>';
-  h += '<div style="font-size:8px;color:#aaa;margin-bottom:18px">'+banka+'</div>';
-  h += '<div style="display:flex;justify-content:space-between"><div style="width:180px;text-align:center"><div style="border-top:2px solid #111;padding-top:4px;font-size:7px;letter-spacing:.12em;color:#aaa">'+(window._piOriginator?window._piOriginator(t):'')+L.imza.toUpperCase()+'</div></div>';
-  h += '<div style="width:180px;text-align:center"><div style="border-top:2px solid #111;padding-top:4px;font-size:7px;letter-spacing:.12em;color:#aaa">'+(L.tarihMuhur||'DATE / STAMP').toUpperCase()+'</div></div></div>';
-  if(gizliKod) h+='<div style="text-align:center;margin-top:12px;font-size:7px;color:#ccc;font-family:monospace">'+gizliKod+'</div>';
-  h += '</div>';
-  // [PI-STANDART-001] Standart sartlar + banka (L/O'da banka var, typeof guard)
-  if (typeof window._piStandartSartlar === 'function') h += window._piStandartSartlar(t);
-  if (typeof banka === 'undefined' && typeof window._piStandartBanka === 'function') {
-    var __std_banka = window._piStandartBanka(t);
-    if (__std_banka) h += '<div style="margin-top:10px;font-size:9.5px;color:#444">' + __std_banka + '</div>';
-  }
-  return h;
 };
 
 /* ── Tasarım D1 — alt2-v3 Apple/Corporate (GÖRSELLİ) ─────────── PI-D-001 */
