@@ -67,7 +67,7 @@ window._hoBankModal = function() {
 window._hoSaveBank = function() {
   var name = (_g('ho-b-name')?.value || '').trim(); var cur = _g('ho-b-cur')?.value || 'TRY'; var bak = parseFloat(_g('ho-b-bakiye')?.value || '0') || 0; var tip = (_g('ho-b-tip')?.value || '').trim();
   if (!name || !bak) { window.toast?.('Ad ve bakiye zorunlu', 'err'); return; }
-  _HO.banks.push({ id: Date.now(), name: name, currency: cur, bakiye: bak, tip: tip, updatedAt: _nowTs() });
+  _HO.banks.push({ id: window.generateNumericId(), name: name, currency: cur, bakiye: bak, tip: tip, updatedAt: _nowTs() });
   _saveBanks(); document.querySelector('.mo')?.remove(); window.renderHesapOzeti(); window.toast?.('Hesap eklendi', 'ok');
 };
 window._hoDeleteBank = function(id) { _HO.banks = _HO.banks.filter(function(b) { return b.id !== id; }); _saveBanks(); window.renderHesapOzeti(); };

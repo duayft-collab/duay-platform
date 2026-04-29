@@ -6297,7 +6297,7 @@ function _saveTpls(d) { localStorage.setItem(ODM_TPL_KEY, JSON.stringify(d.slice
 window._odmSaveAsTemplate = function(id) {
   var odm2 = loadOdm(); var o = odm2.find(function(x) { return x.id === id; }); if (!o) return;
   var name = prompt('Şablon adı:', o.name || ''); if (!name) return;
-  var tpls = _loadTpls(); tpls.unshift({ id: Date.now(), name: name, data: { name: o.name, cat: o.cat, currency: o.currency, amount: o.amount, cariName: o.cariName, yontem: o.yontem, note: o.note }, createdAt: new Date().toISOString() }); _saveTpls(tpls); window.toast?.('Şablon kaydedildi ✓', 'ok');
+  var tpls = _loadTpls(); tpls.unshift({ id: window.generateNumericId(), name: name, data: { name: o.name, cat: o.cat, currency: o.currency, amount: o.amount, cariName: o.cariName, yontem: o.yontem, note: o.note }, createdAt: new Date().toISOString() }); _saveTpls(tpls); window.toast?.('Şablon kaydedildi ✓', 'ok');
 };
 
 window._odmOpenTemplateModal = function() {

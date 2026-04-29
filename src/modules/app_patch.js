@@ -3743,7 +3743,7 @@ window._stNavlunDagit = function() {
     'Insurance: Buyer\'s responsibility unless CIF terms',
     'Attention: Goods must be inspected within 14 days from delivery',
   ];
-  defaults.forEach(function(s,i){d.push({id:Date.now()+i,text:s,sabit:true,ts:new Date().toISOString()});});
+  defaults.forEach(function(s){d.push({id:window.generateNumericId(),text:s,sabit:true,ts:new Date().toISOString()});});
   if (typeof storeTeklifSartlar==='function') storeTeklifSartlar(d);
 })();
 
@@ -3778,7 +3778,7 @@ window._addSart = function() {
     if (typeof window.toast === 'function') window.toast('Maksimum 10 şart tanımlanabilir. Önce mevcut bir şartı silin veya düzenleyin.', 'warn');
     return;
   }
-  d.push({id:Date.now(),text:text,sabit:true,ts:new Date().toISOString()});
+  d.push({id:window.generateNumericId(),text:text,sabit:true,ts:new Date().toISOString()});
   if (typeof storeTeklifSartlar==='function') storeTeklifSartlar(d);
   window.openTeklifSartlarPanel();
 };
@@ -7012,7 +7012,7 @@ window._numuneArsiviEkle = function() {
   if (!u) { window.toast?.('Ürün adı zorunlu','warn'); return; }
   var d; try { d = JSON.parse(localStorage.getItem('ak_numune_arsivi_v1')||'[]'); } catch(e) { d = []; }
   d.unshift({
-    id: Date.now(),
+    id: window.generateId(),
     tarih: new Date().toISOString().slice(0,10),
     urun: u,
     tedarikci: document.getElementById('nm-ted')?.value?.trim()||'',
@@ -7455,7 +7455,7 @@ window._musteriGeribildirimKaydet = function(cariId) {
   var kayitlar;
   try { kayitlar = JSON.parse(localStorage.getItem(KEY)||'[]'); } catch(e) { kayitlar = []; }
   kayitlar.unshift({
-    id: Date.now(),
+    id: window.generateId(),
     cariId: cariId,
     puan: puan,
     not: not,
