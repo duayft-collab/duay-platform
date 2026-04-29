@@ -1801,8 +1801,18 @@ const DEFAULT_NOTES = [
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadAct()     { const d = _read(KEYS.activity); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d Son 1000 kayıt saklanır (ACTIVITY-LOG-CLEANUP-001) */ function saveAct(d) { _write(KEYS.activity, d.slice(0, 1000));
-  var _fp = _fsPath('activity'); if (_fp) _syncFirestore(_fp, d.slice(0, 1000));
+/** @param {Array<Object>} d Son 1000 kayıt saklanır (ACTIVITY-LOG-CLEANUP-001) */ async function saveAct(d) {
+  /* STORE-MIGRATE-APPEND-ONLY-001: _write + _syncFirestore → _writeRemote (atomic 3-layer + merge by-id).
+     Fallback _write: QUEUED_OFFLINE veya FAILED durumunda local persist (regression koruması). */
+  var sliced = d.slice(0, 1000);
+  var result = await window._writeRemote('activity', sliced, { mergeById: true });
+  if (!result.ok) {
+    if (result.state === 'QUEUED_OFFLINE' || result.state === 'FAILED') {
+      _write(KEYS.activity, sliced);
+    }
+    console.error('[saveAct] _writeRemote ' + result.state + ':', result.error);
+  }
+  return result;
 }
 
 /**
@@ -1859,7 +1869,7 @@ function logActivity(type, detail) {
 // ════════════════════════════════════════════════════════════════
 
 /** @returns {Array<Object>} */ function loadNotifs()    { const d = _read(KEYS.notifications); return Array.isArray(d) ? d : []; }
-/** @param {Array<Object>} d Son 500 kayıt (TTL 30 gün + dedup) */ function storeNotifs(d) {
+/** @param {Array<Object>} d Son 500 kayıt (TTL 30 gün + dedup) */ async function storeNotifs(d) {
   /* NOTIF-CLEANUP-V2-001: her storeNotifs çağrısında TTL + dedup + 500 FIFO — Firestore kalıcı temizlik */
   try {
     if (!Array.isArray(d)) d = [];
@@ -1887,11 +1897,15 @@ function logActivity(type, detail) {
   _write(KEYS.notifications, sliced);
   /* NOTIF-CLEANUP-V2-HOTFIX-001: cache.js _wrap cleanup'sız data'yı _cache'e yazıyor — temizlenmiş data için cache invalidate */
   try { if (typeof window.invalidateCacheKey === 'function') window.invalidateCacheKey('notifs'); } catch(_ce) {}
-  /* Firestore sync: cleanup'lı TAM listeyi gönder (500'e kadar), LS sadece 50 */
+  /* STORE-MIGRATE-APPEND-ONLY-001: Debounced FS write — _syncFirestore → _writeRemote (skipLocal:true → LS asimetri korunur).
+     Asimetri: LS 50 (yukarıda _write), FS 500 (TAM d). Debounce 500ms (toplu notif spam koruması). */
   clearTimeout(storeNotifs._timer);
-  storeNotifs._timer = setTimeout(function() {
+  storeNotifs._timer = setTimeout(async function() {
     if (window.Auth?.getFBAuth?.()?.currentUser) {
-      var _fp_notifs = _fsPath('notifications'); if (_fp_notifs) _syncFirestore(_fp_notifs, d);
+      var result = await window._writeRemote('notifications', d, { mergeById: true, skipLocal: true });
+      if (!result.ok) {
+        console.error('[storeNotifs] _writeRemote ' + result.state + ':', result.error);
+      }
     }
   }, 500);
 }
@@ -2519,8 +2533,20 @@ const DEFAULT_ARSIV_BELGELER = [
 
 /** @returns {Object.<number,Array>} taskId → mesaj dizisi */
 function loadTaskChats()    { const d = _read(KEYS.taskChats); return (d && typeof d === 'object') ? d : {}; }
-/** @param {Object} d       */ function storeTaskChats(d) { if(d&&typeof d==='object'){Object.keys(d).forEach(function(k){if(Array.isArray(d[k])&&d[k].length>20)d[k]=d[k].slice(-20);});} _write(KEYS.taskChats, d);
-  const _fp_chats = _fsPath('taskChats'); if (_fp_chats) _syncFirestore(_fp_chats, d);
+/** @param {Object} d       */ async function storeTaskChats(d) {
+  if(d && typeof d === 'object'){
+    Object.keys(d).forEach(function(k){ if(Array.isArray(d[k]) && d[k].length>20) d[k]=d[k].slice(-20); });
+  }
+  /* STORE-MIGRATE-APPEND-ONLY-001: _write + _syncFirestore → _writeRemote (Object data, mergeById:false → overwrite mode korunur).
+     Fallback _write: QUEUED_OFFLINE veya FAILED durumunda local persist. Toast YOK (arka plan chat sync, kullanıcı yormaz). */
+  var result = await window._writeRemote('taskChats', d, { mergeById: false });
+  if (!result.ok) {
+    if (result.state === 'QUEUED_OFFLINE' || result.state === 'FAILED') {
+      _write(KEYS.taskChats, d);
+    }
+    console.error('[storeTaskChats] _writeRemote ' + result.state + ':', result.error);
+  }
+  return result;
 }
 
 // ════════════════════════════════════════════════════════════════
