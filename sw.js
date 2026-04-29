@@ -62,8 +62,9 @@
 /* [CACHE-BUMP-2026-04-29-V93] CARI-DISPLAY-FIX-001 — schema unify (unvan || ad || name) display helper */
 /* [CACHE-BUMP-2026-04-29-V94] CARI-RESTORE-RESPECT-001 — _mergeDataSets restore-respect rule (cross-tab restore safe) */
 /* [CACHE-BUMP-2026-04-29-V95] CASH-FLOW-MENU-FIX-001 — üst nav Muhasebe altmenüsüne Nakit Akışı Manuel item eklendi */
-const CACHE_NAME    = 'duay-platform-v95';
-const CACHE_VERSION = '95.0.0';
+/* [CACHE-BUMP-2026-04-29-V96] DEMO-REMOVE-001 — Demo button + 3 demo fn (_insertDemoUrunler + _insertCariDemoData + _temizleDemoVeri) silindi */
+const CACHE_NAME    = 'duay-platform-v96';
+const CACHE_VERSION = '96.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
