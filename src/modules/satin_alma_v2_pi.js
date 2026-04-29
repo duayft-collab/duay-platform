@@ -197,14 +197,11 @@ window._piOlustur = function(teklif, tasarim, katman, skipKontrol) {
           onCancel:  function() { window._piOlustur(teklif, tasarim, katman, true); }
         });
         return;
-      } else if (confirm(__msg)) {
-        teklif.originator = __cuName;
-        window._piOlustur(teklif, tasarim, katman, true);
-        return;
-      } else {
-        window._piOlustur(teklif, tasarim, katman, true);
-        return;
       }
+      /* K06-NATIVE-CONFIRM-CLEAN-001: confirmModal yüklü değilse originator eklenmeden devam (güvenli default) */
+      console.warn('[K06] confirmModal yüklenmedi — originator eklenmeden devam ediliyor');
+      window._piOlustur(teklif, tasarim, katman, true);
+      return;
     }
   }
 
@@ -223,12 +220,10 @@ window._piOlustur = function(teklif, tasarim, katman, skipKontrol) {
           onConfirm: function() { window._piOlustur(teklif, tasarim, katman, true); }
         });
         return;
-      } else if (confirm(__d1Msg)) {
-        window._piOlustur(teklif, tasarim, katman, true);
-        return;
-      } else {
-        return;
       }
+      /* K06-NATIVE-CONFIRM-CLEAN-001: confirmModal yüklü değilse iptal (güvenli default — onay alınmadı) */
+      console.warn('[K06] confirmModal yüklenmedi — D1 görsel uyarısı onayı alınamadı, iptal');
+      return;
     }
   }
 
