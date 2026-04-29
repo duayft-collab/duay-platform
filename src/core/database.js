@@ -2260,7 +2260,7 @@ function loadTatilAyarlar()    {
   return (d && typeof d === 'object') ? d : { calisan: true, uyariGun: 7, otoDuyuru: false };
 }
 /** @param {Object} d */
-function storeTatilAyarlar(d)  { _write(KEYS.tatilAyarlar, d); }
+function storeTatilAyarlar(d)  { _write(KEYS.tatilAyarlar, d); /* SYNC-GAP-CLOSE-001: tatilAyarlar Firestore yazımı eklendi */ var fp = _fsPath('tatilAyarlar'); if (fp) _syncFirestore(fp, d); }
 
 // ════════════════════════════════════════════════════════════════
 // BÖLÜM 28 — UI DURUMU (Tema, Dil, Sidebar)
@@ -3014,6 +3014,13 @@ function startRealtimeSync() {
     ['pusula', KEYS.pusula, () => { window._ppModRender?.(); }],
     /* SYNC-EXPECTED-DELIVERIES-001: Sevkiyat Merkezi multi-cihaz canlı sync */
     ['expectedDeliveries', KEYS.expectedDeliveries, () => { window._edRenderPanel?.(); }],
+    /* SYNC-GAP-CLOSE-001: kalan 6 tek-yön kırık koleksiyon — lazy mode */
+    ['ihracatListesi',  KEYS.ihracatListesi,  () => window.renderIhracatListesi?.()],
+    ['kargoChecks',     KEYS.kargoChecks,     () => window.renderKargo?.()],
+    ['kargoHistory',    KEYS.kargoHistory,    () => window.renderKargo?.()],
+    ['kpiLog',          KEYS.kpiLog,          () => window.renderKpi?.()],
+    ['navlunSatis',     KEYS.navlunSatis,     () => window.renderNavlun?.()],
+    ['temizlik',        KEYS.temizlik,        () => window.renderTemizlik?.()],
   ];
 
   /* LS-SYNC-009 FAZ-1: Sadece CRITICAL listen et, LAZY'leri lookup'a kaydet */
