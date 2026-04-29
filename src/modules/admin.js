@@ -755,7 +755,7 @@ var _PERM_CATEGORIES = {
   finans: {
     label: 'Muhasebe & Finans',
     icon: '💰',
-    mods: ['finans','odemeler','nakit-akisi','cari','cari-karsilastirma','donem-ozeti','pirim','kpi','kpi-panel']
+    mods: ['finans','odemeler','nakit-akisi','cash-flow-manuel','cari','cari-karsilastirma','donem-ozeti','pirim','kpi','kpi-panel']
   },
   ihracat: {
     label: 'İhracat',
@@ -980,7 +980,7 @@ function openPermModal(id) {
   /* ADMIN-PERM-SADE-UI-001: Sade 3-buton (Erişemez/Görebilir/Tam Yetki) + kategorili + şablon */
   /* ADMIN-KATMAN-001: nav menüsüyle birebir 8 kategori, tüm modüller */
   var KATMAN = [
-    { lbl: 'Muhasebe & Finans',    mods: ['finans','odemeler','nakit-akisi','cari','cari-karsilastirma','donem-ozeti','pirim','kpi','kpi-panel'] },
+    { lbl: 'Muhasebe & Finans',    mods: ['finans','odemeler','nakit-akisi','cash-flow-manuel','cari','cari-karsilastirma','donem-ozeti','pirim','kpi','kpi-panel'] },
     { lbl: 'Satış',                mods: ['crm','satis-teklifleri','satis-rapor','siparisler','etkinlik','rehber'] },
     { lbl: 'Satınalma',            mods: ['satinalma','urunler','alis-teklifleri','numune','numune-arsivi','fason','stok'] },
     { lbl: 'Lojistik',             mods: ['kargo','lojistik','teslimat-takip','navlun'] },
@@ -990,7 +990,7 @@ function openPermModal(id) {
     { lbl: 'Sistem & Yönetim',     mods: ['dashboard','admin','settings','arsiv','arsiv-hub','resmi','users','activity','trash'] },
   ];
   var MODUL_LABEL = {
-    'finans':'Finans Paneli','odemeler':'Ödemeler','nakit-akisi':'Nakit Akışı',
+    'finans':'Finans Paneli','odemeler':'Ödemeler','nakit-akisi':'Nakit Akışı','cash-flow-manuel':'Nakit Akışı Manuel',
     'cari':'Cari Yönetimi','cari-karsilastirma':'Cari Karşılaştırma','donem-ozeti':'Dönem Özeti',
     'pirim':'Prim Yönetimi','kpi':'KPI & Performans','kpi-panel':'KPI Özet',
     'crm':'CRM / Müşteriler','satis-teklifleri':'Satış Teklifleri','satis-rapor':'Satış Raporu',

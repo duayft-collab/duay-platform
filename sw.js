@@ -50,8 +50,9 @@
 /* [CACHE-BUMP-2026-04-29-V81] SYNC-CACHE-INVALIDATE-FIX-001 (_memCache direkt invalidate) aktivasyon */
 /* [CACHE-BUMP-2026-04-29-V82] WRITE-LOCAL-FOUNDATION-001 — _writeLocal fn aktivasyon */
 /* [CACHE-BUMP-2026-04-29-V83] WRITE-REMOTE-FOUNDATION-001 — _writeRemote fn aktivasyon */
-const CACHE_NAME    = 'duay-platform-v83';
-const CACHE_VERSION = '83.0.0';
+/* [CACHE-BUMP-2026-04-29-V84] CASH-FLOW-MODULE-001 — Nakit Akışı Manuel MVP modülü */
+const CACHE_NAME    = 'duay-platform-v84';
+const CACHE_VERSION = '84.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
@@ -113,6 +114,7 @@ const PRECACHE_URLS = [
   '/src/modules/hedefler.js',
   '/src/modules/odemeler.js',
   '/src/modules/nakit_akis.js',
+  '/src/modules/cash_flow.js',
   '/src/modules/kpi.js',
   '/src/modules/ik_panel.js',
   '/src/modules/puantaj.js',

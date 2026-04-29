@@ -103,6 +103,7 @@ window._yetkiKontrol = function(islem) {
     'talimatlar': () => { window.renderTalimatlar?.(); },
     'dashboardDetay': () => { window.DashboardDetay?.render?.(); },
     'nakit-akisi': () => { window.renderNakitAkis?.(); },
+    'cash-flow-manuel': () => { window._cfRenderPanel?.(); },
     /* MENU-EKSIK-001: 5 yeni stub paneli */
     'satis-rapor':         () => { window._renderSatisRapor?.(); },
     'numune-arsivi':       () => { window._renderNumuneArsivi?.(); },
@@ -651,6 +652,7 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
     { id:'cari',      label:'Cari Yönetimi'        },
     /* ADMIN-MOD-COMPLETE-001: ALL_MODULES'ta eksik olan 8 nav modülü */
     { id:'nakit-akisi',     label:'Nakit Akışı'            },
+    { id:'cash-flow-manuel',label:'Nakit Akışı Manuel'     },
     { id:'pusula-pro',      label:'Pusula Pro'             },
     { id:'navlun',          label:'Navlun Hesaplama'       },
     { id:'ihracat',         label:'İhracat Operasyonları'  },
@@ -683,7 +685,7 @@ console.log('[app_patch] V18 uyumluluk fonksiyonları yüklendi');
                          'arsiv','tebligat','evrak','resmi','temizlik',
                          'rehber','numune','etkinlik','links',
                          'satinalma','cari','fason',
-                         'nakit-akisi','pusula-pro','navlun',
+                         'nakit-akisi','cash-flow-manuel','pusula-pro','navlun',
                          'ihracat','ihracat-ops','ihracat-listesi',
                          'ihracat-formlar','ihracat-belgeler'];
   if (window.ROLE_DEFAULT_MODULES?.manager) {
