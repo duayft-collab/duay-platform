@@ -2419,6 +2419,8 @@ function _listenCollection(collection, localKey, onUpdate) {
       } catch(e) {}
       // FIX: Init merge sonrası cache invalidate
       try { if (typeof window.invalidateCacheForCollection === 'function') window.invalidateCacheForCollection(collection); } catch(e) {}
+      /* SYNC-CACHE-INVALIDATE-FIX-001: _memCache direkt invalidate — invalidateCacheForCollection sadece cache.js _cache'i temizliyor, _memCache (database.js _read katmanı) dokunulmuyor */
+      try { if (window._memCache && localKey in window._memCache) delete window._memCache[localKey]; } catch(e) {}
       // Merge sonucu Firestore'dan farklıysa geri yaz (sayı veya içerik farkı)
       if (Array.isArray(merged) && Array.isArray(fsData)) {
         var _needWrite = merged.length !== fsData.length;
@@ -2528,6 +2530,8 @@ function _listenCollection(collection, localKey, onUpdate) {
         if (typeof window.invalidateCacheForCollection === 'function') {
           window.invalidateCacheForCollection(collection);
         }
+        /* SYNC-CACHE-INVALIDATE-FIX-001: _memCache direkt invalidate */
+        if (window._memCache && localKey in window._memCache) delete window._memCache[localKey];
       } catch(e) {}
       // Merge sonucu Firestore'dan farklıysa geri yaz (trash/notifications/activity hariç)
       if (_rtNoMerge.indexOf(collection) === -1 && Array.isArray(merged) && Array.isArray(fsData)) {
