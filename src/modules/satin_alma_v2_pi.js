@@ -331,7 +331,7 @@ window._piUrunSatirlari = function(teklif, katman) {
       : satisNum * miktar;
     var satisF = satisNum.toFixed(2);
     var toplam = toplamNum.toFixed(2);
-    return { no: i+1, kod: u.duayKodu||u.kod||'', eskiKod: u.eskiKod||'', ad: u.urunAdi||u.ad||'', miktar: miktar, birim: u.birim||'PCS', satisF: satisF, toplam: toplam, gorsel: u.gorsel||'' };
+    return { no: i+1, kod: u.duayKodu||u.kod||'', eskiKod: u.eskiKod||'', ad: u.urunAdi||u.ad||'', miktar: miktar, birim: u.birim||'PCS', satisF: satisF, toplam: toplam, gorsel: u.gorsel||'', image: u.image||'' };
   });
 };
 
@@ -817,7 +817,7 @@ window._piTasarimD1 = function(t, bugun, satirlar, katman, gizliKod, L) {
     html += '<tr>';
     html += '<td>' + esc(String(s.no || '')) + '</td>';
     html += '<td><div style="display:flex;gap:14px;align-items:flex-start;">';
-    if (s.gorsel) html += '<img class="pi-d-prod-image" src="' + esc(s.gorsel) + '" alt="" />';
+    if (s.gorsel || s.image) html += '<img class="pi-d-prod-image" src="' + esc(s.gorsel || s.image) + '" alt="" />';
     else html += '<div class="pi-d-prod-image"></div>';
     html += '<div style="flex:1;">';
     html += '<div class="pi-d-prod-name">' + esc(s.ad || '') + '</div>';
@@ -840,8 +840,15 @@ window._piTasarimD1 = function(t, bugun, satirlar, katman, gizliKod, L) {
   /* PI-BANKA-001: paraBirimi bug fix — t.dil yerine t.paraBirimi */
   var birim = t.paraBirimi || 'USD';
   html += '<div class="pi-d-totals"><div class="pi-d-totals-block">';
-  html += '<div class="pi-d-totals-row"><span>' + esc(L.araToplam || 'Subtotal') + '</span><span>' + birim + ' ' + araToplam.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
-  html += '<div class="pi-d-totals-row grand"><span>' + esc(L.toplam || 'Total') + '</span><span>' + birim + ' ' + araToplam.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
+  /* SATIS-PI-CONTENT-UNIFY-001: CIF/CFR Insurance + Freight (Strateji C) */
+  var __fi = (typeof window._piFreightInsuranceHTML === 'function') ? window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD') : { preTotalHTML: '', grandTotal: null };
+  if (__fi.preTotalHTML) {
+    html += __fi.preTotalHTML;
+  } else {
+    html += '<div class="pi-d-totals-row"><span>' + esc(L.araToplam || 'Subtotal') + '</span><span>' + birim + ' ' + araToplam.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
+  }
+  var __grandTot = (__fi.grandTotal !== null && __fi.grandTotal !== undefined) ? __fi.grandTotal : araToplam;
+  html += '<div class="pi-d-totals-row grand"><span>' + esc(L.toplam || 'Total') + '</span><span>' + birim + ' ' + __grandTot.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
   html += '</div></div>';
 
   /* Info grid */
@@ -950,8 +957,15 @@ window._piTasarimD2 = function(t, bugun, satirlar, katman, gizliKod, L) {
   /* PI-BANKA-001: paraBirimi bug fix — t.dil yerine t.paraBirimi */
   var birim = t.paraBirimi || 'USD';
   html += '<div class="pi-d-totals"><div class="pi-d-totals-block">';
-  html += '<div class="pi-d-totals-row"><span>' + esc(L.araToplam || 'Subtotal') + '</span><span>' + birim + ' ' + araToplam.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
-  html += '<div class="pi-d-totals-row grand"><span>' + esc(L.toplam || 'Total') + '</span><span>' + birim + ' ' + araToplam.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
+  /* SATIS-PI-CONTENT-UNIFY-001: CIF/CFR Insurance + Freight (Strateji C) */
+  var __fi = (typeof window._piFreightInsuranceHTML === 'function') ? window._piFreightInsuranceHTML(t, L, t.paraBirimi || 'USD') : { preTotalHTML: '', grandTotal: null };
+  if (__fi.preTotalHTML) {
+    html += __fi.preTotalHTML;
+  } else {
+    html += '<div class="pi-d-totals-row"><span>' + esc(L.araToplam || 'Subtotal') + '</span><span>' + birim + ' ' + araToplam.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
+  }
+  var __grandTot = (__fi.grandTotal !== null && __fi.grandTotal !== undefined) ? __fi.grandTotal : araToplam;
+  html += '<div class="pi-d-totals-row grand"><span>' + esc(L.toplam || 'Total') + '</span><span>' + birim + ' ' + __grandTot.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</span></div>';
   html += '</div></div>';
 
   html += '<div class="pi-d-info-grid">';
