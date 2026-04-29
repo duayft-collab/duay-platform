@@ -29,6 +29,25 @@
   };
 
   /**
+   * CARI-DISPLAY-FIX-001: Display name helper — _cariNormalize ile aynı 6-field order.
+   * Schema split sorunu: bazı cari kayıtları c.name yerine c.ad / c.firmaAdi / c.unvan
+   * field'ı kullanır. Display, search, KPI tarafında bu helper'la unify edilir.
+   * Veri yazımı YOK — yalnızca okuma/render için.
+   * @param {Object} c Ham cari objesi
+   * @returns {string} İlk dolu display name (boşsa '')
+   */
+  window._cariDisplayName = function(c) {
+    if (!c) return '';
+    return (c.name && String(c.name).trim()) ||
+           (c.ad && String(c.ad).trim()) ||
+           (c.firmaAdi && String(c.firmaAdi).trim()) ||
+           (c.title && String(c.title).trim()) ||
+           (c.unvan && String(c.unvan).trim()) ||
+           (c.companyName && String(c.companyName).trim()) ||
+           '';
+  };
+
+  /**
    * Tüm müşteri cari kayıtlarını normalize edilmiş halde döndür.
    * Silinenleri filtreler, ismi olmayanları atar.
    * @returns {Array} Normalize edilmiş cari listesi

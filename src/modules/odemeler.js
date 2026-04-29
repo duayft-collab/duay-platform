@@ -7391,7 +7391,9 @@ function renderCari() {
     var _cariIdSet = {}, _cariNameSet = {};
     all.forEach(function(c) {
       _cariIdSet[String(c.id)] = true;
-      if (c.name) _cariNameSet[String(c.name).toLowerCase()] = true;
+      /* CARI-DISPLAY-FIX-001: schema unify KPI match (6-field) — c.ad/firmaAdi/unvan kayıtlar da KPI'ya dahil */
+      var _displayName = window._cariDisplayName(c);
+      if (_displayName) _cariNameSet[_displayName.toLowerCase()] = true;
     });
     var _kpiEslesir = function(r) {
       if (r.cariId && _cariIdSet[String(r.cariId)]) return true;
@@ -7451,7 +7453,8 @@ function renderCari() {
       if (stageF !== 'rejected' && (c.cariType || 'potansiyel') !== stageF) return false;
     }
     if (search && !(
-      (c.name || '').toLowerCase().includes(search) ||
+      /* CARI-DISPLAY-FIX-001: schema unify search (6-field) — c.ad/firmaAdi/unvan kayıtlar da bulunur */
+      (window._cariDisplayName(c) || '').toLowerCase().includes(search) ||
       (c.email || '').toLowerCase().includes(search) ||
       (c.phone || '').toLowerCase().includes(search) ||
       (c.vkn || '').toLowerCase().includes(search) ||
@@ -7620,8 +7623,8 @@ function renderCari() {
     return '<div onclick="window._selectCari?.(' + c.id + ')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:0.5px solid var(--b);cursor:pointer;background:' + (isSel ? 'var(--al)' : '') + ';transition:background .15s ease" onmouseenter="if(!' + isSel + ')this.style.background=\'var(--s2)\';this.querySelector(\'.cari-row-action\')?.style.setProperty(\'opacity\',\'1\')" onmouseleave="if(!' + isSel + ')this.style.background=\'\';this.querySelector(\'.cari-row-action\')?.style.setProperty(\'opacity\',\'0\')">'
       + (isManager ? '<input type="checkbox" class="cari-bulk-cb" value="' + c.id + '" onclick="event.stopPropagation();window._cariUpdateBulkCount()" style="accent-color:#DC2626;flex-shrink:0">' : '')
       + '<span title="' + sc.label + '" style="width:8px;height:8px;border-radius:50%;background:' + sc.color + ';border:0.5px solid rgba(0,0,0,.08);flex-shrink:0;display:inline-block"></span>'
-      /* CARI-ISIMSIZ-FIX-001: boş firma adı → "İsimsiz Cari" fallback */
-      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + window._esc(c.name || 'İsimsiz Cari') + statusBadge
+      /* CARI-ISIMSIZ-FIX-001 + CARI-DISPLAY-FIX-001: schema unify (6-field) helper, sonra "İsimsiz Cari" fallback */
+      + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + window._esc(window._cariDisplayName(c) || 'İsimsiz Cari') + statusBadge
         + (c.kod ? ' <span style="font-size:9px;font-family:monospace;color:var(--t2);padding:2px 6px;background:rgba(0,0,0,0.04);border-radius:4px;vertical-align:middle;font-variant-numeric:tabular-nums" title="Müşteri kodu">' + window._esc(c.kod) + '</span>' : '')
         /* [CARI-UI-LISTE-001] Risk rozet kaldirildi — sol dot zaten gosteriyor */
         + hatirHTML
@@ -7948,8 +7951,8 @@ function _renderCariDetail(id) {
       + _avHTML
       + '<div>'
         // CARI-OZET-EKSIK-001: başlık yanına müşteri kodu rozeti
-        /* CARI-ISIMSIZ-FIX-001: boş firma adı → "İsimsiz Cari" fallback */
-        + '<div style="font-size:18px;font-weight:700;color:var(--t);display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + window._esc(c.name || 'İsimsiz Cari')
+        /* CARI-ISIMSIZ-FIX-001 + CARI-DISPLAY-FIX-001: schema unify (6-field) helper, sonra "İsimsiz Cari" fallback */
+        + '<div style="font-size:18px;font-weight:700;color:var(--t);display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + window._esc(window._cariDisplayName(c) || 'İsimsiz Cari')
           + '<span style="font-size:10px;color:var(--t3);font-weight:500;font-family:monospace;padding:2px 8px;background:var(--s2);border-radius:10px" title="Müşteri kodu">' + window._esc(c.kod || c.musKod || '—') + '</span>'
           /* SUPPLIER-ONBOARDING-FLOW-002 PARÇA 4: yüksek risk rozet */
           + (window._cariIsHighRisk && window._cariIsHighRisk(c) ? '<span style="display:inline-block;padding:2px 8px;background:#FEE2E2;color:#E0574F;border-radius:10px;font-size:10px;font-weight:500;letter-spacing:.03em" title="guvenliMi=false veya riskSeviyesi=yuksek">⚠ YÜKSEK RİSK</span>' : '')
