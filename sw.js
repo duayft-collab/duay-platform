@@ -46,8 +46,9 @@
 /* [CACHE-BUMP-2026-04-28-V77] DEAD-CORE-CLEANUP-001 (7 dead file silindi + storage_audit taşındı) aktivasyon */
 /* [CACHE-BUMP-2026-04-29-V78] SYNC-EXPECTED-DELIVERIES-001 (Sevkiyat realtime sync aktive) aktivasyon */
 /* [CACHE-BUMP-2026-04-29-V79] SYNC-GAP-CLOSE-001 (6 SYNC_MAP eklenti + tatilAyarlar Firestore yazımı) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v79';
-const CACHE_VERSION = '79.0.0';
+/* [CACHE-BUMP-2026-04-29-V80] SYNC-MODULE-MAPPING-FIX-001 (10 lazy mapping eksiği kapatıldı) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v80';
+const CACHE_VERSION = '80.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]

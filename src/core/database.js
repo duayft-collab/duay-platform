@@ -2861,7 +2861,9 @@ function startRealtimeSync() {
 
   const MODULE_COLLECTIONS = {
     /* LS-SYNC-009-FIX-001: GERÇEK nav ID'leri (Chrome'dan tespit edildi) */
-    'dashboard':            ['odemeler','tahsilat','calendar','hedefler'],
+    'dashboard':            ['odemeler','tahsilat','calendar','hedefler','sozler'],
+    /* SYNC-MODULE-MAPPING-FIX-001: Lojistik hub — sevkiyat + kargo extras */
+    'lojistik':             ['expectedDeliveries','kargo','konteyner','navlun','kargoChecks','kargoHistory','navlunSatis'],
     'satin-alma':           ['alisTeklifleri','urunler','kargo','navlun','cari'],
     'satinalma':            ['alisTeklifleri','urunler','kargo','navlun','cari'],
     'alis-teklifleri':      ['alisTeklifleri','urunler','cari'],
@@ -2874,16 +2876,16 @@ function startRealtimeSync() {
     'nakit-akisi':          ['odemeler','tahsilat','bankalar'],
     'donem-ozeti':          ['odemeler','tahsilat','kpi'],
     'hesap':                ['odemeler','tahsilat','bankalar','cari'],
-    'pusula-pro':           ['pusula','calendar','hedefler','fikirler','iddialar','suggestions','kararlar','smartGoals','notes'],  /* LS-SYNC-009-FIX-002: pusula ana key eklendi */
+    'pusula-pro':           ['pusula','calendar','hedefler','fikirler','iddialar','suggestions','kararlar','smartGoals','notes','taskChats'],  /* LS-SYNC-009-FIX-002 + SYNC-MODULE-MAPPING-FIX-001 (taskChats) */
     'hedefler':             ['hedefler','kpi','smartGoals'],
     'ik-hub':               ['ik','izin','puan','pirim','greetings'],
     'pirim':                ['pirim','puan'],
-    'kpi-panel':            ['kpi','puan','hedefler'],
-    'kargo':                ['kargo','konteyner','navlun'],
+    'kpi-panel':            ['kpi','puan','hedefler','kpiLog'],
+    'kargo':                ['kargo','konteyner','navlun','kargoChecks','kargoHistory'],
     'teslimat-takip':       ['kargo','konteyner'],
-    'ihracat-ops':          ['ihracatDosyalar','ihracatEvraklar','ihracatUrunler','ihracatGcb','ihracatBl','ihracatTemplate','ihracatOps','gumrukculer','forwarderlar','evrakWorkflow'],
+    'ihracat-ops':          ['ihracatDosyalar','ihracatEvraklar','ihracatUrunler','ihracatGcb','ihracatBl','ihracatTemplate','ihracatOps','gumrukculer','forwarderlar','evrakWorkflow','gcb'],
     'ihracat-formlar':      ['ihracatDosyalar','ihracatEvraklar'],
-    'ihracat-listesi':      ['ihracatDosyalar'],
+    'ihracat-listesi':      ['ihracatDosyalar','ihracatListesi'],
     'urunler':              ['urunler','stok'],
     'urun-db':              ['urunler'],
     'stok':                 ['stok','urunler'],
@@ -2899,7 +2901,7 @@ function startRealtimeSync() {
     'admin':                ['users'],
     'settings':             [],
     'ceo':                  ['hedefler','kpi','activity','kararlar'],
-    'temizlik':             []
+    'temizlik':             ['temizlik']
   };
 
   const _syncMapLookup = {};
