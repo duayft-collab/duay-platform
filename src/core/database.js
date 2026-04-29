@@ -540,9 +540,9 @@ window._writeRemote = async function(collection, data, options) {
   window._pendingWrites[writeId].state = 'IN_FLIGHT';
   var syncedAt = new Date().toISOString();
 
-  /* writingLock — listener echo skip için (writeId bazlı) */
-  if (!window._writingLock) window._writingLock = {};
-  window._writingLock[collection] = { writeId: writeId, syncedAt: syncedAt, expiry: Date.now() + 30000 };
+  /* LISTENER-WRITE-UNIFY-001: _writingLock → _writingNow unify (mevcut listener echo skip mekanizmasıyla tek map) */
+  if (!window._writingNow) window._writingNow = {};
+  window._writingNow[collection] = { syncedAt: syncedAt, expiry: Date.now() + 30000 };
 
   var tid = (window.Auth && window.Auth.getTenantId && window.Auth.getTenantId()) || window.DEFAULT_TENANT_ID || 'tenant_default';
   var basePath = 'duay_' + tid.replace(/[^a-zA-Z0-9_]/g, '_');
@@ -581,8 +581,9 @@ window._writeRemote = async function(collection, data, options) {
     /* FAILED — local'e dokunulmadı (CONFIRMED öncesi yapılmadı) */
     if (window._pendingWrites[writeId]) window._pendingWrites[writeId].state = 'FAILED';
     delete window._pendingWrites[writeId];
-    if (window._writingLock && window._writingLock[collection] && window._writingLock[collection].writeId === writeId) {
-      delete window._writingLock[collection];
+    /* LISTENER-WRITE-UNIFY-001: _writingNow cleanup — kendi yazımız fail olduğunda lock temizlensin */
+    if (window._writingNow && window._writingNow[collection] && window._writingNow[collection].syncedAt === syncedAt) {
+      delete window._writingNow[collection];
     }
     var errMsg = (e && e.message) || 'unknown';
     console.error('[WRITE-REMOTE] FAILED:', collection, errMsg);
@@ -2608,26 +2609,21 @@ function _listenCollection(collection, localKey, onUpdate) {
     const docRef = FB_DB.collection(_base2).doc(collection);
     if (localStorage.getItem('ak_debug')) console.log('[LISTEN]', collection, '→', _base2 + '/' + collection);
     // Anlık ilk çekme — Firestore + localStorage merge (veri kaybı önleme)
-    docRef.get().then(snap => {
+    docRef.get().then(async snap => {
       if (!snap.exists) return;
       const fsData = snap.data()?.data;
       if (fsData === null || fsData === undefined) return;
       var merged = _mergeDataSets(localKey, fsData, collection);
       _stripBase64BeforeWrite(localKey, merged);
       try {
-        var _lzInit = typeof LZString !== 'undefined' ? LZString : null;
-        var _jsonInit = JSON.stringify(merged);
-        if (_lzInit && (localKey.startsWith('ak_')||localKey.startsWith('pp_')||localKey.startsWith('odm_')||localKey.startsWith('duay_')||localKey.startsWith('ik_')) && _jsonInit.length > 500) {
-          localStorage.setItem(localKey, '_LZ_' + _lzInit.compressToUTF16(_jsonInit));
-        } else {
-          localStorage.setItem(localKey, _jsonInit);
-        }
+        /* LISTENER-WRITE-UNIFY-001: manuel LS write → _writeLocal (atomic 3-layer: memCache + IDB + LS) */
+        var _wlrInit = await window._writeLocal(localKey, merged);
+        if (!_wlrInit.ok) console.warn('[LISTENER:init] _writeLocal fail for', collection, _wlrInit.error);
         localStorage.setItem(localKey + '_ts', snap.data()?.syncedAt || new Date().toISOString());
       } catch(e) {}
-      // FIX: Init merge sonrası cache invalidate
+      // FIX: Init merge sonrası cache invalidate (cache.js layer)
       try { if (typeof window.invalidateCacheForCollection === 'function') window.invalidateCacheForCollection(collection); } catch(e) {}
-      /* SYNC-CACHE-INVALIDATE-FIX-001: _memCache direkt invalidate — invalidateCacheForCollection sadece cache.js _cache'i temizliyor, _memCache (database.js _read katmanı) dokunulmuyor */
-      try { if (window._memCache && localKey in window._memCache) delete window._memCache[localKey]; } catch(e) {}
+      /* LISTENER-WRITE-UNIFY-001: _memCache delete kaldırıldı — _writeLocal zaten memCache'i SET ediyor (Layer 1), invalidate gereksiz */
       // Merge sonucu Firestore'dan farklıysa geri yaz (sayı veya içerik farkı)
       if (Array.isArray(merged) && Array.isArray(fsData)) {
         var _needWrite = merged.length !== fsData.length;
@@ -2647,7 +2643,7 @@ function _listenCollection(collection, localKey, onUpdate) {
       if (e.code !== 'permission-denied') console.warn('[DB:init]', collection, e.message);
     });
 
-    const unsubscribe = docRef.onSnapshot(snap => {
+    const unsubscribe = docRef.onSnapshot(async snap => {
       if (window.__lastHydrateRender && (Date.now() - window.__lastHydrateRender) < 300) return;
       if (window.__skipSnapshotOnce?.[collection]) { delete window.__skipSnapshotOnce[collection]; return; }
       if (!snap.exists) {
@@ -2723,22 +2719,17 @@ function _listenCollection(collection, localKey, onUpdate) {
       }
       _stripBase64BeforeWrite(localKey, merged);
       try {
-        var _lzRT = typeof LZString !== 'undefined' ? LZString : null;
-        var _jsonRT = JSON.stringify(merged);
-        if (_lzRT && (localKey.startsWith('ak_')||localKey.startsWith('pp_')||localKey.startsWith('odm_')||localKey.startsWith('duay_')||localKey.startsWith('ik_')) && _jsonRT.length > 500) {
-          localStorage.setItem(localKey, '_LZ_' + _lzRT.compressToUTF16(_jsonRT));
-        } else {
-          localStorage.setItem(localKey, _jsonRT);
-        }
+        /* LISTENER-WRITE-UNIFY-001: manuel LS write → _writeLocal (atomic 3-layer: memCache + IDB + LS) */
+        var _wlrRT = await window._writeLocal(localKey, merged);
+        if (!_wlrRT.ok) console.warn('[LISTENER:rt] _writeLocal fail for', collection, _wlrRT.error);
         localStorage.setItem(localKey + '_ts', snap.data()?.syncedAt || new Date().toISOString());
       } catch (e) { GlobalErrorHandler('realtime:write', e, 'warn'); }
-      // FIX: In-memory cache'i invalidate et — onSnapshot bypass sorunu
+      // FIX: In-memory cache'i invalidate et — onSnapshot bypass sorunu (cache.js layer)
       try {
         if (typeof window.invalidateCacheForCollection === 'function') {
           window.invalidateCacheForCollection(collection);
         }
-        /* SYNC-CACHE-INVALIDATE-FIX-001: _memCache direkt invalidate */
-        if (window._memCache && localKey in window._memCache) delete window._memCache[localKey];
+        /* LISTENER-WRITE-UNIFY-001: _memCache delete kaldırıldı — _writeLocal zaten memCache'i SET ediyor (Layer 1), invalidate gereksiz */
       } catch(e) {}
       // Merge sonucu Firestore'dan farklıysa geri yaz (trash/notifications/activity hariç)
       if (_rtNoMerge.indexOf(collection) === -1 && Array.isArray(merged) && Array.isArray(fsData)) {
