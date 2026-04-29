@@ -1008,14 +1008,41 @@ function _mergeDataSets(localKey, fsData, collection) {
     var fsTs = _ft(item.updatedAt || item.ts || item.syncedAt || '');
     var localTs = _ft(existing.updatedAt || existing.ts || existing.syncedAt || '');
 
-    /* TOMBSTONE-PRIORITY-001: isDeleted her zaman öncelikli — geri gelmez */
+    /* TOMBSTONE-PRIORITY-001 + CARI-RESTORE-RESPECT-001: isDeleted öncelikli, AMA
+       _restoredAt > deletedAt ise restore daha yeni → respect (cross-tab restore safe). */
     if (item.isDeleted || existing.isDeleted) {
       var _tombBase = (fsTs >= localTs) ? item : existing;
       var _tombOther = (_tombBase === item) ? existing : item;
       var _merged = Object.assign({}, _tombBase);
-      _merged.isDeleted = true;
-      _merged.deletedAt = _tombBase.deletedAt || _tombOther.deletedAt || new Date().toISOString();
-      _merged.deletedBy = _tombBase.deletedBy || _tombOther.deletedBy || null;
+
+      /* CARI-RESTORE-RESPECT-001: timestamp karşılaştırması — restore yeni mi? */
+      var _iRestoredAt = item._restoredAt ? new Date(item._restoredAt).getTime() : 0;
+      var _eRestoredAt = existing._restoredAt ? new Date(existing._restoredAt).getTime() : 0;
+      var _iDeletedAt = item.deletedAt ? new Date(item.deletedAt).getTime() : 0;
+      var _eDeletedAt = existing.deletedAt ? new Date(existing.deletedAt).getTime() : 0;
+      var _maxRestoredAt = Math.max(_iRestoredAt, _eRestoredAt);
+      var _maxDeletedAt = Math.max(_iDeletedAt, _eDeletedAt);
+
+      if (_maxRestoredAt > 0 && _maxRestoredAt > _maxDeletedAt) {
+        /* RESTORE RESPECT — restore daha yeni işlem */
+        _merged.isDeleted = false;
+        _merged.deletedAt = null;
+        _merged.deletedBy = null;
+        _merged._restoredAt = item._restoredAt || existing._restoredAt;
+        if (item._restoredReason || existing._restoredReason) {
+          _merged._restoredReason = item._restoredReason || existing._restoredReason;
+        }
+        /* _tombstoneReason audit için kalır (orijinal silme sebebi izlenir) */
+        if (item._tombstoneReason || existing._tombstoneReason) {
+          _merged._tombstoneReason = item._tombstoneReason || existing._tombstoneReason;
+        }
+      } else {
+        /* TOMBSTONE-PRIORITY-001 eski davranış (geri uyumlu) */
+        _merged.isDeleted = true;
+        _merged.deletedAt = _tombBase.deletedAt || _tombOther.deletedAt || new Date().toISOString();
+        _merged.deletedBy = _tombBase.deletedBy || _tombOther.deletedBy || null;
+      }
+
       mergedMap[key] = _merged;
       return; // erken çık — updatedAt/permissions karşılaştırması atlanır
     }
