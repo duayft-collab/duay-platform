@@ -3785,13 +3785,21 @@ window._renderDbHealthPanel = function() {
 /**
  * Bildirim temizleme — son 50'yi tutar.
  */
-window._cleanNotifications = function() {
+window._cleanNotifications = async function() {
   try {
     var notifs = JSON.parse(localStorage.getItem('ak_notif1') || '[]');
     var cleaned = notifs.slice(0, 50);
     localStorage.setItem('ak_notif1', JSON.stringify(cleaned));
-    var path = typeof _fsPath === 'function' ? _fsPath('notifications') : null;
-    if (path) _syncFirestore(path, cleaned);
+
+    /* CLEAN-NOTIFS-MIGRATE-001: _syncFirestore → _writeRemote (mergeById:false explicit overwrite + skipLocal:true LS asimetri korunur).
+       Admin "Bildirim Temizle" butonu deliberately overwrite: 4293+ notif → 50 cleanup. */
+    var result = await window._writeRemote('notifications', cleaned, { mergeById: false, skipLocal: true });
+    if (!result.ok) {
+      console.error('[_cleanNotifications] _writeRemote ' + result.state + ':', result.error);
+      window.toast?.('Bildirim temizleme: ' + (result.error || result.state), 'err');
+      return;
+    }
+
     window.toast?.((notifs.length - cleaned.length) + ' bildirim temizlendi', 'ok');
     window._renderDbHealthPanel?.();
   } catch (e) {
