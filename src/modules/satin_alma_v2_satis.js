@@ -1304,3 +1304,21 @@ window._stJobIdAra = function(inp) {
   document.body.appendChild(dd2);
   document.addEventListener('click', function rm(){ dd2.remove(); document.removeEventListener('click',rm); }, {once:true});
 };
+
+/* SATIS-EMOJI-NAV-001: Satış teklifi ürün satırından Ürün Kataloğuna nav + filtre */
+window._stUrunGoster = function(idOrKod) {
+  if (!idOrKod) return;
+  if (typeof window._tn2SelectMod === 'function') {
+    window._tn2SelectMod('urunler', null);
+  } else if (window.App && typeof window.App.nav === 'function') {
+    window.App.nav('urunler');
+  }
+  setTimeout(function() {
+    var inp = document.getElementById('urun-search');
+    if (inp) {
+      inp.value = String(idOrKod);
+      inp.dispatchEvent(new Event('input'));
+    }
+    if (typeof window.renderUrunler === 'function') window.renderUrunler();
+  }, 150);
+};
