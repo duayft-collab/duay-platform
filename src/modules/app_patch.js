@@ -6022,9 +6022,10 @@ window._renderFirmaKpi = function() {
   /* Muhasebe men\u00fcs\u00fcne 3 yeni mod\u00fcl */
   /* NAKIT-KPI-FIX-001: nakit-akisi Muhasebe men\u00fcs\u00fcne ta\u015f\u0131nd\u0131 */
   if (G.muhasebe && Array.isArray(G.muhasebe.mods)) {
-    ['evrak-paketi', 'kdv-iadesi', 'periyodik-kontrol', 'nakit-akisi'].forEach(function(id) {
+    /* CASH-FLOW-MENU-FIX-001: cash-flow-manuel üst nav Muhasebe altmenüsüne eklendi */
+    ['evrak-paketi', 'kdv-iadesi', 'periyodik-kontrol', 'nakit-akisi', 'cash-flow-manuel'].forEach(function(id) {
       if (!G.muhasebe.mods.some(function(m) { return m.id === id; })) {
-        var lbl = { 'evrak-paketi': 'Evrak Paketi', 'kdv-iadesi': 'KDV \u0130adesi', 'periyodik-kontrol': 'Periyodik Kontrol', 'nakit-akisi': 'Nakit Ak\u0131\u015f\u0131' }[id];
+        var lbl = { 'evrak-paketi': 'Evrak Paketi', 'kdv-iadesi': 'KDV \u0130adesi', 'periyodik-kontrol': 'Periyodik Kontrol', 'nakit-akisi': 'Nakit Ak\u0131\u015f\u0131', 'cash-flow-manuel': 'Nakit Ak\u0131\u015f\u0131 Manuel' }[id];
         G.muhasebe.mods.push({ id: id, label: lbl });
       }
     });
