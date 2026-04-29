@@ -478,6 +478,121 @@ window._writeLocal = async function(key, value) {
   return { ok: true };
 };
 
+/* ════════════════════════════════════════════════════════════════
+ * WRITE-REMOTE-FOUNDATION-001 — Firestore-first state machine
+ * ════════════════════════════════════════════════════════════════
+ * window._writeRemote(collection, data) — Firestore yazımı SUCCESS
+ * olmadan local'e dokunmaz. 950 KB üzeri veri Firestore'a hiç
+ * gönderilmez (silent reject yerine NET hata).
+ *
+ * State machine:
+ *   PENDING → SIZE_CHECK → IN_FLIGHT → CONFIRMED | FAILED
+ *
+ * CONFIRMED: _writeLocal çağrılır (atomic 3-layer commit)
+ * FAILED: local'e dokunulmadı, rollback gereksiz
+ *
+ * Kullanım: storeCari pilot'unda (commit #6) devreye girecek.
+ * Mevcut _syncFirestore + storeXxx fns dokunulmaz.
+ *
+ * @param {string} collection  Firestore koleksiyon adı (KEYS key'i)
+ * @param {*}      data        Yeni veri
+ * @param {Object} [options]   { skipLocal?, timeout? } — opsiyonel
+ * @returns {Promise<{ok:boolean, state:string, writeId?:string, error?:string}>}
+ */
+window._writeRemote = async function(collection, data, options) {
+  options = options || {};
+  if (!collection || typeof collection !== 'string') {
+    return { ok: false, state: 'REJECTED_PRECHECK', error: 'invalid_collection' };
+  }
+
+  /* writeId — listener echo skip + pendingWrites map için */
+  var writeId = 'wr_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+
+  /* SIZE_CHECK — Firestore 1MB document limit (safety margin 950 KB) */
+  var payloadSize = 0;
+  try { payloadSize = JSON.stringify(data || null).length; } catch(_se) {}
+  if (payloadSize > 950000) {
+    if (typeof window.toast === 'function') {
+      window.toast('Kaydedilemedi: ' + collection + ' — veri çok büyük (' + Math.round(payloadSize/1024) + ' KB, Firestore 1 MB sınırı)', 'err');
+    }
+    console.error('[WRITE-REMOTE] REJECTED_PRECHECK:', collection, payloadSize, 'bytes');
+    return { ok: false, state: 'REJECTED_PRECHECK', error: 'size_exceeded', size: payloadSize };
+  }
+
+  /* PENDING — pendingWrites map'e kayıt */
+  if (!window._pendingWrites) window._pendingWrites = {};
+  window._pendingWrites[writeId] = {
+    collection: collection,
+    state: 'PENDING',
+    startedAt: Date.now(),
+    size: payloadSize
+  };
+
+  /* Auth + FB_DB hazır mı? */
+  var FB_DB = window.Auth && window.Auth.getFBDB && window.Auth.getFBDB();
+  var fbAuth = window.Auth && window.Auth.getFBAuth && window.Auth.getFBAuth();
+  if (!FB_DB || (fbAuth && !fbAuth.currentUser)) {
+    delete window._pendingWrites[writeId];
+    return { ok: false, state: 'QUEUED_OFFLINE', error: 'fb_or_auth_not_ready' };
+  }
+
+  /* IN_FLIGHT — Firestore set */
+  window._pendingWrites[writeId].state = 'IN_FLIGHT';
+  var syncedAt = new Date().toISOString();
+
+  /* writingLock — listener echo skip için (writeId bazlı) */
+  if (!window._writingLock) window._writingLock = {};
+  window._writingLock[collection] = { writeId: writeId, syncedAt: syncedAt, expiry: Date.now() + 30000 };
+
+  var tid = (window.Auth && window.Auth.getTenantId && window.Auth.getTenantId()) || window.DEFAULT_TENANT_ID || 'tenant_default';
+  var basePath = 'duay_' + tid.replace(/[^a-zA-Z0-9_]/g, '_');
+  var path = basePath + '/' + collection;
+
+  try {
+    /* Timeout 30s */
+    var timeoutMs = options.timeout || 30000;
+    var timeoutPromise = new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('timeout_' + timeoutMs + 'ms')); }, timeoutMs); });
+    var writePromise = FB_DB.doc(path).set({ data: data, syncedAt: syncedAt });
+    await Promise.race([writePromise, timeoutPromise]);
+
+    /* CONFIRMED */
+    window._pendingWrites[writeId].state = 'CONFIRMED';
+
+    /* Local commit (atomic 3-layer) — opsiyonel skip */
+    var localResult = { ok: true };
+    if (!options.skipLocal && typeof window._writeLocal === 'function') {
+      var lsKey = (window.KEYS && window.KEYS[collection]) || ('ak_' + collection);
+      localResult = await window._writeLocal(lsKey, data);
+    }
+
+    delete window._pendingWrites[writeId];
+
+    if (localResult.ok) {
+      return { ok: true, state: 'COMMITTED', writeId: writeId, syncedAt: syncedAt };
+    } else {
+      /* DESYNC — Firestore yazıldı, local fail. Self-healing: listener Firestore'dan tekrar çekecek */
+      console.warn('[WRITE-REMOTE] DESYNC:', collection, 'FS_ok local_fail:', localResult.error);
+      if (typeof window.toast === 'function') {
+        window.toast('Kayıt yapıldı, yerel önbellek hatası — sayfayı yenileyin', 'warn');
+      }
+      return { ok: true, state: 'DESYNC', writeId: writeId, syncedAt: syncedAt, localError: localResult.error };
+    }
+  } catch (e) {
+    /* FAILED — local'e dokunulmadı (CONFIRMED öncesi yapılmadı) */
+    if (window._pendingWrites[writeId]) window._pendingWrites[writeId].state = 'FAILED';
+    delete window._pendingWrites[writeId];
+    if (window._writingLock && window._writingLock[collection] && window._writingLock[collection].writeId === writeId) {
+      delete window._writingLock[collection];
+    }
+    var errMsg = (e && e.message) || 'unknown';
+    console.error('[WRITE-REMOTE] FAILED:', collection, errMsg);
+    if (typeof window.toast === 'function') {
+      window.toast('Kaydedilemedi: ' + collection + ' — ' + errMsg, 'err');
+    }
+    return { ok: false, state: 'FAILED', error: errMsg, writeId: writeId };
+  }
+};
+
 window._memCache = window._memCache || {};
 window._KEYS_SET = {};
 window._storageReady = false;
