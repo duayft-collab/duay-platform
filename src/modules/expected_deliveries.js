@@ -1139,6 +1139,79 @@
   /* ─── PARÇA 6: UI LİSTE + 4 FİLTRE (Apple minimal) ─────── */
   var _uiEsc = function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
 
+  /* LOJISTIK-RENK-001: Yön/admin only 3 alan + 20 renk paleti */
+  var _edAdminFields = function() {
+    var r = (typeof window.CU === 'function' ? window.CU()?.role : window.CU?.role) || '';
+    return r === 'admin' || r === 'manager';
+  };
+  var _LOJ_KOLI_RENK = [
+    { k: 'kirmizi',    h: '#FF3B30', a: 'Kırmızı' },
+    { k: 'turuncu',    h: '#FF9500', a: 'Turuncu' },
+    { k: 'sari',       h: '#FFCC00', a: 'Sarı' },
+    { k: 'yesil',      h: '#34C759', a: 'Yeşil' },
+    { k: 'mint',       h: '#00C7BE', a: 'Mint' },
+    { k: 'cyan',       h: '#32ADE6', a: 'Cyan' },
+    { k: 'mavi',       h: '#007AFF', a: 'Mavi' },
+    { k: 'lacivert',   h: '#0040DD', a: 'Lacivert' },
+    { k: 'mor',        h: '#AF52DE', a: 'Mor' },
+    { k: 'pembe',      h: '#FF2D55', a: 'Pembe' },
+    { k: 'kahverengi', h: '#A2845E', a: 'Kahve' },
+    { k: 'gri',        h: '#8E8E93', a: 'Gri' },
+    { k: 'siyah',      h: '#1C1C1E', a: 'Siyah' },
+    { k: 'koyu_yesil', h: '#1B5E20', a: 'K.Yeşil' },
+    { k: 'haki',       h: '#7B6F2C', a: 'Haki' },
+    { k: 'bordo',      h: '#7B1F1F', a: 'Bordo' },
+    { k: 'altin',      h: '#C7A23B', a: 'Altın' },
+    { k: 'gumus',      h: '#B0B0B0', a: 'Gümüş' },
+    { k: 'krem',       h: '#F1E6C8', a: 'Krem' },
+    { k: 'lila',       h: '#C8A2C8', a: 'Lila' }
+  ];
+  var _lojRenkBul = function(k) { return _LOJ_KOLI_RENK.find(function(r){return r.k===k;}) || null; };
+  var _lojRenkBadge = function(k, emoji) {
+    var r = _lojRenkBul(k);
+    if (!r && !emoji) return '<span style="color:var(--t3);font-size:10px">—</span>';
+    var em = emoji ? '<span style="font-size:11px">' + _uiEsc(String(emoji).slice(0,4)) + '</span>' : '';
+    if (!r) return '<span style="font-size:11px">' + em + '</span>';
+    return '<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:4px;background:' + r.h + '15;border:0.5px solid ' + r.h + '40;font-size:10px"><span style="width:8px;height:8px;border-radius:2px;background:' + r.h + ';display:inline-block"></span>' + em + '</span>';
+  };
+  var _lojRenkPickerHtml = function(id, mevcut) {
+    var opts = '<option value="">—</option>' + _LOJ_KOLI_RENK.map(function(r){
+      return '<option value="' + r.k + '"' + (r.k===mevcut?' selected':'') + '>' + r.a + '</option>';
+    }).join('');
+    return '<select class="fi" id="' + id + '" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" style="width:100%">' + opts + '</select>';
+  };
+  var _lojIhracatDropdownHtml = function(id, mevcut) {
+    var ihrList = (typeof window.loadIhracatOps === 'function') ? window.loadIhracatOps() : [];
+    ihrList = (ihrList || []).filter(function(x){ return !x.isDeleted; }).slice(0, 50);
+    var found = false;
+    var opts = '<option value="">—</option>' + ihrList.map(function(i){
+      var lbl = i.exportNo || i.dosyaNo || i.no || i.id;
+      var v = String(i.id);
+      if (v === String(mevcut || '')) found = true;
+      return '<option value="' + _uiEsc(v) + '"' + (v===String(mevcut || '')?' selected':'') + '>' + _uiEsc(String(lbl)) + '</option>';
+    }).join('');
+    var digerSelected = (mevcut && !found) ? ' selected' : '';
+    opts += '<option value="__diger__"' + digerSelected + '>Diğeri (manuel gir)…</option>';
+    var manualVal = (mevcut && !found) ? _uiEsc(String(mevcut)) : '';
+    var manualDisplay = (mevcut && !found) ? 'block' : 'none';
+    return '<select class="fi" id="' + id + '" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" onchange="window._lojIhrChange(this)" style="width:100%">' + opts + '</select>'
+         + '<input class="fi" id="' + id + '-manual" placeholder="Manuel ihracat ID/no (max 15)" maxlength="15" value="' + manualVal + '" style="display:' + manualDisplay + ';margin-top:6px;width:100%" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()">';
+  };
+  var _lojIhrValue = function(selectId) {
+    var sel = document.getElementById(selectId);
+    if (!sel) return '';
+    if (sel.value === '__diger__') {
+      var manual = document.getElementById(selectId + '-manual');
+      return manual ? (manual.value || '').trim().slice(0, 15) : '';
+    }
+    return sel.value || '';
+  };
+  window._lojIhrChange = function(sel) {
+    var manual = document.getElementById(sel.id + '-manual');
+    if (!manual) return;
+    manual.style.display = sel.value === '__diger__' ? 'block' : 'none';
+  };
+
   var STATUS_LABELS = {
     TEDARIK_ASAMASINDA: 'Tedarik',
     URETIMDE: 'Üretimde',
@@ -1741,6 +1814,59 @@
     }
   };
 
+  /* LOJISTIK-RENK-001: yön/admin mevcut kayda 3 alan atar/değiştirir */
+  window._edAtaModal = function(edId) {
+    if (!_edAdminFields()) { window.toast?.('Bu işlem için yetkiniz yok', 'warn'); return; }
+    var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+    var ed = list.find(function(x){return String(x.id)===String(edId);});
+    if (!ed) { window.toast?.('Kayıt bulunamadı', 'err'); return; }
+    var old = document.getElementById('mo-ed-ata'); if (old) old.remove();
+    var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-ed-ata';
+    mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;border-radius:14px;overflow:hidden">'
+      + '<div style="padding:14px 20px;border-bottom:0.5px solid var(--b);font-size:14px;font-weight:600">İhracat / Sipariş / Renk Ata</div>'
+      + '<div style="padding:18px 20px">'
+      + '<div style="margin-bottom:12px"><div class="fl" style="font-size:11px;color:var(--t3);margin-bottom:4px">İhracat ID <span style="color:var(--t3);font-size:10px">(max 15 karakter)</span></div>' + _lojIhracatDropdownHtml('ed-at-ihracat', ed.ihracatId || '') + '</div>'
+      + '<div style="margin-bottom:12px"><div class="fl" style="font-size:11px;color:var(--t3);margin-bottom:4px">Sipariş Kodu <span style="color:var(--t3);font-size:10px">(müşteri ref)</span></div><input class="fi" id="ed-at-siparis" value="' + _uiEsc(ed.siparisKodu || '') + '" placeholder="ALC-2026-0099" style="width:100%"></div>'
+      + '<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:12px">'
+      + '<div><div class="fl" style="font-size:11px;color:var(--t3);margin-bottom:4px">Koli Etiket Rengi</div>' + _lojRenkPickerHtml('ed-at-renk', ed.koliRenk || '') + '</div>'
+      + '<div><div class="fl" style="font-size:11px;color:var(--t3);margin-bottom:4px">Emoji <span style="color:var(--t3);font-size:10px">(opsiyonel)</span></div><input class="fi" id="ed-at-emoji" value="' + _uiEsc(ed.koliEmoji || '') + '" maxlength="4" placeholder="📦" style="width:100%"></div>'
+      + '</div></div>'
+      + '<div style="padding:12px 20px;border-top:0.5px solid var(--b);display:flex;gap:8px;justify-content:flex-end"><button class="btn btns" onclick="document.getElementById(\'mo-ed-ata\')?.remove()">İptal</button><button class="btn btnp" onclick="window._edAtaKaydet(\'' + _uiEsc(String(ed.id)) + '\')">Kaydet</button></div></div>';
+    document.body.appendChild(mo); setTimeout(function(){mo.classList.add('open');},10);
+  };
+
+  window._edAtaKaydet = function(edId) {
+    if (!_edAdminFields()) { window.toast?.('Bu işlem için yetkiniz yok', 'warn'); return; }
+    var g = function(eid) { return document.getElementById(eid); };
+    var patch = {
+      ihracatId: _lojIhrValue('ed-at-ihracat').slice(0, 15),
+      siparisKodu: (g('ed-at-siparis')?.value || '').trim(),
+      koliRenk: g('ed-at-renk')?.value || '',
+      koliEmoji: (g('ed-at-emoji')?.value || '').slice(0, 4)
+    };
+    var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+    var idx = list.findIndex(function(x){return String(x.id)===String(edId);});
+    if (idx < 0) { window.toast?.('Kayıt bulunamadı', 'err'); return; }
+    var prev = { ihracatId: list[idx].ihracatId || '', siparisKodu: list[idx].siparisKodu || '', koliRenk: list[idx].koliRenk || '', koliEmoji: list[idx].koliEmoji || '' };
+    list[idx].ihracatId = patch.ihracatId;
+    list[idx].siparisKodu = patch.siparisKodu;
+    list[idx].koliRenk = patch.koliRenk;
+    list[idx].koliEmoji = patch.koliEmoji;
+    list[idx].updatedAt = new Date().toISOString();
+    if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(list);
+    if (typeof window.logActivity === 'function') {
+      var changes = [];
+      Object.keys(prev).forEach(function(key){
+        if (String(prev[key]) !== String(list[idx][key])) changes.push(key + ':' + (prev[key] || '∅') + '→' + (list[idx][key] || '∅'));
+      });
+      if (changes.length) window.logActivity('expected_delivery', 'ata', edId, changes.join(','));
+    }
+    document.getElementById('mo-ed-ata')?.remove();
+    window.toast?.('Atama kaydedildi', 'ok');
+    if (typeof window._edRefresh === 'function') window._edRefresh();
+    else if (typeof window.renderEdList === 'function') window.renderEdList();
+  };
+
   window._edAksiyonMenu = function(edId) {
     var all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
     var ed = all.find(function(e) { return e.id === edId; });
@@ -1757,6 +1883,8 @@
       + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edPriorityMenu && window._edPriorityMenu(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">⭐ Öncelik Değiştir</button>'
       + (isOverdue ? '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edDelayReasonModal && window._edDelayReasonModal(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px;color:#E0574F" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">⚠️ Gecikme Sebebi</button>' : '')
       + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edEkeGozAt && window._edEkeGozAt(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">📎 Eke göz at</button>'
+      /* LOJISTIK-RENK-001: yön/admin koşullu Ata buton (Düzenle ÖNCESİ) */
+      + (_edAdminFields() ? '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edAtaModal && window._edAtaModal(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">🏷️ İhracat / Sipariş / Renk Ata</button>' : '')
       + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edEditModal && window._edEditModal(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">✏️ Düzenle</button>'
       + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edDeleteConfirm && window._edDeleteConfirm(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px;color:#E0574F" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">🗑️ Sil</button>'
     + '</div>';
@@ -1863,21 +1991,27 @@
       if (ed.belgeUrl) __ikonlar += '<a href="' + esc(ed.belgeUrl) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none;font-size:13px;margin-right:4px" title="Belge / PDF">📎</a>';
       if (ed.trackingUrl) __ikonlar += '<a href="' + esc(ed.trackingUrl) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none;font-size:13px" title="Tracking">🔗</a>';
       if (!__ikonlar) __ikonlar = '<span style="color:var(--t3);font-size:10px">—</span>';
-      return '<div style="display:grid;grid-template-columns:0.5fr 2fr 1fr 0.8fr 0.8fr 0.7fr 0.7fr auto;gap:12px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
+      /* LOJISTIK-RENK-001: 11-kolon grid (8→11) + İhracat ID hücresi */
+      return '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 0.8fr 0.8fr 0.7fr 1fr 0.7fr 0.7fr auto;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
         + '<div>' + __yonBadge + '</div>'
+        + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ed.ihracatId ? esc(String(ed.ihracatId).slice(0,15)) : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div><div style="font-weight:500;color:var(--t)">'+esc(ed.productName||'—')+'</div>'
         + '<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(tedAd)+'</div></div>'
         + '<div onclick="event.stopPropagation()"><select onchange="window._edStatusChange && window._edStatusChange(\'' + esc(ed.id) + '\', this.value)" style="padding:3px 8px;border-radius:10px;font-size:10px;font-weight:500;color:' + st['c'] + ';background:' + st['bg'] + ';border:0.5px solid ' + st['c'] + '33;cursor:pointer;font-family:inherit">' + STATUSES.map(function(__sk){var __s = STATUS[__sk];return '<option value="' + __sk + '"' + (ed.status === __sk ? ' selected' : '') + '>' + esc(__s ? __s['t'] : __sk) + '</option>';}).join('') + '</select></div>'
         + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+qd+'/'+qt+' <span style="color:var(--t3);font-size:10px">(%'+pct+')</span></div>'
         + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+esc(eta)+'</div>'
         + '<div style="font-size:11px;font-weight:600;color:var(--t2);text-align:center" title="' + esc(__sorumluAd || 'Atanmamış') + '">' + esc(__sorumluInitials) + '</div>'
+        /* LOJISTIK-RENK-001: Sipariş Kodu + Renk hücreleri */
+        + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ed.siparisKodu ? esc(String(ed.siparisKodu)) : '<span style="color:var(--t3)">—</span>') + '</div>'
+        + '<div style="text-align:center">' + _lojRenkBadge(ed.koliRenk, ed.koliEmoji) + '</div>'
         + '<div style="font-size:13px;text-align:center">' + __ikonlar + '</div>'
         + '<button onclick="event.stopPropagation();window._edAksiyonMenu && window._edAksiyonMenu(\''+esc(ed.id)+'\')" style="padding:4px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;color:var(--t3);font-size:14px;font-family:inherit;line-height:1">⋮</button>'
         + '</div>';
     }).join('');
 
-    var hdrRow = '<div style="display:grid;grid-template-columns:0.5fr 2fr 1fr 0.8fr 0.8fr 0.7fr 0.7fr auto;gap:12px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
-      + '<div>Yön</div><div>Ürün / Tedarikçi</div><div>Durum</div><div>Miktar</div><div>Tahmini</div><div>Sorumlu</div><div>İkon</div><div></div></div>';
+    /* LOJISTIK-RENK-001: 8→11 kolon (Yön | İhracatID | Ürün/Ted | Durum | Miktar | Tahmini | Sorumlu | SipKod | Renk | İkon | Aksiyon) */
+    var hdrRow = '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 0.8fr 0.8fr 0.7fr 1fr 0.7fr 0.7fr auto;gap:10px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
+      + '<div>Yön</div><div>İhracat ID</div><div>Ürün / Tedarikçi</div><div>Durum</div><div>Miktar</div><div>Tahmini</div><div>Sorumlu</div><div>Sipariş Kodu</div><div>Renk</div><div>İkon</div><div></div></div>';
 
     return '<div id="ed-list-container" style="'+card+'">'
       + '<div style="'+hdr+'">'
