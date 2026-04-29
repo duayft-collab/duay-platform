@@ -5641,7 +5641,7 @@ window._ihrLog = function(dosyaId, aksiyon, hedef, evrakTur) {
   var loglar = [];
   try { loglar = JSON.parse(localStorage.getItem(logKey) || '[]'); } catch(e) {}
   loglar.unshift({
-    id: Date.now().toString(),
+    id: window.generateId(),
     aksiyon: aksiyon,
     hedef: hedef || null,
     evrakTur: evrakTur || null,
