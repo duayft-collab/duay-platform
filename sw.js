@@ -66,8 +66,9 @@
 /* [CACHE-BUMP-2026-04-29-V97] SATIS-EMOJI-NAV-001 — Satış teklifi ürün satırından Ürün Kataloğuna emoji navigation aktivasyon */
 /* [CACHE-BUMP-2026-04-29-V98] SATIS-PI-DESIGN-CLEANUP-001 — 4 PI tasarımı silindi (C/I/L/O), 4 korundu (A/B/D1/D2) (T1: ae70269) */
 /* [CACHE-BUMP-2026-04-29-V99] SATIS-FORM-GORSEL-FIX-001 — Satış teklifi form ürün satırı görsel render fix (u.gorsel || u.image fallback) (T1: ca7a193) */
-const CACHE_NAME    = 'duay-platform-v99';
-const CACHE_VERSION = '99.0.0';
+/* [CACHE-BUMP-2026-04-29-V100] SATIS-PI-CONTENT-UNIFY-001 — D1/D2'ye CIF Insurance/Freight + image fallback (Strateji C) (T1: 3625e0c) */
+const CACHE_NAME    = 'duay-platform-v100';
+const CACHE_VERSION = '100.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
