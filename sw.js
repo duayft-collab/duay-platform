@@ -52,8 +52,9 @@
 /* [CACHE-BUMP-2026-04-29-V83] WRITE-REMOTE-FOUNDATION-001 — _writeRemote fn aktivasyon */
 /* [CACHE-BUMP-2026-04-29-V84] CASH-FLOW-MODULE-001 — Nakit Akışı Manuel MVP modülü */
 /* [CACHE-BUMP-2026-04-29-V85] LISTENER-WRITE-UNIFY-001 — listener _writeLocal entegrasyonu + _writingLock unify */
-const CACHE_NAME    = 'duay-platform-v85';
-const CACHE_VERSION = '85.0.0';
+/* [CACHE-BUMP-2026-04-29-V86] NOMERGE-USERFILTER-FIX-001 — yetki-filtreli koleksiyonlar merge mode'a alındı */
+const CACHE_NAME    = 'duay-platform-v86';
+const CACHE_VERSION = '86.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
