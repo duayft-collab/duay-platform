@@ -3012,6 +3012,8 @@ function startRealtimeSync() {
     }],
     // PUSULA-SYNC-001: Pusula görevleri — multi-cihaz realtime sync
     ['pusula', KEYS.pusula, () => { window._ppModRender?.(); }],
+    /* SYNC-EXPECTED-DELIVERIES-001: Sevkiyat Merkezi multi-cihaz canlı sync */
+    ['expectedDeliveries', KEYS.expectedDeliveries, () => { window._edRenderPanel?.(); }],
   ];
 
   /* LS-SYNC-009 FAZ-1: Sadece CRITICAL listen et, LAZY'leri lookup'a kaydet */

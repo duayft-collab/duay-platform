@@ -44,8 +44,9 @@
 /* [CACHE-BUMP-2026-04-28-V75] PP-MODAL-CONDITIONAL-003 (Kredi + Diger placeholder, 8 TİP TAMAMLANDI) aktivasyon */
 /* [CACHE-BUMP-2026-04-28-V76] SW-PRECACHE-AUTOSYNC-001 (PRECACHE_URLS otomatik senkron) aktivasyon */
 /* [CACHE-BUMP-2026-04-28-V77] DEAD-CORE-CLEANUP-001 (7 dead file silindi + storage_audit taşındı) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v77';
-const CACHE_VERSION = '77.0.0';
+/* [CACHE-BUMP-2026-04-29-V78] SYNC-EXPECTED-DELIVERIES-001 (Sevkiyat realtime sync aktive) aktivasyon */
+const CACHE_NAME    = 'duay-platform-v78';
+const CACHE_VERSION = '78.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
