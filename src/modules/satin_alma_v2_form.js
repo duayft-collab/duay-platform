@@ -634,7 +634,7 @@ window._saV2SatisUrunEkle = function(t) {
   var orjF = parseFloat(t.alisF) || 0;
   var kur = (window._saKur||{})[orjPara] || 44.55;
   var alisTl = parseFloat((orjF*kur).toFixed(2));
-  window._saV2SatisUrunler.push({ id:t.id, duayKodu:t.duayKodu||'', urunAdi:t.urunAdi||'', gorsel:t.gorsel||'', alisOrjF:orjF, alisOrjPara:orjPara, alisTl:alisTl, miktar:1, marj:33, birim: t.birim || 'Adet', mensei: t.mensei || '' });
+  window._saV2SatisUrunler.push({ id:t.id, duayKodu:t.duayKodu||'', urunAdi:t.urunAdi||'', gorsel:t.gorsel||t.image||'', alisOrjF:orjF, alisOrjPara:orjPara, alisTl:alisTl, miktar:1, marj:33, birim: t.birim || 'Adet', mensei: t.mensei || '' });
   window._saV2SatisTabloyuGuncelle();
 };
 
@@ -748,7 +748,7 @@ window._saV2SatisTabloyuGuncelle = function() {
     var karFormatted = (urunKar < 0 ? '-' : '') + paraSym
                      + Math.abs(urunKar).toLocaleString('tr-TR', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
     return '<tr style="border-bottom:0.5px solid var(--b)">'
-      + '<td style="padding:4px 6px;width:28px">' + (u.gorsel ? '<img src="' + u.gorsel + '" style="width:26px;height:26px;border-radius:3px;object-fit:cover">' : '<div style="width:26px;height:26px;background:var(--s2);border-radius:3px;border:0.5px solid var(--b)"></div>') + '</td>'
+      + '<td style="padding:4px 6px;width:28px">' + ((u.gorsel || u.image) ? '<img src="' + (u.gorsel || u.image) + '" style="width:26px;height:26px;border-radius:3px;object-fit:cover">' : '<div style="width:26px;height:26px;background:var(--s2);border-radius:3px;border:0.5px solid var(--b)"></div>') + '</td>'
       + '<td style="padding:4px 6px;font-size:10px"><div style="font-weight:500;display:flex;align-items:center;gap:4px"><span>' + _saEsc(u.duayKodu || '') + (u.duayKodu ? ' \u2014 ' : '') + _saEsc(u.urunAdi || '\u2014') + '</span><span onclick="event.stopPropagation();window._stUrunGoster && window._stUrunGoster(\'' + _saEsc(u.duayKodu || u.id || '') + '\')" title="\u00dcr\u00fcn Katalo\u011funda G\u00f6ster" style="cursor:pointer;color:var(--ac);font-size:11px;padding:1px 4px;border-radius:3px;flex-shrink:0" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">\ud83d\udd0d</span></div>' + (u.eskiKod ? '<div style="font-size:8px;color:var(--t3)">(' + _saEsc(u.eskiKod) + ')</div>' : '') + '</td>'
       /* SATIS-URUN-TBODY-STYLE-001: ALIŞ mavi, SATIŞ yeşil, input ortalama, Kaldır kırmızı */
       + '<td style="padding:4px 6px"><input type="number" data-field="miktar" value="' + (u.miktar || 1) + '" min="1" oninput="event.stopPropagation();window._saV2UrunMiktar(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;min-width:40px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);text-align:center;box-sizing:border-box"></td>'
