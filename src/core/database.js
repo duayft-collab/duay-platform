@@ -552,7 +552,56 @@ window._writeRemote = async function(collection, data, options) {
     /* Timeout 30s */
     var timeoutMs = options.timeout || 30000;
     var timeoutPromise = new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('timeout_' + timeoutMs + 'ms')); }, timeoutMs); });
-    var writePromise = FB_DB.doc(path).set({ data: data, syncedAt: syncedAt });
+
+    /* WRITE-REMOTE-MERGE-BY-ID-001: read-merge-write (default TRUE, opt-out: options.mergeById === false) */
+    var mergeById = options.mergeById !== false;
+    var finalData = data;
+
+    if (mergeById && Array.isArray(data)) {
+      try {
+        var existingDoc = await FB_DB.doc(path).get();
+        var existingData = existingDoc.exists ? (existingDoc.data()?.data || []) : [];
+
+        if (Array.isArray(existingData) && existingData.length > 0) {
+          /* id-field bazlı merge: yeni overrider eski; id'siz kayıtlar yeni data'da değişmez şekilde kalır */
+          var mergedMap = {};
+          var idLessNew = [];
+
+          /* Önce eski veriyi haritaya at (id varsa) — tombstone (isDeleted=true) doğal korunur */
+          existingData.forEach(function(r) {
+            if (r && r.id != null) mergedMap[r.id] = r;
+          });
+
+          /* Yeni veri override eder (id varsa); id yoksa idLessNew'a düşer */
+          data.forEach(function(r) {
+            if (r && r.id != null) mergedMap[r.id] = r;
+            else idLessNew.push(r);
+          });
+
+          finalData = Object.values(mergedMap).concat(idLessNew);
+        }
+      } catch (mergeErr) {
+        console.warn('[WRITE-REMOTE-MERGE] read-fail, fallback to overwrite:', collection, mergeErr.message);
+        finalData = data;
+      }
+    }
+
+    /* SIZE_CHECK tekrar — merged data daha büyük olabilir */
+    var mergedPayloadSize = 0;
+    try { mergedPayloadSize = JSON.stringify(finalData || null).length; } catch(_se2) {}
+    if (mergedPayloadSize > 950000) {
+      if (typeof window.toast === 'function') {
+        window.toast('Kaydedilemedi: ' + collection + ' — merge sonrası veri çok büyük (' + Math.round(mergedPayloadSize/1024) + ' KB)', 'err');
+      }
+      console.error('[WRITE-REMOTE] REJECTED_AFTER_MERGE:', collection, mergedPayloadSize);
+      delete window._pendingWrites[writeId];
+      if (window._writingNow && window._writingNow[collection] && window._writingNow[collection].syncedAt === syncedAt) {
+        delete window._writingNow[collection];
+      }
+      return { ok: false, state: 'REJECTED_AFTER_MERGE', error: 'merged_size_exceeded', size: mergedPayloadSize, writeId: writeId };
+    }
+
+    var writePromise = FB_DB.doc(path).set({ data: finalData, syncedAt: syncedAt });
     await Promise.race([writePromise, timeoutPromise]);
 
     /* CONFIRMED */
