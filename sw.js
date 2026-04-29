@@ -56,8 +56,9 @@
 /* [CACHE-BUMP-2026-04-29-V87] WRITE-REMOTE-MERGE-BY-ID-001 — _writeRemote merge by-id mantığı */
 /* [CACHE-BUMP-2026-04-29-V88] STORE-CARI-MIGRATE-PILOT-001 — storeCari _writeRemote'a migrate (pilot) */
 /* [CACHE-BUMP-2026-04-29-V89] STORE-MIGRATE-BATCH-A-001 — storeUrunler + storeSatinalma migrate */
-const CACHE_NAME    = 'duay-platform-v89';
-const CACHE_VERSION = '89.0.0';
+/* [CACHE-BUMP-2026-04-29-V90] STORE-MIGRATE-BATCH-B-001 — storeAlisTeklifleri + storeSatisTeklifleri migrate */
+const CACHE_NAME    = 'duay-platform-v90';
+const CACHE_VERSION = '90.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]

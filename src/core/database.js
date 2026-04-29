@@ -2320,7 +2320,7 @@ function storeNavlunSatis(d) { var _now2=new Date().toISOString(); d=Array.isArr
 /** @returns {Array} */ function loadIhracatListesi() { var d = _read(KEYS.ihracatListesi); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array} d */ function storeIhracatListesi(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; _write(KEYS.ihracatListesi, d); var _fp = _fsPath('ihracatListesi'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadAlisTeklifleri() { var d = _read(KEYS.alisTeklifleri); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(window._normalizeAlisTeklifFields || function(x){return x;}).filter(function(k) { return !k.isDeleted; })); /* [AT-SCHEMA-BRIDGE-001] eski LS kayıtları için okuma anında bridge */ }
-/** @param {Array} d */ function storeAlisTeklifleri(d) {
+/** @param {Array} d */ async function storeAlisTeklifleri(d) {
   /* [AT-SCHEMA-BRIDGE-001] yazma öncesi field bridge */
   if (Array.isArray(d)) d = d.map(window._normalizeAlisTeklifFields || function(x){return x;});
   /* TOMBSTONE-PRESERVE-001: mevcut localStorage'daki tombstone'lar store'da kaybolmasın */
@@ -2344,13 +2344,23 @@ function storeNavlunSatis(d) { var _now2=new Date().toISOString(); d=Array.isArr
     return t;
   }) : d;
   if (typeof window._lsRetention==='function') d = window._lsRetention(d, 'alisTeklifleri', 300, 100);
-  _write(KEYS.alisTeklifleri, d);
+  /* STORE-MIGRATE-BATCH-B-001: _write + _syncFirestore → _writeRemote (atomic 3-layer + merge by-id).
+     Fallback _write: QUEUED_OFFLINE veya FAILED durumunda local persist (regression koruması). */
+  var result = await window._writeRemote('alisTeklifleri', d, { mergeById: true });
+  if (!result.ok) {
+    if (result.state === 'QUEUED_OFFLINE' || result.state === 'FAILED') {
+      _write(KEYS.alisTeklifleri, d);
+    }
+    console.error('[storeAlisTeklifleri] _writeRemote ' + result.state + ':', result.error);
+    if (typeof window.toast === 'function') {
+      window.toast('Alış teklifi: ' + (result.error || result.state), 'err');
+    }
+  }
   try { if (typeof window.invalidateCacheForCollection === 'function') window.invalidateCacheForCollection('alisTeklifleri'); } catch(e) {}
-  var _fp = _fsPath('alisTeklifleri');
-  if (_fp) _syncFirestore(_fp, d);
+  return result;
 }
 /** @returns {Array} */ function loadSatisTeklifleri() { var d = _read(KEYS.satisTeklifleri); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
-/** @param {Array} d */ function storeSatisTeklifleri(d) {
+/** @param {Array} d */ async function storeSatisTeklifleri(d) {
   /* TOMBSTONE-PRESERVE-001: mevcut localStorage'daki tombstone'lar store'da kaybolmasın */
   if (Array.isArray(d)) {
     try {
@@ -2374,11 +2384,21 @@ function storeNavlunSatis(d) { var _now2=new Date().toISOString(); d=Array.isArr
     return t;
   }) : d;
   if (typeof window._lsRetention==='function') d = window._lsRetention(d, 'satisTeklifleri', 300, 100);
-  _write(KEYS.satisTeklifleri, d);
+  /* STORE-MIGRATE-BATCH-B-001: _write + _syncFirestore → _writeRemote (atomic 3-layer + merge by-id).
+     Fallback _write: QUEUED_OFFLINE veya FAILED durumunda local persist (regression koruması). */
+  var result = await window._writeRemote('satisTeklifleri', d, { mergeById: true });
+  if (!result.ok) {
+    if (result.state === 'QUEUED_OFFLINE' || result.state === 'FAILED') {
+      _write(KEYS.satisTeklifleri, d);
+    }
+    console.error('[storeSatisTeklifleri] _writeRemote ' + result.state + ':', result.error);
+    if (typeof window.toast === 'function') {
+      window.toast('Satış teklifi: ' + (result.error || result.state), 'err');
+    }
+  }
   /* CACHE-INVALIDATE-001 */
   try { if (typeof window.invalidateCacheForCollection === 'function') window.invalidateCacheForCollection('satisTeklifleri'); } catch(e) {}
-  var _fp = _fsPath('satisTeklifleri');
-  if (_fp) _syncFirestore(_fp, d);
+  return result;
 }
 
 /** @returns {Array} */ function loadFikirler() { var d = _read(KEYS.fikirler); var arr = Array.isArray(d) ? d : []; return arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; }); }
