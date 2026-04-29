@@ -4371,7 +4371,7 @@ window._ppOncelikEkle = function(zaman, text) {
     return;
   }
   d[zaman].push({
-    id: Date.now().toString(36),
+    id: _ppId(),
     text: text,
     tamam: false,
     createdAt: new Date().toISOString()
@@ -4491,7 +4491,7 @@ window._ppGorevMesajGonder = function(taskId, text, dosyaAd) {
   var mesajlar = window._ppGorevMesajLoad(taskId);
   var cu = _cu;
   mesajlar.push({
-    id: Date.now().toString(36),
+    id: _ppId(),
     text: text || '',
     dosya: dosyaAd || null,
     gonderen: (cu && (cu.displayName || cu.email)) || (window._kullanici && (window._kullanici.displayName || window._kullanici.email)) || 'Ben',
