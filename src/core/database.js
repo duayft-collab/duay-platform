@@ -2185,7 +2185,7 @@ function storeTahsilat(d) {
   if (_fp_tahsilat) _syncFirestore(_fp_tahsilat, d);
 }
 /** @returns {Array<Object>} */ function loadSatinalma() { const d = _read(KEYS.satinalma); const arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr); }
-/** @param {Array<Object>} d */ function storeSatinalma(d) {
+/** @param {Array<Object>} d */ async function storeSatinalma(d) {
   /* TOMBSTONE-PRESERVE-001: mevcut localStorage'daki tombstone'lar store'da kaybolmasın */
   if (Array.isArray(d)) {
     try {
@@ -2206,10 +2206,20 @@ function storeTahsilat(d) {
     }
     return t;
   }) : d;
-  _write(KEYS.satinalma, d);
+  /* STORE-MIGRATE-BATCH-A-001: _write + _syncFirestore → _writeRemote (atomic 3-layer + merge by-id).
+     Fallback _write: QUEUED_OFFLINE veya FAILED durumunda local persist (regression koruması). */
+  var result = await window._writeRemote('satinalma', d, { mergeById: true });
+  if (!result.ok) {
+    if (result.state === 'QUEUED_OFFLINE' || result.state === 'FAILED') {
+      _write(KEYS.satinalma, d);
+    }
+    console.error('[storeSatinalma] _writeRemote ' + result.state + ':', result.error);
+    if (typeof window.toast === 'function') {
+      window.toast('Satın alma kaydı: ' + (result.error || result.state), 'err');
+    }
+  }
   try { if (typeof window.invalidateCacheForCollection === 'function') window.invalidateCacheForCollection('satinalma'); } catch(e) {}
-  var _fp = _fsPath('satinalma');
-  if (_fp) _syncFirestore(_fp, d);
+  return result;
 }
 /** @returns {Array<Object>} @param {Object} [opts] tumKullanicilar */
 function loadCari(opts) {
@@ -2306,7 +2316,7 @@ function storeNavlunSatis(d) { var _now2=new Date().toISOString(); d=Array.isArr
 // BÖLÜM 16D — ÜRÜNLER / ALIŞ TEKLİF / SATIŞ TEKLİF
 // ════════════════════════════════════════════════════════════════
 /** @returns {Array} @param {Object} [opts] tumKullanicilar / _dahilSilinenler */ function loadUrunler(opts) { var d = _read(KEYS.urunler); var arr = Array.isArray(d) ? d : []; var filtreli = arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).map(window._normalizeUrunFields || function(x){return x;}); /* [URUN-RENDER-FIX-001] eski LS kayıtları için okuma anında bridge */ if (!(opts && opts._dahilSilinenler)) filtreli = filtreli.filter(function(k) { return !k.isDeleted; }); if (opts && opts.tumKullanicilar) return filtreli; return window._dbKullaniciFiltreUygula(filtreli); }
-/** @param {Array} d */ function storeUrunler(d) { /* [URUN-RENDER-FIX-001] yazma öncesi field bridge */ d = Array.isArray(d) ? d.map(window._normalizeUrunFields || function(x){return x;}) : d; var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; if(Array.isArray(d) && d.length > 2000) { var aktif = d.filter(function(r){return !r.isDeleted;}); var silinen = d.filter(function(r){return r.isDeleted;}).sort(function(a,b){return (b.deletedAt||'')>(a.deletedAt||'')?1:-1;}).slice(0,200); d = aktif.concat(silinen); } /* URUN-BASE64-STRIP-001: base64 görsel sadece Firestore'a gitsin, localStorage'a değil */ var dLocal = d.map(function(u) { if (u && typeof u.image === 'string' && u.image.startsWith('data:')) { var copy = Object.assign({}, u); copy._hasImage = true; delete copy.image; return copy; } return u; }); _write(KEYS.urunler, dLocal); var _fp = _fsPath('urunler'); if (_fp) _syncFirestore(_fp, d); }
+/** @param {Array} d */ async function storeUrunler(d) { /* [URUN-RENDER-FIX-001] yazma öncesi field bridge */ d = Array.isArray(d) ? d.map(window._normalizeUrunFields || function(x){return x;}) : d; var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; if(Array.isArray(d) && d.length > 2000) { var aktif = d.filter(function(r){return !r.isDeleted;}); var silinen = d.filter(function(r){return r.isDeleted;}).sort(function(a,b){return (b.deletedAt||'')>(a.deletedAt||'')?1:-1;}).slice(0,200); d = aktif.concat(silinen); } /* URUN-BASE64-STRIP-001: base64 görsel sadece Firestore'a gitsin, localStorage'a değil */ var dLocal = d.map(function(u) { if (u && typeof u.image === 'string' && u.image.startsWith('data:')) { var copy = Object.assign({}, u); copy._hasImage = true; delete copy.image; return copy; } return u; }); /* STORE-MIGRATE-BATCH-A-001: FS'e tam veri (görsel dahil) + LS'e strip dLocal — URUN-BASE64-STRIP-001 split korunur */ var result = await window._writeRemote('urunler', d, { mergeById: true, skipLocal: true }); _write(KEYS.urunler, dLocal); if (!result.ok) { console.error('[storeUrunler] _writeRemote ' + result.state + ':', result.error); if (typeof window.toast === 'function') { window.toast('Ürün kaydı: ' + (result.error || result.state), 'err'); } } return result; }
 /** @returns {Array} */ function loadIhracatListesi() { var d = _read(KEYS.ihracatListesi); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._migrateRecord ? window._migrateRecord(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
 /** @param {Array} d */ function storeIhracatListesi(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; _write(KEYS.ihracatListesi, d); var _fp = _fsPath('ihracatListesi'); if (_fp) _syncFirestore(_fp, d); }
 /** @returns {Array} */ function loadAlisTeklifleri() { var d = _read(KEYS.alisTeklifleri); var arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(window._normalizeAlisTeklifFields || function(x){return x;}).filter(function(k) { return !k.isDeleted; })); /* [AT-SCHEMA-BRIDGE-001] eski LS kayıtları için okuma anında bridge */ }
