@@ -64,8 +64,9 @@
 /* [CACHE-BUMP-2026-04-29-V95] CASH-FLOW-MENU-FIX-001 — üst nav Muhasebe altmenüsüne Nakit Akışı Manuel item eklendi */
 /* [CACHE-BUMP-2026-04-29-V96] DEMO-REMOVE-001 — Demo button + 3 demo fn (_insertDemoUrunler + _insertCariDemoData + _temizleDemoVeri) silindi */
 /* [CACHE-BUMP-2026-04-29-V97] SATIS-EMOJI-NAV-001 — Satış teklifi ürün satırından Ürün Kataloğuna emoji navigation aktivasyon */
-const CACHE_NAME    = 'duay-platform-v97';
-const CACHE_VERSION = '97.0.0';
+/* [CACHE-BUMP-2026-04-29-V98] SATIS-PI-DESIGN-CLEANUP-001 — 4 PI tasarımı silindi (C/I/L/O), 4 korundu (A/B/D1/D2) (T1: ae70269) */
+const CACHE_NAME    = 'duay-platform-v98';
+const CACHE_VERSION = '98.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
