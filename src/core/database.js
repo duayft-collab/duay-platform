@@ -386,6 +386,98 @@ window.RETENTION = Object.freeze(RETENTION);
 // ═══════════════════════════════════════════════════════════════
 // STORAGE-IDB-ROOT-001 — memory cache + IndexedDB engine (hardened)
 // ═══════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════════
+ * WRITE-LOCAL-FOUNDATION-001 — Atomic 3-layer local write
+ * ════════════════════════════════════════════════════════════════
+ * window._writeLocal(key, value) — Tüm local katmanları (memCache + IDB + LS)
+ * tek transaction olarak günceller. Herhangi bir layer fail ederse 3 katmanı
+ * da eski haline geri yükler (rollback).
+ *
+ * Kullanım: _listenCollection ve _writeRemote tarafından çağrılır.
+ * Mevcut _write fn dokunulmaz, eski akışlar etkilenmez.
+ *
+ * @param {string} key      LS/IDB key (KEYS.xxx değeri, ör: 'ak_cari1')
+ * @param {*}      value    Yeni veri
+ * @returns {Promise<{ok:boolean, error?:string}>}
+ */
+window._writeLocal = async function(key, value) {
+  if (!key || typeof key !== 'string') return { ok: false, error: 'invalid_key' };
+
+  /* Snapshot — rollback için 3 katman da saklanır */
+  var _snap = { memCache: undefined, idb: undefined, ls: null, hadMC: false };
+  try {
+    if (window._memCache && Object.prototype.hasOwnProperty.call(window._memCache, key)) {
+      _snap.hadMC = true;
+      try { _snap.memCache = JSON.parse(JSON.stringify(window._memCache[key])); }
+      catch(_e1) { _snap.memCache = window._memCache[key]; }
+    }
+    _snap.ls = localStorage.getItem(key);
+  } catch(_se) { /* snapshot fail — devam, rollback eksik olabilir */ }
+
+  var _isBigKey = window._KEYS_SET && window._KEYS_SET[key];
+  if (_isBigKey && typeof window.idbGet === 'function' && !window._idbFailed) {
+    try { _snap.idb = await window.idbGet(key, 'misc'); }
+    catch(_ie) { _snap.idb = undefined; }
+  }
+
+  /* Layer 1: memCache (senkron, hata vermez normalde) */
+  var _l1ok = false;
+  try {
+    if (!window._memCache) window._memCache = {};
+    window._memCache[key] = value;
+    _l1ok = true;
+  } catch(e1) {
+    return { ok: false, error: 'memCache_fail:' + (e1 && e1.message) };
+  }
+
+  /* Layer 2: IDB (asenkron, await ZORUNLU) */
+  var _l2ok = false;
+  if (_isBigKey && typeof window.idbSet === 'function' && !window._idbFailed) {
+    try {
+      await window.idbSet(key, value, 'misc');
+      _l2ok = true;
+    } catch(e2) {
+      /* Rollback memCache */
+      try {
+        if (_snap.hadMC) window._memCache[key] = _snap.memCache;
+        else delete window._memCache[key];
+      } catch(_re1) {}
+      return { ok: false, error: 'idbSet_fail:' + (e2 && e2.message) };
+    }
+  } else {
+    _l2ok = true; /* Big key değilse IDB skip, hata değil */
+  }
+
+  /* Layer 3: localStorage (büyük key'lerde IDB var, LS gerek yok) */
+  var _l3ok = true;
+  if (!_isBigKey || window._idbFailed) {
+    try {
+      var _lz = typeof LZString !== 'undefined' ? LZString : null;
+      var _json = JSON.stringify(value);
+      if (_lz && (key.startsWith('ak_') || key.startsWith('pp_') || key.startsWith('odm_') || key.startsWith('duay_') || key.startsWith('ik_')) && _json.length > 500) {
+        localStorage.setItem(key, '_LZ_' + _lz.compressToUTF16(_json));
+      } else {
+        localStorage.setItem(key, _json);
+      }
+    } catch(e3) {
+      /* Rollback memCache + IDB */
+      try {
+        if (_snap.hadMC) window._memCache[key] = _snap.memCache;
+        else delete window._memCache[key];
+      } catch(_re2) {}
+      if (_isBigKey && typeof window.idbSet === 'function' && _snap.idb !== undefined) {
+        try { await window.idbSet(key, _snap.idb, 'misc'); } catch(_re3) {}
+      }
+      return { ok: false, error: 'localStorage_fail:' + (e3 && e3.message), quotaExceeded: e3 && (e3.name === 'QuotaExceededError' || e3.code === 22) };
+    }
+  } else {
+    /* Big key + IDB OK: LS'i temizle (mevcut _write davranışıyla uyumlu) */
+    try { localStorage.removeItem(key); } catch(_le) {}
+  }
+
+  return { ok: true };
+};
+
 window._memCache = window._memCache || {};
 window._KEYS_SET = {};
 window._storageReady = false;

@@ -48,8 +48,9 @@
 /* [CACHE-BUMP-2026-04-29-V79] SYNC-GAP-CLOSE-001 (6 SYNC_MAP eklenti + tatilAyarlar Firestore yazımı) aktivasyon */
 /* [CACHE-BUMP-2026-04-29-V80] SYNC-MODULE-MAPPING-FIX-001 (10 lazy mapping eksiği kapatıldı) aktivasyon */
 /* [CACHE-BUMP-2026-04-29-V81] SYNC-CACHE-INVALIDATE-FIX-001 (_memCache direkt invalidate) aktivasyon */
-const CACHE_NAME    = 'duay-platform-v81';
-const CACHE_VERSION = '81.0.0';
+/* [CACHE-BUMP-2026-04-29-V82] WRITE-LOCAL-FOUNDATION-001 — _writeLocal fn aktivasyon */
+const CACHE_NAME    = 'duay-platform-v82';
+const CACHE_VERSION = '82.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
