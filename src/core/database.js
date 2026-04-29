@@ -2233,7 +2233,7 @@ function loadCari(opts) {
     return !c.hiddenFrom.map(String).includes(uid);
   });
 }
-/** @param {Array<Object>} d */ function storeCari(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2; if(!t.status&&!t.isDeleted)t.status='active';/* CARI-STATUS-MIGRATION-001: legacy status eksik kayitlara active ata */}return t;}):d;
+/** @param {Array<Object>} d */ async function storeCari(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2; if(!t.status&&!t.isDeleted)t.status='active';/* CARI-STATUS-MIGRATION-001: legacy status eksik kayitlara active ata */}return t;}):d;
   var tumCari = _read(KEYS.cari) || [];
   d.forEach(function(yeni) {
     if (!yeni.id || yeni._mukerrerKontrolAtla) return;
@@ -2245,8 +2245,19 @@ function loadCari(opts) {
     if (mukerrer) window.toast?.('Uyar\u0131: Bu kay\u0131t sistemde ba\u015fka bir kullan\u0131c\u0131da mevcut', 'warn');
   });
   if (typeof window._lsRetention==='function') d = window._lsRetention(d, 'cari', 500, 100);
-  _write(KEYS.cari, d);
-  var _fp = _fsPath('cari'); if (_fp) _syncFirestore(_fp, d);
+  /* STORE-CARI-MIGRATE-PILOT-001: _write + _syncFirestore \u2192 _writeRemote (atomic 3-layer + merge by-id).
+     Fallback _write: QUEUED_OFFLINE veya FAILED durumunda local persist (regression korumas\u0131). */
+  var result = await window._writeRemote('cari', d, { mergeById: true });
+  if (!result.ok) {
+    if (result.state === 'QUEUED_OFFLINE' || result.state === 'FAILED') {
+      _write(KEYS.cari, d);
+    }
+    console.error('[storeCari] _writeRemote ' + result.state + ':', result.error);
+    if (typeof window.toast === 'function') {
+      window.toast('Cari kayd\u0131: ' + (result.error || result.state), 'err');
+    }
+  }
+  return result;
 }
 
 // ════════════════════════════════════════════════════════════════

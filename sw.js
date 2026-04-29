@@ -54,8 +54,9 @@
 /* [CACHE-BUMP-2026-04-29-V85] LISTENER-WRITE-UNIFY-001 — listener _writeLocal entegrasyonu + _writingLock unify */
 /* [CACHE-BUMP-2026-04-29-V86] NOMERGE-USERFILTER-FIX-001 — yetki-filtreli koleksiyonlar merge mode'a alındı */
 /* [CACHE-BUMP-2026-04-29-V87] WRITE-REMOTE-MERGE-BY-ID-001 — _writeRemote merge by-id mantığı */
-const CACHE_NAME    = 'duay-platform-v87';
-const CACHE_VERSION = '87.0.0';
+/* [CACHE-BUMP-2026-04-29-V88] STORE-CARI-MIGRATE-PILOT-001 — storeCari _writeRemote'a migrate (pilot) */
+const CACHE_NAME    = 'duay-platform-v88';
+const CACHE_VERSION = '88.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
