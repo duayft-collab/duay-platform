@@ -71,8 +71,9 @@
 /* [CACHE-BUMP-2026-04-30-V102] SATIS-PI-FALLBACK-001 — sartlar default + CIF/CIP/CFR otomatik Insurance/Freight (T1: 19ad962) */
 /* [CACHE-BUMP-2026-04-30-V103] SATIS-FORM-PI-FIX-001 — incoterm load fix (CIF→EXW bug) + sartlar slice(0,5) kaldırıldı (T1: 6883d12) */
 /* [CACHE-BUMP-2026-04-30-V104] SATIS-PI-PREVIEW-FIELDS-FIX-001 — _saV2TamOnIzle + _saV2SatisPDF teklif objesine eksik 5 field eklendi (Subtotal/Freight/Insurance/TOTAL 0 bug) (T1: 999a965) */
-const CACHE_NAME    = 'duay-platform-v104';
-const CACHE_VERSION = '104.0.0';
+/* [CACHE-BUMP-2026-04-30-V105] SATIS-PI-FREIGHT-EXW-FIX-001 — EXW/FOB/FAS/FCA terms'lerde freight render kapatıldı (state'ten bağımsız defansif filtre) (T1: 1455eac) */
+const CACHE_NAME    = 'duay-platform-v105';
+const CACHE_VERSION = '105.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
