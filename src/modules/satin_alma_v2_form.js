@@ -3,11 +3,46 @@ window._saV2Duzenle = function(id) {
   var liste = window._saV2Load?.() || [];
   var t = liste.find(function(x) { return String(x.id) === String(id); });
   if (!t) return;
+  /* ALIS-FORM-REV-LOCK-001: archived revizyon ise kilit modal */
+  if (t.archived === true) {
+    window._saV2DuzenleEskiRevizyon(id);
+    return;
+  }
   if (t.durum === 'onaylandi') {
     window._saV2GuncellemeTalep(id);
     return;
   }
   window._saV2DuzenleForm(id);
+};
+
+/* ALIS-FORM-REV-LOCK-001: Eski revizyon kilit modal — sadece son rev düzenlenebilir */
+window._saV2DuzenleEskiRevizyon = function(id) {
+  var liste = window._saV2Load?.() || [];
+  var t = liste.find(function(x) { return String(x.id) === String(id); });
+  if (!t) return;
+  /* En son revizyonu bul (aynı parentId, archived=false) */
+  var rootId = String(t.parentId || t.id);
+  var sonRev = liste.find(function(x) {
+    return String(x.parentId || x.id) === rootId && !x.archived;
+  });
+  var thisRevNo = t.revNo || 1;
+  var sonRevNo = sonRev ? (sonRev.revNo || 1) : thisRevNo;
+  if (typeof window.confirmModal === 'function') {
+    window.confirmModal(
+      'Bu eski bir revizyon (v' + thisRevNo + '). En son revizyon: v' + sonRevNo + '. Yeni revizyon olarak açmak ister misin? (Bu kayıt sadece görüntülenebilir, düzenlenemez.)',
+      {
+        title: 'Eski Revizyon — Düzenleme Kilitli',
+        confirmText: 'Yeni Revizyon Olarak Aç',
+        cancelText: 'İptal',
+        onConfirm: function() {
+          if (sonRev) window._saV2DuzenleForm(sonRev.id);
+          else window.toast?.('En son revizyon bulunamadı', 'warn');
+        }
+      }
+    );
+  } else {
+    window.toast?.('Bu kayıt eski revizyon — düzenlenemez', 'warn');
+  }
 };
 window._saV2YeniTeklif = function(duzenleKayit) {
   var mevcut = document.getElementById('sav2-form-modal'); if (mevcut) { mevcut.remove(); if(!duzenleKayit) return; }
@@ -556,6 +591,16 @@ window._saV2FormKaydet = function() {
     createdByName: window.CU?.()?.displayName || window.CU?.()?.name || ''
   };
   var liste = typeof window._saV2Load === 'function' ? window._saV2Load() : [];
+  /* ALIS-FORM-REV-LOCK-001: Düzenleme ise eski kaydı archive et — yanlışlıkla yeni rev üstüne yazımı engelle */
+  if (_duz) {
+    var _eskiIdx = liste.findIndex(function(x) { return String(x.id) === String(_duz.id); });
+    if (_eskiIdx >= 0) {
+      liste[_eskiIdx].archived = true;
+      liste[_eskiIdx].archivedAt = new Date().toISOString();
+      liste[_eskiIdx].archivedBy = _kullanici;
+      liste[_eskiIdx].archivedReason = 'Yeni revizyon (v' + (_duz.revNo + 1) + ') oluşturuldu';
+    }
+  }
   liste.unshift(kayit);
   if (typeof window._saV2Store === 'function') window._saV2Store(liste);
   window._sav2DraftSil?.();
