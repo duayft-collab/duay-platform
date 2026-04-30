@@ -877,7 +877,7 @@ window._saV2SatisTabloyuGuncelle = function() {
     var karFormatted = (urunKar < 0 ? '-' : '') + paraSym
                      + Math.abs(urunKar).toLocaleString('tr-TR', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
     /* SATIS-MODAL-WIDTH-DESIGN-001: tr hover bg + transition */
-    return '<tr onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'" style="border-bottom:0.5px solid var(--b);transition:background .12s">'
+    return '<tr onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'" style="border-bottom:0.5px solid var(--b);transition:background .12s;cursor:default">'
       /* SATIS-MODAL-UX-FIX-001: ürün sıra no */
       + '<td style="padding:4px 6px;text-align:center;color:var(--t3);font-size:10px">' + (gIdx + 1) + '</td>'
       + '<td style="padding:4px 6px;width:28px">' + ((u.gorsel || u.image) ? '<img src="' + (u.gorsel || u.image) + '" style="width:26px;height:26px;border-radius:3px;object-fit:cover">' : '<div style="width:26px;height:26px;background:var(--s2);border-radius:3px;border:0.5px solid var(--b)"></div>') + '</td>'

@@ -153,19 +153,20 @@ window._saV2TeklifOlustur = function(id) {
     /* SATIS-MODAL-UX-FIX-001: # sıra no kolonu + görsel %4→%3 + ürün %26→%24 toplam %100 normalize */
     + '<col style="width:3%">'    /* # sıra no */
     + '<col style="width:3%">'    /* görsel */
-    + '<col style="width:24%">'   /* KOD / ÜRÜN ADI — SATIS-MODAL-UX-FIX-001 normalize */
-    + '<col style="width:8%">'    /* MİKTAR */
-    + '<col style="width:8%">'    /* BİRİM */
-    + '<col style="width:8%">'    /* ALIŞ */
-    + '<col style="width:5%">'    /* MARJ % */
-    + '<col style="width:8%">'    /* SATIŞ */
-    + '<col style="width:9%">'    /* TOPLAM */
-    + '<col style="width:12%">'   /* KAR */
-    + '<col style="width:8%">'    /* MENŞEİ */
+    /* SATIS-MODAL-COL-STICKY-FIX-001: ürün col %24→%32 (+8), 7 diğer kolon %1 azalır, MARJ %5 intact, toplam %100 */
+    + '<col style="width:32%">'   /* KOD / ÜRÜN ADI */
+    + '<col style="width:7%">'    /* MİKTAR */
+    + '<col style="width:7%">'    /* BİRİM */
+    + '<col style="width:7%">'    /* ALIŞ */
+    + '<col style="width:5%">'    /* MARJ % — intact */
+    + '<col style="width:7%">'    /* SATIŞ */
+    + '<col style="width:8%">'    /* TOPLAM */
+    + '<col style="width:10%">'   /* KAR */
+    + '<col style="width:7%">'    /* MENŞEİ */
     + '<col style="width:4%">'    /* Kaldır */
     + '</colgroup>';
   /* SATIS-MODAL-WIDTH-DESIGN-001: thead sticky top:36px (Ürün Ekle butonu altı) */
-  ic += '<thead style="position:sticky;top:36px;z-index:2"><tr style="background:var(--s2);font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.04em">';
+  ic += '<thead style="position:sticky;top:36px;z-index:2;background:var(--sf);box-shadow:0 1px 0 var(--b)"><tr style="background:var(--s2);font-size:8px;font-weight:600;color:var(--t3);letter-spacing:.04em">';
   ic += '<th style="padding:7px 10px;text-align:center;color:var(--t3)">#</th><th style="padding:7px 10px"></th><th style="padding:7px 10px;text-align:left">KOD / ÜRÜN ADI</th><th style="padding:7px 10px">MİKTAR</th><th style="padding:7px 10px">BİRİM</th><th style="padding:7px 10px;text-align:right">ALIŞ</th><th style="padding:7px 10px">MARJ %</th><th style="padding:7px 10px;text-align:right">SATIŞ</th><th style="padding:7px 10px;text-align:right">TOPLAM</th><th style="padding:7px 10px;text-align:right">KAR</th><th style="padding:7px 10px">MENŞEİ</th><th style="padding:7px 10px"></th></tr></thead>';
   ic += '<tbody id="st-urun-tbody"></tbody></table>';
   ic += '</div>';
