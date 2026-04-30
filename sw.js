@@ -69,8 +69,9 @@
 /* [CACHE-BUMP-2026-04-29-V100] SATIS-PI-CONTENT-UNIFY-001 — D1/D2'ye CIF Insurance/Freight + image fallback (Strateji C) (T1: 3625e0c) */
 /* [CACHE-BUMP-2026-04-29-V101] SATIS-PI-URUNLOOKUP-001 — _piUrunSatirlari'na master ürün lookup eklendi (D1 PDF görsel fix) (T1: 1db045a) */
 /* [CACHE-BUMP-2026-04-30-V102] SATIS-PI-FALLBACK-001 — sartlar default + CIF/CIP/CFR otomatik Insurance/Freight (T1: 19ad962) */
-const CACHE_NAME    = 'duay-platform-v102';
-const CACHE_VERSION = '102.0.0';
+/* [CACHE-BUMP-2026-04-30-V103] SATIS-FORM-PI-FIX-001 — incoterm load fix (CIF→EXW bug) + sartlar slice(0,5) kaldırıldı (T1: 6883d12) */
+const CACHE_NAME    = 'duay-platform-v103';
+const CACHE_VERSION = '103.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
