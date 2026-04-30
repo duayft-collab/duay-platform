@@ -641,7 +641,15 @@ window._saV2SatisPDF = function() {
     odeme: odeme,
     urunler: window._saV2SatisUrunler || [],
     revNo: '01',
-    dil: window._saV2AktifPIDil || 'EN'
+    dil: window._saV2AktifPIDil || 'EN',
+    /* SATIS-PI-PREVIEW-FIELDS-FIX-001: PI fn'lerinin (subtotal, freight, insurance, sartlar) ihtiyaç duyduğu field'lar */
+    toplamSatis: (window._saV2SatisUrunler || []).reduce(function(s, u) {
+      return s + (parseFloat(u.satisFiyat) || 0) * (parseFloat(u.miktar) || 0);
+    }, 0).toFixed(2),
+    sartlar: (window._stSartlar || []).slice(),
+    freightToggle: !!window._stFreightToggle,
+    freightAmount: parseFloat(window._stFreightAmount) || 0,
+    insuranceAmount: parseFloat(window._stInsuranceAmount) || 0
   };
   if (typeof window._piOlustur !== 'function') {
     window.toast?.('PI modülü yüklenmedi','warn'); return;
@@ -1172,7 +1180,15 @@ window._saV2TamOnIzle = function() {
       };
     }),
     revNo: '01',
-    dil: window._saV2AktifPIDil || 'EN'
+    dil: window._saV2AktifPIDil || 'EN',
+    /* SATIS-PI-PREVIEW-FIELDS-FIX-001: PI fn'lerinin (subtotal, freight, insurance, sartlar) ihtiyaç duyduğu field'lar — canlı önizleme (_saV2PIOnizlemeGuncelle) ile aynı formüller */
+    toplamSatis: window._saV2SatisUrunler.reduce(function(s, u) {
+      return s + (parseFloat(u.satisFiyat) || 0) * (parseFloat(u.miktar) || 0);
+    }, 0).toFixed(2),
+    sartlar: (window._stSartlar || []).slice(),
+    freightToggle: !!window._stFreightToggle,
+    freightAmount: parseFloat(window._stFreightAmount) || 0,
+    insuranceAmount: parseFloat(window._stInsuranceAmount) || 0
   };
   var tasarim = window._saV2AktifPITasarim || 'A';
   if (typeof window._piOlustur !== 'function') {
