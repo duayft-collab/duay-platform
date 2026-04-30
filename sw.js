@@ -68,8 +68,9 @@
 /* [CACHE-BUMP-2026-04-29-V99] SATIS-FORM-GORSEL-FIX-001 — Satış teklifi form ürün satırı görsel render fix (u.gorsel || u.image fallback) (T1: ca7a193) */
 /* [CACHE-BUMP-2026-04-29-V100] SATIS-PI-CONTENT-UNIFY-001 — D1/D2'ye CIF Insurance/Freight + image fallback (Strateji C) (T1: 3625e0c) */
 /* [CACHE-BUMP-2026-04-29-V101] SATIS-PI-URUNLOOKUP-001 — _piUrunSatirlari'na master ürün lookup eklendi (D1 PDF görsel fix) (T1: 1db045a) */
-const CACHE_NAME    = 'duay-platform-v101';
-const CACHE_VERSION = '101.0.0';
+/* [CACHE-BUMP-2026-04-30-V102] SATIS-PI-FALLBACK-001 — sartlar default + CIF/CIP/CFR otomatik Insurance/Freight (T1: 19ad962) */
+const CACHE_NAME    = 'duay-platform-v102';
+const CACHE_VERSION = '102.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
