@@ -142,14 +142,16 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<input type="number" id="sav2-toplu-marj" min="0" max="500" step="0.5" placeholder="%" onclick="event.stopPropagation()" oninput="event.stopPropagation()" style="width:70px;font-size:10px;padding:4px 6px;border:0.5px solid var(--b);border-radius:4px;background:var(--sf);color:var(--t);font-family:inherit">';
   ic += '<button onclick="event.stopPropagation();window._saV2TopluMarjUygula()" style="font-size:10px;padding:4px 12px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t);font-family:inherit">T\u00fcm\u00fcne Uygula</button>';
   ic += '<span style="font-size:9px;color:var(--t3)">\u2014 sonra tek tek de\u011fi\u015ftirilebilir</span></div>';
-  ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden;margin-top:6px;min-height:280px">';
+  ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden auto;margin-top:6px;min-height:280px;max-height:55vh">';
   ic += '<button onclick="event.stopPropagation();window._saV2UrunSecModal&&window._saV2UrunSecModal()" style="width:100%;padding:8px 12px;border:none;border-bottom:0.5px dashed var(--b);background:transparent;color:var(--t3);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;text-align:center" onmouseover="this.style.background=\'var(--s3)\'" onmouseout="this.style.background=\'var(--s2)\'">+ Ürün Ekle</button>';
   /* SATIS-URUN-TABLO-001: table-layout:fixed + colgroup ile kolon genişlikleri sabit */
   ic += '<table style="width:100%;border-collapse:collapse;table-layout:fixed">';
   /* SATIS-FORM-PARITE-001: 10 kolon — +BİRİM +MENŞEİ eklendi (satış/alış form parité) */
   ic += '<colgroup>'
-    + '<col style="width:4%">'    /* görsel */
-    + '<col style="width:26%">'   /* KOD / ÜRÜN ADI */
+    /* SATIS-MODAL-UX-FIX-001: # sıra no kolonu + görsel %4→%3 + ürün %26→%24 toplam %100 normalize */
+    + '<col style="width:3%">'    /* # sıra no */
+    + '<col style="width:3%">'    /* görsel */
+    + '<col style="width:24%">'   /* KOD / ÜRÜN ADI — SATIS-MODAL-UX-FIX-001 normalize */
     + '<col style="width:8%">'    /* MİKTAR */
     + '<col style="width:8%">'    /* BİRİM */
     + '<col style="width:8%">'    /* ALIŞ */
@@ -161,7 +163,7 @@ window._saV2TeklifOlustur = function(id) {
     + '<col style="width:4%">'    /* Kaldır */
     + '</colgroup>';
   ic += '<thead><tr style="background:var(--s2);font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.04em">';
-  ic += '<th style="padding:7px 10px"></th><th style="padding:7px 10px;text-align:left">KOD / ÜRÜN ADI</th><th style="padding:7px 10px">MİKTAR</th><th style="padding:7px 10px">BİRİM</th><th style="padding:7px 10px;text-align:right">ALIŞ</th><th style="padding:7px 10px">MARJ %</th><th style="padding:7px 10px;text-align:right">SATIŞ</th><th style="padding:7px 10px;text-align:right">TOPLAM</th><th style="padding:7px 10px;text-align:right">KAR</th><th style="padding:7px 10px">MENŞEİ</th><th style="padding:7px 10px"></th></tr></thead>';
+  ic += '<th style="padding:7px 10px;text-align:center;color:var(--t3)">#</th><th style="padding:7px 10px"></th><th style="padding:7px 10px;text-align:left">KOD / ÜRÜN ADI</th><th style="padding:7px 10px">MİKTAR</th><th style="padding:7px 10px">BİRİM</th><th style="padding:7px 10px;text-align:right">ALIŞ</th><th style="padding:7px 10px">MARJ %</th><th style="padding:7px 10px;text-align:right">SATIŞ</th><th style="padding:7px 10px;text-align:right">TOPLAM</th><th style="padding:7px 10px;text-align:right">KAR</th><th style="padding:7px 10px">MENŞEİ</th><th style="padding:7px 10px"></th></tr></thead>';
   ic += '<tbody id="st-urun-tbody"></tbody></table>';
   ic += '</div>';
 
