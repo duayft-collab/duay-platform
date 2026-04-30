@@ -170,4 +170,98 @@
     BELGE_META: BELGE_META
   });
 
+  /* SHIPMENT-DOC-CREATE-001: ED list erişimi — mevcut DB API reuse (database.js L2335-2336) */
+  function _edListRaw() {
+    return (typeof window.loadExpectedDeliveries === 'function'
+      ? window.loadExpectedDeliveries({ raw: true })
+      : []) || [];
+  }
+
+  function _edListStore(list) {
+    if (typeof window.storeExpectedDeliveries === 'function') {
+      window.storeExpectedDeliveries(list);
+    }
+  }
+
+  function _edFindIdx(list, edId) {
+    if (!Array.isArray(list) || !edId) return -1;
+    for (let i = 0; i < list.length; i++) {
+      if (list[i] && list[i].id === edId) return i;
+    }
+    return -1;
+  }
+
+  /* SHIPMENT-DOC-CREATE-001: boş shipmentDoc şablon builder (K03 — şema tek kaynak) */
+  function _createEmptyDoc(ownerId) {
+    return {
+      state: 'BOS',
+      ownerId: ownerId || _cuId(),
+      createdAt: _now(),
+      updatedAt: _now(),
+      closedAt: null,
+      belgeler: {
+        irsaliye: null, kantar: null, teslimImza: null,
+        soforFotos: [], yuklemeFotos: [],
+        nakliyeFatura: null, saticiFatura: null, imoForm: null,
+        ekBelgeler: []
+      },
+      yuk: { brutKg: 0, netKg: 0, m3: 0, tip: 'kati', imo: false, unNo: '', imdgSinif: '' },
+      paket: {
+        tip: 'palet', adet: 0, olcuModu: '3d',
+        en: 0, boy: 0, yukseklik: 0, uzunluk: 0, cap: 0,
+        agirlikDagilimi: ''
+      },
+      yerlesim: { konteynerNo: '', sira: 0, katman: 0, not: '' },
+      paydaslar: { sofor: null, satici: null, alici: null, forwarder: null },
+      history: [],
+      pendingApprovals: [],
+      reviewRequired: false
+    };
+  }
+
+  /**
+   * ED için yeni shipmentDoc oluştur (idempotent — zaten varsa fail döner).
+   * @param {string} edId hedef ED kayıt id'si
+   * @param {string} [ownerId] sahip uid (yoksa ED.responsibleUserId veya CU)
+   * @returns {{success: boolean, sd?: Object, error?: string}}
+   */
+  window._shipmentDocCreate = function(edId, ownerId) {
+    if (!edId) return { success: false, error: 'edId_required' };
+    const list = _edListRaw();
+    const idx = _edFindIdx(list, edId);
+    if (idx === -1) return { success: false, error: 'ed_not_found' };
+    if (list[idx].shipmentDoc) return { success: false, error: 'already_exists' };
+
+    const finalOwner = ownerId || list[idx].responsibleUserId || _cuId();
+    list[idx].shipmentDoc = _createEmptyDoc(finalOwner);
+    list[idx].shipmentDoc._edId = edId;
+    list[idx].updatedAt = _now();
+
+    try {
+      _edListStore(list);
+    } catch (e) {
+      console.warn('[SHIPMENT-DOC-CREATE-001] store fail:', e && e.message);
+      if (typeof window.toast === 'function') window.toast('Kayıt yazılamadı', 'err');
+      return { success: false, error: 'store_failed' };
+    }
+
+    return { success: true, sd: list[idx].shipmentDoc };
+  };
+
+  /**
+   * ED'ye bağlı shipmentDoc'u oku (UI için _edId enjekte edilir).
+   * @param {string} edId
+   * @returns {Object|null} shipmentDoc objesi veya null
+   */
+  window._shipmentDocGet = function(edId) {
+    if (!edId) return null;
+    const list = _edListRaw();
+    const idx = _edFindIdx(list, edId);
+    if (idx === -1) return null;
+    const sd = list[idx].shipmentDoc;
+    if (!sd) return null;
+    sd._edId = edId;
+    return sd;
+  };
+
 })();
