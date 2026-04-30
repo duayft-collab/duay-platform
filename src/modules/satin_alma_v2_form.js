@@ -15,7 +15,43 @@ window._saV2Duzenle = function(id) {
   window._saV2DuzenleForm(id);
 };
 
-/* ALIS-FORM-REV-LOCK-001: Eski revizyon kilit modal — sadece son rev düzenlenebilir */
+/* ALIS-FORM-REV-VIEWER-001: Eski revizyonu salt okunur form'da göster (input/select/textarea disabled) */
+window._saV2GoruntuleSaltOkur = function(id) {
+  var liste = window._saV2Load?.() || [];
+  var t = liste.find(function(x) { return String(x.id) === String(id); });
+  if (!t) return;
+  /* Düzenle form'unu aç (mevcut fn — düzenle modunda field'ları doldurur) */
+  window._saV2DuzenleForm(id);
+  /* Form DOM oluştuktan sonra disabled + banner uygula */
+  setTimeout(function() {
+    var modal = document.getElementById('sav2-form-modal');
+    if (!modal) return;
+    var moc = modal.querySelector('.moc');
+    if (moc && !moc.querySelector('[data-rev-viewer-banner]')) {
+      var banner = document.createElement('div');
+      banner.setAttribute('data-rev-viewer-banner', '1');
+      banner.style.cssText = 'background:#FEF3C7;border-bottom:1px solid #F59E0B;padding:8px 16px;font-size:11px;color:#92400E;text-align:center;font-weight:500';
+      banner.textContent = '🔒 Salt okunur — Eski revizyon (v' + (t.revNo || 1) + '), düzenlenemez';
+      moc.insertBefore(banner, moc.firstChild);
+    }
+    /* Tüm input/select/textarea/contenteditable'ları kilitle */
+    modal.querySelectorAll('input, select, textarea').forEach(function(el) {
+      el.disabled = true;
+    });
+    modal.querySelectorAll('[contenteditable="true"]').forEach(function(el) {
+      el.setAttribute('contenteditable', 'false');
+      el.style.background = 'var(--s2)';
+    });
+    /* Save / Kaydet butonlarını gizle */
+    modal.querySelectorAll('button').forEach(function(btn) {
+      var txt = (btn.textContent || '').trim();
+      if (/Kaydet|Save|Onayla|Ekle/i.test(txt) && txt !== 'İptal' && txt !== 'Vazgeç') btn.style.display = 'none';
+    });
+  }, 250);
+};
+
+/* ALIS-FORM-REV-LOCK-001 + ALIS-FORM-REV-VIEWER-001: Eski revizyon kilit modal —
+   3-buton: Görüntüle (salt okunur) / Yeni Revizyon Olarak Aç / İptal */
 window._saV2DuzenleEskiRevizyon = function(id) {
   var liste = window._saV2Load?.() || [];
   var t = liste.find(function(x) { return String(x.id) === String(id); });
@@ -27,22 +63,29 @@ window._saV2DuzenleEskiRevizyon = function(id) {
   });
   var thisRevNo = t.revNo || 1;
   var sonRevNo = sonRev ? (sonRev.revNo || 1) : thisRevNo;
-  if (typeof window.confirmModal === 'function') {
-    window.confirmModal(
-      'Bu eski bir revizyon (v' + thisRevNo + '). En son revizyon: v' + sonRevNo + '. Yeni revizyon olarak açmak ister misin? (Bu kayıt sadece görüntülenebilir, düzenlenemez.)',
-      {
-        title: 'Eski Revizyon — Düzenleme Kilitli',
-        confirmText: 'Yeni Revizyon Olarak Aç',
-        cancelText: 'İptal',
-        onConfirm: function() {
-          if (sonRev) window._saV2DuzenleForm(sonRev.id);
-          else window.toast?.('En son revizyon bulunamadı', 'warn');
-        }
-      }
-    );
-  } else {
-    window.toast?.('Bu kayıt eski revizyon — düzenlenemez', 'warn');
-  }
+  /* Custom 3-button modal — confirmModal sadece 2-buton, kendi modal pattern'imiz */
+  var modalId = 'sav2-rev-lock-modal';
+  document.getElementById(modalId)?.remove();
+  var sonRevId = sonRev ? String(sonRev.id) : '';
+  var thisId = String(id);
+  var modal = document.createElement('div');
+  modal.className = 'mo';
+  modal.id = modalId;
+  modal.style.display = 'flex';
+  modal.innerHTML = '<div class="moc" style="max-width:460px;padding:0;overflow:hidden;border-radius:16px">'
+    + '<div style="padding:22px 24px">'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">'
+    + '<div style="width:40px;height:40px;border-radius:12px;background:rgba(245,158,11,.12);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🔒</div>'
+    + '<div style="font-size:15px;font-weight:700;color:var(--t)">Eski Revizyon — Düzenleme Kilitli</div>'
+    + '</div>'
+    + '<div style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:22px">Bu kayıt eski bir revizyon (<b>v' + thisRevNo + '</b>). En son revizyon: <b>v' + sonRevNo + '</b>.<br><br>Görüntülemek mi yoksa yeni revizyon olarak açmak mı istersin?</div>'
+    + '</div>'
+    + '<div style="display:flex;gap:6px;padding:14px 24px 20px;background:var(--s2);border-top:1px solid var(--b)">'
+    + '<button class="btn btns" style="flex:1" onclick="document.getElementById(\'' + modalId + '\').remove()">İptal</button>'
+    + '<button class="btn btns" style="flex:1.2" onclick="document.getElementById(\'' + modalId + '\').remove();window._saV2GoruntuleSaltOkur(\'' + thisId + '\')">Görüntüle</button>'
+    + '<button class="btn btnp" style="flex:1.5" onclick="document.getElementById(\'' + modalId + '\').remove();' + (sonRevId ? 'window._saV2DuzenleForm(\'' + sonRevId + '\')' : 'window.toast?.(\'En son revizyon bulunamadı\',\'warn\')') + '">Yeni Revizyon Olarak Aç</button>'
+    + '</div></div>';
+  document.body.appendChild(modal);
 };
 window._saV2YeniTeklif = function(duzenleKayit) {
   var mevcut = document.getElementById('sav2-form-modal'); if (mevcut) { mevcut.remove(); if(!duzenleKayit) return; }
