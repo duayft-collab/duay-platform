@@ -77,8 +77,9 @@
 /* [CACHE-BUMP-2026-04-30-V108] ALIS-FORM-PI-VALID-REV-CHANGELOG-001 — PI ID/Tarih zorunlu + revizyon altyapısı (parentId/revNo/changeLog) — Active PI Architecture temeli (T1: b92ea88) */
 /* [CACHE-BUMP-2026-04-30-V109] ALIS-FORM-REV-LOCK-001 — Eski revizyon edit kilidi + archive flag (Active PI Architecture lock katmanı) (T1: 0078b37) */
 /* [CACHE-BUMP-2026-04-30-V110] ALIS-FORM-REV-VIEWER-001 — Eski revizyon salt okunur viewer + 3-button kilit modal (Active PI Architecture viewer katmanı) (T1: e56d798) */
-const CACHE_NAME    = 'duay-platform-v110';
-const CACHE_VERSION = '110.0.0';
+/* [CACHE-BUMP-2026-04-30-V111] SATIS-MODAL-PDF-FIX-001 — Modal ödeme alanı görünür + A/B PDF boş döküman fix (esc fn lokal scope, V106 yan etkisi düzelt) (T2-prev: b6cd92b) */
+const CACHE_NAME    = 'duay-platform-v111';
+const CACHE_VERSION = '111.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
