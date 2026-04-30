@@ -56,10 +56,14 @@ window._piStandartBillTo = function(t) {
 };
 
 window._piStandartSartlar = function(t) {
-  if (!Array.isArray(t['sartlar']) || !t['sartlar'].length) return '';
+  /* SATIS-PI-FALLBACK-001: sartlar boşsa default 5 madde fallback */
+  var sartlar = (Array.isArray(t['sartlar']) && t['sartlar'].length)
+    ? t['sartlar']
+    : ((typeof window._saV2Sartlar === 'function') ? (window._saV2Sartlar() || []).slice(0, 5) : []);
+  if (!sartlar.length) return '';
   var html = '<div style="margin-top:14px"><div style="font-weight:700;font-size:11px;margin-bottom:6px">TERMS &amp; CONDITIONS</div>';
   html += '<ol style="margin:0;padding-left:18px;font-size:9.5px;line-height:1.45">';
-  t['sartlar'].forEach(function(line) {
+  sartlar.forEach(function(line) {
     html += '<li style="margin-bottom:2px">' + line + '</li>';
   });
   html += '</ol></div>';
@@ -288,10 +292,14 @@ window._piOlustur = function(teklif, tasarim, katman, skipKontrol) {
 
 /* ── Ürün satırları (PI-FIYAT-001: form-set fiyat önceliği + number safety) ── */
 window._piFreightInsuranceHTML = function(t, L, paraSimge) {
-  if (!t || !t.freightToggle) return { preTotalHTML: '', grandTotal: null };
-  var freight = parseFloat(t.freightAmount) || 0;
+  if (!t) return { preTotalHTML: '', grandTotal: null };
+  /* SATIS-PI-FALLBACK-001: freightToggle yoksa teslim'e bak — CIF/CIP/CFR ise her zaman göster */
   var teslim = String(t.teslim || '');
   var isCifCip = (teslim.indexOf('CIF') === 0 || teslim.indexOf('CIP') === 0);
+  var isCfr = (teslim.indexOf('CFR') === 0);
+  var shouldShow = !!t.freightToggle || isCifCip || isCfr;
+  if (!shouldShow) return { preTotalHTML: '', grandTotal: null };
+  var freight = parseFloat(t.freightAmount) || 0;
   var insurance = isCifCip ? (parseFloat(t.insuranceAmount) || 0) : 0;
   var subtotal = parseFloat(t.toplamSatis) || 0;
   var grandTotal = subtotal + freight + insurance;
@@ -872,11 +880,15 @@ window._piTasarimD1 = function(t, bugun, satirlar, katman, gizliKod, L) {
   html += '</div></div>';
 
   /* Şartlar */
-  if (Array.isArray(t.sartlar) && t.sartlar.length) {
+  /* SATIS-PI-FALLBACK-001: sartlar fallback (default 5 _saV2Sartlar) */
+  var __sartlar = (Array.isArray(t.sartlar) && t.sartlar.length)
+    ? t.sartlar
+    : ((typeof window._saV2Sartlar === 'function') ? (window._saV2Sartlar() || []).slice(0, 5) : []);
+  if (__sartlar.length) {
     html += '<div class="pi-d-terms">';
     html += '<div class="pi-d-terms-label">' + esc(L.sartlar || 'Terms & Conditions') + '</div>';
     html += '<ol class="pi-d-terms-list">';
-    t.sartlar.forEach(function(s) { html += '<li>' + esc(String(s)) + '</li>'; });
+    __sartlar.forEach(function(s) { html += '<li>' + esc(String(s)) + '</li>'; });
     html += '</ol></div>';
   }
 
@@ -987,11 +999,15 @@ window._piTasarimD2 = function(t, bugun, satirlar, katman, gizliKod, L) {
   html += '<div class="pi-d-info-line"><strong>' + esc(L.gecerli || 'Valid') + ':</strong> ' + esc(t.gecerlilik || '30 days') + '</div>';
   html += '</div></div>';
 
-  if (Array.isArray(t.sartlar) && t.sartlar.length) {
+  /* SATIS-PI-FALLBACK-001: sartlar fallback (default 5 _saV2Sartlar) */
+  var __sartlar = (Array.isArray(t.sartlar) && t.sartlar.length)
+    ? t.sartlar
+    : ((typeof window._saV2Sartlar === 'function') ? (window._saV2Sartlar() || []).slice(0, 5) : []);
+  if (__sartlar.length) {
     html += '<div class="pi-d-terms">';
     html += '<div class="pi-d-terms-label">' + esc(L.sartlar || 'Terms & Conditions') + '</div>';
     html += '<ol class="pi-d-terms-list">';
-    t.sartlar.forEach(function(s) { html += '<li>' + esc(String(s)) + '</li>'; });
+    __sartlar.forEach(function(s) { html += '<li>' + esc(String(s)) + '</li>'; });
     html += '</ol></div>';
   }
 
