@@ -592,6 +592,8 @@ window._piCSS = function(tasarim) {
 
 /* ── Tasarım A — Corporate (siyah-beyaz klasik) ────────────── */
 window._piTasarimA = function(t, bugun, satirlar, katman, gizliKod, L) {
+  /* SATIS-MODAL-PDF-FIX-001: esc fn lokal (window._esc fallback), büyük render fn'lerinin scope'una erişimi yok */
+  var esc = window._esc || function(s){return String(s||'');};
   L = L || PI_DILLER.EN;
   var toplamSatis = satirlar.reduce(function(a, s) { return a + parseFloat(s.toplam); }, 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
   var h = '<div style="padding:28px 32px 20px;border-bottom:2px solid #111">';
@@ -639,6 +641,8 @@ window._piTasarimA = function(t, bugun, satirlar, katman, gizliKod, L) {
 
 /* ── Tasarım B — Modern Blue (Duay mavisi accent) ──────────── */
 window._piTasarimB = function(t, bugun, satirlar, katman, gizliKod, L) {
+  /* SATIS-MODAL-PDF-FIX-001: esc fn lokal — _piTasarimA pattern */
+  var esc = window._esc || function(s){return String(s||'');};
   L = L || PI_DILLER.EN;
   var toplamSatis = satirlar.reduce(function(a, s) { return a + parseFloat(s.toplam); }, 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
   var h = '<div style="background:#185FA5;padding:22px 28px;display:flex;justify-content:space-between;align-items:flex-start">';

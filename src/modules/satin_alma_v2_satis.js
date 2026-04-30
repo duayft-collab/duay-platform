@@ -89,7 +89,8 @@ window._saV2TeklifOlustur = function(id) {
   ic += '</div>';
   ic += '</div>'
   ic += '</div>';
-  ic += '<div style="display:none"><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">ÖDEME KOŞULU</div>';
+  /* SATIS-MODAL-PDF-FIX-001: V106'da gizlenen ödeme alanı görünür yap, V106 default-empty davranışı korunur (placeholder option intact) */
+  ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">ÖDEME KOŞULU</div>';
   ic += '<select id="st-odeme" onchange="event.stopPropagation();window._saV2PIOnizlemeGuncelle()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
   /* SATIS-PI-PAYMENT-DEFAULT-FIX-001: empty placeholder — kullanıcı seçim yapmazsa st-odeme.value='' (modal'da gizli, default "30% Advance" otomatik kayda gitmesin) */
   ic += '<option value=""></option>';
