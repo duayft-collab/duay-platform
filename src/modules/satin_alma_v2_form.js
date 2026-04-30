@@ -259,7 +259,14 @@ window._saV2YeniTeklif = function(duzenleKayit) {
         if (_menEl && u.mensei) { Array.from(_menEl.options).forEach(function(o) { if (o.value === u.mensei || o.textContent === u.mensei) o.selected = true; }); }
         var _imgEl = document.getElementById('sav2u-' + _si + '-gorsel-img');
         var _icoEl = document.getElementById('sav2u-' + _si + '-gorsel-ico');
-        if (_imgEl && u.gorsel) { _imgEl.src = u.gorsel; _imgEl.style.display = 'block'; if (_icoEl) _icoEl.style.display = 'none'; }
+        /* ALIS-FORM-URUN-GORSEL-FIX-001: önce master lookup (duayKodu, güncel görsel), sonra kayıttaki fallback */
+        var _masterGorsel = '';
+        if (u.duayKodu && window._memCache && window._memCache['ak_urunler1']) {
+          var _master = window._memCache['ak_urunler1'].find(function(m) { return m.duayKodu === u.duayKodu; });
+          if (_master && (_master.gorsel || _master.image)) _masterGorsel = _master.gorsel || _master.image;
+        }
+        var _finalGorsel = _masterGorsel || u.gorsel || u.image || '';
+        if (_imgEl && _finalGorsel) { _imgEl.src = _finalGorsel; _imgEl.style.display = 'block'; if (_icoEl) _icoEl.style.display = 'none'; }
       });
       /* SA-FORM-KUR-FIX-001: düzenleme sonrası kur/TL hesabını tetikle */
       setTimeout(function() {
@@ -459,7 +466,11 @@ window._saV2FormKaydet = function() {
   satirlar.forEach(function(satir) {
     var idx = satir.getAttribute('data-urun-satir');
     var gu = function(k) { var el = document.getElementById('sav2u-' + idx + '-' + k); return el ? (el.value || '').trim() : ''; };
+    /* ALIS-FORM-URUN-GORSEL-FIX-001: gorsel DOM'dan persist et — kaybolmasın */
+    var _imgElSave = document.getElementById('sav2u-' + idx + '-gorsel-img');
+    var _imgSrc = (_imgElSave && _imgElSave.style.display !== 'none' && _imgElSave.src) ? _imgElSave.src : '';
     var urun = {
+      gorsel: _imgSrc,
       duayKodu: gu('duayKodu'), urunAdi: gu('urunAdi'), turkceAdi: gu('turkceAdi'),
       marka: gu('marka'), miktar: parseFloat(gu('miktar')) || 0, birim: gu('birim') || 'Adet',
       alisF: parseFloat(gu('alisF')) || 0, para: gu('para') || 'USD',
