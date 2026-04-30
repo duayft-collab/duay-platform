@@ -311,11 +311,19 @@ window._piFreightInsuranceHTML = function(t, L, paraSimge) {
 };
 
 window._piUrunSatirlari = function(teklif, katman) {
+  /* SATIS-PI-URUNLOOKUP-001: master ürün lookup map (gorsel/image fallback) */
+  var urunMap = {};
+  try {
+    var allUrunler = (typeof window.loadUrunler === 'function') ? window.loadUrunler() : [];
+    allUrunler.forEach(function(uu) { if (uu && uu.id != null) urunMap[uu.id] = uu; });
+  } catch(e) {}
+
   var urunler = teklif.urunler || [];
   if (!urunler.length && teklif.urunAdi) {
     urunler = [{ duayKodu: teklif.duayKodu || '', urunAdi: teklif.urunAdi || '', miktar: teklif.miktar || 1, alisTl: parseFloat(teklif.alisF) || 0, marj: 33, gorsel: teklif.gorsel || '' }];
   }
   return urunler.filter(function(u){var qty=parseFloat(u.miktar)||0;var desc=String((u.urunAdi||u.duayAdi||u.ingAd||"")).trim();var kod=String((u.kod||u.duayKodu||"")).trim();return qty>0||desc!==""||kod!=="";}).map(function(u, i) {
+    var master = urunMap[u.id] || urunMap[u.urunId] || {};
     var miktar = parseFloat(u.miktar) || 1;
     /* Alış öncelik: alisHedef (form'da kur çevrilmiş) > alisTl > alisF */
     var alis = parseFloat(u.alisHedef != null ? u.alisHedef : (u.alisTl != null ? u.alisTl : u.alisF)) || 0;
@@ -331,7 +339,7 @@ window._piUrunSatirlari = function(teklif, katman) {
       : satisNum * miktar;
     var satisF = satisNum.toFixed(2);
     var toplam = toplamNum.toFixed(2);
-    return { no: i+1, kod: u.duayKodu||u.kod||'', eskiKod: u.eskiKod||'', ad: u.urunAdi||u.ad||'', miktar: miktar, birim: u.birim||'PCS', satisF: satisF, toplam: toplam, gorsel: u.gorsel||'', image: u.image||'' };
+    return { no: i+1, kod: u.duayKodu||u.kod||master.duayKodu||master.kod||'', eskiKod: u.eskiKod||master.eskiKod||'', ad: u.urunAdi||u.ad||master.urunAdi||master.ad||master.name||'', miktar: miktar, birim: u.birim||master.birim||'PCS', satisF: satisF, toplam: toplam, gorsel: u.gorsel||master.gorsel||master.image||'', image: u.image||master.image||master.gorsel||'' };
   });
 };
 
