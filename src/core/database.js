@@ -218,7 +218,6 @@ const KEYS = {
   kargoHistory  : 'ak_krg_history1',   // #4 durum geçmişi
   kargoMasraf   : 'ak_krg_masraf1',    // #6 masraf takibi
   kargoBelge    : 'ak_krg_belge1',     // #9 belge yönetimi
-  navlunKarsi   : 'ak_nvl_karsi1',     // #2 karşılaştırma
   lojPerf       : 'ak_loj_perf1',      // #10 performans
   konteyner     : 'ak_konteyn1',
   nsecState     : 'ak_nsec_state',
