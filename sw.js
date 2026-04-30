@@ -81,8 +81,10 @@
 /* [CACHE-BUMP-2026-04-30-V112] SATIS-MODAL-UX-FIX-001 — Satış modalı 4 UX fix (kar virgül + ürün sıra no + scroll + üst artır tuşu) (T2-prev: 0bd3ddd) */
 /* [CACHE-BUMP-2026-04-30-V113] SATIS-MODAL-WIDTH-DESIGN-001 — Modal %20 genişletme + 5 mikro tasarım iyileştirme (sticky header, hover states, transitions) (T2-prev: 86bc1b5) */
 /* [CACHE-BUMP-2026-04-30-V114] SATIS-MODAL-COL-STICKY-FIX-001 — Sticky thead opak + ürün col %32 + 3 mikro tasarım (T2-prev: 500da05) */
-const CACHE_NAME    = 'duay-platform-v114';
-const CACHE_VERSION = '114.0.0';
+/* [CACHE-BUMP-2026-04-30-V115] LOJISTIK-CLEANUP-001 — KEYS.navlunKarsi dead code temizlik (T2-prev: bc0ac64) NOT: cache bump atlandı, V115→V116 birleşik */
+/* [CACHE-BUMP-2026-04-30-V116] LOJISTIK-SCHEMA-EXTEND-001 — eksik/hasar discrepancy log + konteynır kapasite helper (T2-prev: a233e5e) */
+const CACHE_NAME    = 'duay-platform-v116';
+const CACHE_VERSION = '116.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
