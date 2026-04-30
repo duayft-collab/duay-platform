@@ -72,8 +72,9 @@
 /* [CACHE-BUMP-2026-04-30-V103] SATIS-FORM-PI-FIX-001 — incoterm load fix (CIF→EXW bug) + sartlar slice(0,5) kaldırıldı (T1: 6883d12) */
 /* [CACHE-BUMP-2026-04-30-V104] SATIS-PI-PREVIEW-FIELDS-FIX-001 — _saV2TamOnIzle + _saV2SatisPDF teklif objesine eksik 5 field eklendi (Subtotal/Freight/Insurance/TOTAL 0 bug) (T1: 999a965) */
 /* [CACHE-BUMP-2026-04-30-V105] SATIS-PI-FREIGHT-EXW-FIX-001 — EXW/FOB/FAS/FCA terms'lerde freight render kapatıldı (state'ten bağımsız defansif filtre) (T1: 1455eac) */
-const CACHE_NAME    = 'duay-platform-v105';
-const CACHE_VERSION = '105.0.0';
+/* [CACHE-BUMP-2026-04-30-V106] SATIS-PI-PAYMENT-DEFAULT-FIX-001 — Modal'da girilmeyen ödeme PDF'te görünme bug'ı (dropdown empty placeholder + A/B hardcoded default kaldırıldı) (T1: 696ab07) */
+const CACHE_NAME    = 'duay-platform-v106';
+const CACHE_VERSION = '106.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
