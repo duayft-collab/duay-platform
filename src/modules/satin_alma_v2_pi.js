@@ -293,8 +293,12 @@ window._piOlustur = function(teklif, tasarim, katman, skipKontrol) {
 /* ── Ürün satırları (PI-FIYAT-001: form-set fiyat önceliği + number safety) ── */
 window._piFreightInsuranceHTML = function(t, L, paraSimge) {
   if (!t) return { preTotalHTML: '', grandTotal: null };
-  /* SATIS-PI-FALLBACK-001: freightToggle yoksa teslim'e bak — CIF/CIP/CFR ise her zaman göster */
+  /* SATIS-PI-FREIGHT-EXW-FIX-001: EXW/FOB/FAS/FCA — freight buyer sorumluluğu, ASLA gösterme (state'ten bağımsız) */
   var teslim = String(t.teslim || '');
+  var incoFirst = (teslim.split(/\s+/)[0] || '').toUpperCase();
+  var noFreightTerms = ['EXW','FOB','FAS','FCA'];
+  if (noFreightTerms.indexOf(incoFirst) >= 0) return { preTotalHTML: '', grandTotal: null };
+  /* SATIS-PI-FALLBACK-001: freightToggle yoksa teslim'e bak — CIF/CIP/CFR ise her zaman göster */
   var isCifCip = (teslim.indexOf('CIF') === 0 || teslim.indexOf('CIP') === 0);
   var isCfr = (teslim.indexOf('CFR') === 0);
   var shouldShow = !!t.freightToggle || isCifCip || isCfr;
