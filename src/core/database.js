@@ -218,6 +218,8 @@ const KEYS = {
   kargoHistory  : 'ak_krg_history1',   // #4 durum geçmişi
   kargoMasraf   : 'ak_krg_masraf1',    // #6 masraf takibi
   kargoBelge    : 'ak_krg_belge1',     // #9 belge yönetimi
+  /* LOJISTIK-SCHEMA-EXTEND-001: eksik/hasar discrepancy log */
+  eksikHasar    : 'ak_eksik_hasar1',   // discrepancy log (etap-bazlı eksik/hasar)
   lojPerf       : 'ak_loj_perf1',      // #10 performans
   konteyner     : 'ak_konteyn1',
   nsecState     : 'ak_nsec_state',
@@ -2030,6 +2032,10 @@ const DEFAULT_KARGO_FIRMALAR = ['Yurtiçi','Aras','MNG','PTT','DHL','UPS','FedEx
 
 /** @returns {Object}        */ function loadKargoBelge()    { const d = _read(KEYS.kargoBelge);    return (d && typeof d==='object') ? d : {}; }
 /** @param  {Object} d       */ function storeKargoBelge(d)  { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.kargoBelge, d); var _fp = _fsPath('kargoBelge'); if (_fp) _syncFirestore(_fp, d); }
+
+/* LOJISTIK-SCHEMA-EXTEND-001: eksikHasar Array data — etap-bazlı discrepancy log (loadKargo pattern) */
+/** @returns {Array<Object>} */ function loadEksikHasar()    { const d = _read(KEYS.eksikHasar); const arr = Array.isArray(d) ? d : []; return window._dbKullaniciFiltreUygula(arr.map(function(k) { return window._normalizeEksikHasarFields ? window._normalizeEksikHasarFields(k) : k; }).filter(function(k) { return !k.isDeleted; })); }
+/** @param {Array<Object>} d */ function storeEksikHasar(d)  { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&typeof t==='object'){t.updatedAt=_now2;}return t;}):d; _write(KEYS.eksikHasar, d); var _fp = _fsPath('eksikHasar'); if (_fp) _syncFirestore(_fp, d); }
 
 /** @returns {Object}        */ function loadKargoChecks()   { const d = _read(KEYS.kargoChecks); return (d && typeof d === 'object') ? d : {}; }
 /** @param {Object} d        */ function storeKargoChecks(d) { var _now2=new Date().toISOString(); d=Array.isArray(d)?d.map(function(t){if(t&&!t.updatedAt)t.updatedAt=_now2;return t;}):d; _write(KEYS.kargoChecks, d); var _fp = _fsPath('kargoChecks'); if (_fp) _syncFirestore(_fp, d); }
@@ -4291,6 +4297,7 @@ const DB = {
   loadKargoHistory, storeKargoHistory,
   loadKargoMasraf, storeKargoMasraf,
   loadKargoBelge, storeKargoBelge,
+  loadEksikHasar, storeEksikHasar,
   // Prim
   loadPirim, storePirim,
   loadPirimParams, storePirimParams,
@@ -4382,6 +4389,20 @@ window._normalizeUrunFields = function(u) {
 // [AT-SCHEMA-BRIDGE-001 START] AlışTeklifi schema bridge — satirlar↔urunler mirror + standartAdi↔urunAdi
 // app_patch.js 'satirlar' yazıyor, satin_alma_v2 'urunler' yazıyor — render fn'leri sadece 'urunler' okuyor.
 // Idempotent: sadece eksik field doldurulur. Mevcut değerlere dokunulmaz.
+/* LOJISTIK-SCHEMA-EXTEND-001: eksikHasar minimum normalize + konteynır kapasite default */
+window._normalizeEksikHasarFields = function(eh) {
+  if (!eh || typeof eh !== 'object') return eh;
+  if (!eh.createdAt) eh.createdAt = new Date().toISOString();
+  if (eh.isDeleted === undefined) eh.isDeleted = false;
+  if (eh.durum === undefined) eh.durum = 'acik';
+  return eh;
+};
+
+window._konteynirKapasiteDefault = function(tip) {
+  var def = { '20FT': 28, '40FT': 58, '40HQ': 68 };
+  return def[tip] || 33;
+};
+
 window._normalizeAlisTeklifFields = function(t) {
   if (!t || typeof t !== 'object') return t;
   // Top-level: satirlar ↔ urunler two-way mirror
@@ -4435,7 +4456,7 @@ if (typeof module !== 'undefined' && module.exports) {
     'logActivity','addNotif','loadNotifs','storeNotifs',
     'loadIk','storeIk','loadKargo','storeKargo',
     'loadKargoFirmalar','storeKargoFirmalar','loadKonteyn','storeKonteyn',
-    'loadKargoChecks','storeKargoChecks','loadPirim','storePirim',
+    'loadKargoChecks','storeKargoChecks','loadEksikHasar','storeEksikHasar','loadPirim','storePirim',
     'loadPirimParams','storePirimParams','loadStok','storeStok',
     'loadNumune','storeNumune','loadCrmData','storeCrmData',
     'loadRehber','storeRehber','loadHdf','storeHdf',
