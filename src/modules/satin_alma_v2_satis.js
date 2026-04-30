@@ -228,10 +228,10 @@ window._saV2TeklifOlustur = function(id) {
     window._saV2SatisUrunler = [];
     window._saV2SatisUrunEkle(t);
   }
-  /* BUG-04: edit mode'da kayıttaki şartları kullan, yoksa default 5 */
+  /* BUG-04 + SATIS-FORM-PI-FIX-001: edit mode'da kayıttaki şartları kullan, yoksa _saV2Sartlar() TÜM listesi (slice(0,5) yanlıştı) */
   window._stSartlar = (duzenleme && duzenleme.sartlar && duzenleme.sartlar.length)
     ? duzenleme.sartlar.slice()
-    : (window._saV2Sartlar?.() || []).slice(0, 5);
+    : (window._saV2Sartlar?.() || []).slice();
   window._stFreightToggle = !!(duzenleme && duzenleme.freightToggle);
   window._stFreightAmount = (duzenleme && parseFloat(duzenleme.freightAmount)) || 0;
   window._stInsuranceAmount = (duzenleme && parseFloat(duzenleme.insuranceAmount)) || 0;
@@ -268,7 +268,11 @@ window._saV2TeklifOlustur = function(id) {
       setVal('st-teslim-yeri', duzenleme.teslim || duzenleme.teslimYeri || '');
       setVal('st-para-birimi', duzenleme.paraBirimi || duzenleme.para || 'USD');
       setVal('st-odeme', duzenleme.odeme || '');
-      setVal('st-incoterm', duzenleme.incoterm || 'EXW');
+      /* SATIS-FORM-PI-FIX-001: incoterm save'de teslim adıyla yazılıyor → load'da teslim'den parse */
+      var _t = (duzenleme.teslim || duzenleme.teslimSekli || '').toString().trim();
+      var _incFirst = (_t.split(/\s+/)[0] || '').toUpperCase();
+      var _validIncs = ['EXW','FCA','FAS','FOB','CFR','CIF','CPT','CIP','DAP','DPU','DDP'];
+      setVal('st-incoterm', _validIncs.indexOf(_incFirst) >= 0 ? _incFirst : (duzenleme.incoterm || 'EXW'));
       setVal('st-job-id', duzenleme.jobId || '');
       window._saV2SatisTabloyuGuncelle?.();
       window._saV2PIOnizlemeGuncelle?.();

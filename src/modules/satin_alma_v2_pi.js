@@ -59,7 +59,7 @@ window._piStandartSartlar = function(t) {
   /* SATIS-PI-FALLBACK-001: sartlar boşsa default 5 madde fallback */
   var sartlar = (Array.isArray(t['sartlar']) && t['sartlar'].length)
     ? t['sartlar']
-    : ((typeof window._saV2Sartlar === 'function') ? (window._saV2Sartlar() || []).slice(0, 5) : []);
+    : ((typeof window._saV2Sartlar === 'function') ? (window._saV2Sartlar() || []) : []);
   if (!sartlar.length) return '';
   var html = '<div style="margin-top:14px"><div style="font-weight:700;font-size:11px;margin-bottom:6px">TERMS &amp; CONDITIONS</div>';
   html += '<ol style="margin:0;padding-left:18px;font-size:9.5px;line-height:1.45">';
@@ -883,7 +883,7 @@ window._piTasarimD1 = function(t, bugun, satirlar, katman, gizliKod, L) {
   /* SATIS-PI-FALLBACK-001: sartlar fallback (default 5 _saV2Sartlar) */
   var __sartlar = (Array.isArray(t.sartlar) && t.sartlar.length)
     ? t.sartlar
-    : ((typeof window._saV2Sartlar === 'function') ? (window._saV2Sartlar() || []).slice(0, 5) : []);
+    : ((typeof window._saV2Sartlar === 'function') ? (window._saV2Sartlar() || []) : []);
   if (__sartlar.length) {
     html += '<div class="pi-d-terms">';
     html += '<div class="pi-d-terms-label">' + esc(L.sartlar || 'Terms & Conditions') + '</div>';
@@ -1002,7 +1002,7 @@ window._piTasarimD2 = function(t, bugun, satirlar, katman, gizliKod, L) {
   /* SATIS-PI-FALLBACK-001: sartlar fallback (default 5 _saV2Sartlar) */
   var __sartlar = (Array.isArray(t.sartlar) && t.sartlar.length)
     ? t.sartlar
-    : ((typeof window._saV2Sartlar === 'function') ? (window._saV2Sartlar() || []).slice(0, 5) : []);
+    : ((typeof window._saV2Sartlar === 'function') ? (window._saV2Sartlar() || []) : []);
   if (__sartlar.length) {
     html += '<div class="pi-d-terms">';
     html += '<div class="pi-d-terms-label">' + esc(L.sartlar || 'Terms & Conditions') + '</div>';
