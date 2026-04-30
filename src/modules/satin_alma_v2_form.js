@@ -12,6 +12,16 @@ window._saV2Duzenle = function(id) {
 window._saV2YeniTeklif = function(duzenleKayit) {
   var mevcut = document.getElementById('sav2-form-modal'); if (mevcut) { mevcut.remove(); if(!duzenleKayit) return; }
   var _isDuzenle = !!duzenleKayit;
+  /* ALIS-FORM-PI-VALID-REV-CHANGELOG-001: Düzenleme modu — global state ile save fn'e parentId/revNo bilgisini geçir */
+  if (_isDuzenle) {
+    window._sav2DuzenleKayitData = {
+      id: duzenleKayit.id,
+      parentId: duzenleKayit.parentId || duzenleKayit.id,
+      revNo: duzenleKayit.revNo || 1
+    };
+  } else {
+    delete window._sav2DuzenleKayitData;
+  }
   var modal = document.createElement('div');
   modal.id = 'sav2-form-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:24px 0;overflow-y:auto';
@@ -459,6 +469,9 @@ window._saV2FormKaydet = function() {
     teslimat: g('teslimat'), teklifId: window._saTeklifId?.(g('tedarikci').slice(0,4)||'0000') || ''
   };
   if (!baslik.tedarikci) { window.toast?.('Tedarikçi zorunlu', 'warn'); return; }
+  /* ALIS-FORM-PI-VALID-REV-CHANGELOG-001: PI ID ve Tarih zorunlu */
+  if (!baslik.piNo) { window.toast?.('Proforma Fatura No (PI ID) zorunlu', 'warn'); return; }
+  if (!baslik.piTarih) { window.toast?.('Proforma Tarihi zorunlu', 'warn'); return; }
   var satirlar = document.querySelectorAll('[data-urun-satir]');
   if (!satirlar.length) { window.toast?.('En az 1 ürün ekleyin', 'warn'); return; }
   var urunler = [];
@@ -508,8 +521,23 @@ window._saV2FormKaydet = function() {
     }, 0);
     toplamPara = 'TRY';
   }
+  /* ALIS-FORM-PI-VALID-REV-CHANGELOG-001: revNo/parentId/changeLog — Active PI Architecture temeli */
+  var _yeniId = typeof window.generateId === 'function' ? window.generateId() : ('SA' + Date.now());
+  var _duz = window._sav2DuzenleKayitData;
+  var _kullanici = window.CU?.()?.displayName || window.CU?.()?.name || '';
+  var _kullaniciUid = String(window.CU?.()?.uid || window.CU?.()?.id || '');
   var kayit = {
-    id: typeof window.generateId === 'function' ? window.generateId() : ('SA' + Date.now()),
+    id: _yeniId,
+    parentId: _duz ? _duz.parentId : _yeniId,
+    revNo: _duz ? (_duz.revNo + 1) : 1,
+    changeLog: [{
+      kim: _kullanici,
+      uid: _kullaniciUid,
+      tarih: new Date().toISOString(),
+      degisim: _duz ? ('Revizyon v' + (_duz.revNo + 1) + ' oluşturuldu') : 'İlk teklif oluşturuldu',
+      oncekiVersionId: _duz ? _duz.id : null,
+      neden: ''
+    }],
     tedarikci: baslik.tedarikci, jobId: baslik.jobId, piNo: baslik.piNo, piTarih: baslik.piTarih,
     // SATINALMA-GECERLILIK-001: geçerlilik tarihi (KPI Süresi Yaklaşan için)
     gecerlilikTarihi: g('gecerlilikTarihi') || g('validUntil') || '',
@@ -533,6 +561,8 @@ window._saV2FormKaydet = function() {
   window._sav2DraftSil?.();
   document.getElementById('sav2-form-modal')?.remove();
   window.toast?.('Teklif kaydedildi \u2014 ' + urunler.length + ' \u00fcr\u00fcn', 'ok');
+  /* ALIS-FORM-PI-VALID-REV-CHANGELOG-001: state temizle */
+  delete window._sav2DuzenleKayitData;
   window.renderSatinAlmaV2?.();
 };
 
