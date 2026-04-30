@@ -614,7 +614,7 @@ window._piTasarimA = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '</div>';
   h += '<div style="padding:14px 32px">';
   h += '<div style="font-size:8px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">' + L.kosullar + '</div>';
-  h += '<div style="font-size:10px;color:#333;line-height:1.8">' + (t.teslim || 'FOB Istanbul') + '<br>' + (t.odeme || '30% Advance, 70% L/C') + '</div></div></div>';
+  h += '<div style="font-size:10px;color:#333;line-height:1.8">' + (t.teslim || 'FOB Istanbul') + '<br>' + (t.odeme || '—') + '</div></div></div>';
   h += '<div style="padding:0 32px"><table><thead><tr>';
   h += '<th style="width:32px">#</th><th>' + L.urun + '</th><th style="width:55px">' + L.miktar + '</th><th style="width:55px">' + L.birim + '</th><th style="width:90px;text-align:right">' + L.birimFiyat + '</th><th style="width:100px;text-align:right">' + L.tutar + '</th>';
   h += '</tr></thead><tbody>';
@@ -658,7 +658,7 @@ window._piTasarimB = function(t, bugun, satirlar, katman, gizliKod, L) {
   h += '</div>';
   h += '<div style="border-left:3px solid #185FA5;padding-left:12px">';
   h += '<div style="font-size:8px;font-weight:700;color:#185FA5;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">' + L.kosullar + '</div>';
-  h += '<div style="font-size:10px;color:#333;line-height:1.8">' + (t.teslim || 'FOB Istanbul') + '<br>' + (t.odeme || '30% Advance, 70% L/C') + '</div></div></div>';
+  h += '<div style="font-size:10px;color:#333;line-height:1.8">' + (t.teslim || 'FOB Istanbul') + '<br>' + (t.odeme || '—') + '</div></div></div>';
   h += '<div style="padding:0 28px"><table><thead><tr style="background:#E6F1FB">';
   h += '<th style="color:#0C447C;width:32px">#</th><th style="color:#0C447C">' + L.urun + '</th><th style="color:#0C447C;width:55px">' + L.miktar + '</th><th style="color:#0C447C;width:55px">' + L.birim + '</th><th style="color:#0C447C;width:90px;text-align:right">' + L.birimFiyat + '</th><th style="color:#0C447C;width:100px;text-align:right">' + L.tutar + '</th>';
   h += '</tr></thead><tbody>';

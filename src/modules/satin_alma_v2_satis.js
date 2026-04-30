@@ -91,6 +91,8 @@ window._saV2TeklifOlustur = function(id) {
   ic += '</div>';
   ic += '<div style="display:none"><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">ÖDEME KOŞULU</div>';
   ic += '<select id="st-odeme" onchange="event.stopPropagation();window._saV2PIOnizlemeGuncelle()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit">';
+  /* SATIS-PI-PAYMENT-DEFAULT-FIX-001: empty placeholder — kullanıcı seçim yapmazsa st-odeme.value='' (modal'da gizli, default "30% Advance" otomatik kayda gitmesin) */
+  ic += '<option value=""></option>';
   ['30% Advance, 70% L/C at sight','50% Advance, 50% L/C at sight','100% Advance before shipment','L/C at sight','T/T 30 days after B/L','T/T 60 days after B/L','D/P at sight','Open Account 30 days'].forEach(function(o){ic += '<option>'+o+'</option>';});
   ic += '</select></div>';
   /* T03-8 v2: sol banka div hidden — sağ PI altında yeni görünür div var */
