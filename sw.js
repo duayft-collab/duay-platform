@@ -74,8 +74,9 @@
 /* [CACHE-BUMP-2026-04-30-V105] SATIS-PI-FREIGHT-EXW-FIX-001 — EXW/FOB/FAS/FCA terms'lerde freight render kapatıldı (state'ten bağımsız defansif filtre) (T1: 1455eac) */
 /* [CACHE-BUMP-2026-04-30-V106] SATIS-PI-PAYMENT-DEFAULT-FIX-001 — Modal'da girilmeyen ödeme PDF'te görünme bug'ı (dropdown empty placeholder + A/B hardcoded default kaldırıldı) (T1: 696ab07) */
 /* [CACHE-BUMP-2026-04-30-V107] ALIS-FORM-URUN-GORSEL-FIX-001 — Alış teklifi düzenle açılışında ürün görseli kaybolma bug'ı (save fn'e gorsel field + düzenle fn'e 3-katmanlı master lookup fallback) (T1: f71dec0) */
-const CACHE_NAME    = 'duay-platform-v107';
-const CACHE_VERSION = '107.0.0';
+/* [CACHE-BUMP-2026-04-30-V108] ALIS-FORM-PI-VALID-REV-CHANGELOG-001 — PI ID/Tarih zorunlu + revizyon altyapısı (parentId/revNo/changeLog) — Active PI Architecture temeli (T1: b92ea88) */
+const CACHE_NAME    = 'duay-platform-v108';
+const CACHE_VERSION = '108.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
