@@ -37,7 +37,8 @@ window._saV2TeklifOlustur = function(id) {
     ? window._saV2AktifDuzenlemeTeklif.teklifId
     : (window._saTeklifId?.(musteriKod)||(musteriKod+'-'+Date.now()));
   var musteriList = (typeof window.loadCari === 'function' ? window.loadCari({tumKullanicilar:true}) : []).filter(function(c){return !c.isDeleted && (c.type==='musteri'||c.type==='M\u00fc\u015fteri'||c.cariType==='onayli'||c.tip==='musteri');});
-  var ic = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:min(1680px,95vw);max-height:92vh;display:flex;flex-direction:column">';
+  /* SATIS-MODAL-WIDTH-DESIGN-001: modal max-width 1680→2016 (%20 ferahlık) */
+  var ic = '<div style="background:var(--sf);border-radius:10px;border:0.5px solid var(--b);width:min(2016px,95vw);max-height:92vh;display:flex;flex-direction:column">';
 
   ic += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:0.5px solid var(--b);flex-shrink:0">';
   ic += '<div><div style="font-size:14px;font-weight:500;color:var(--t)">Satış Teklifi Oluştur</div>';
@@ -143,7 +144,8 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<button onclick="event.stopPropagation();window._saV2TopluMarjUygula()" style="font-size:10px;padding:4px 12px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t);font-family:inherit">T\u00fcm\u00fcne Uygula</button>';
   ic += '<span style="font-size:9px;color:var(--t3)">\u2014 sonra tek tek de\u011fi\u015ftirilebilir</span></div>';
   ic += '<div style="border:0.5px solid var(--b);border-radius:6px;overflow:hidden auto;margin-top:6px;min-height:280px;max-height:55vh">';
-  ic += '<button onclick="event.stopPropagation();window._saV2UrunSecModal&&window._saV2UrunSecModal()" style="width:100%;padding:8px 12px;border:none;border-bottom:0.5px dashed var(--b);background:transparent;color:var(--t3);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;text-align:center" onmouseover="this.style.background=\'var(--s3)\'" onmouseout="this.style.background=\'var(--s2)\'">+ Ürün Ekle</button>';
+  /* SATIS-MODAL-WIDTH-DESIGN-001: + Ürün Ekle butonu sticky top:0, hover bg restore var(--sf) */
+  ic += '<button onclick="event.stopPropagation();window._saV2UrunSecModal&&window._saV2UrunSecModal()" style="width:100%;padding:8px 12px;border:none;border-bottom:0.5px dashed var(--b);background:var(--sf);color:var(--t3);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;text-align:center;position:sticky;top:0;z-index:3" onmouseover="this.style.background=\'var(--s3)\'" onmouseout="this.style.background=\'var(--sf)\'">+ Ürün Ekle</button>';
   /* SATIS-URUN-TABLO-001: table-layout:fixed + colgroup ile kolon genişlikleri sabit */
   ic += '<table style="width:100%;border-collapse:collapse;table-layout:fixed">';
   /* SATIS-FORM-PARITE-001: 10 kolon — +BİRİM +MENŞEİ eklendi (satış/alış form parité) */
@@ -162,7 +164,8 @@ window._saV2TeklifOlustur = function(id) {
     + '<col style="width:8%">'    /* MENŞEİ */
     + '<col style="width:4%">'    /* Kaldır */
     + '</colgroup>';
-  ic += '<thead><tr style="background:var(--s2);font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.04em">';
+  /* SATIS-MODAL-WIDTH-DESIGN-001: thead sticky top:36px (Ürün Ekle butonu altı) */
+  ic += '<thead style="position:sticky;top:36px;z-index:2"><tr style="background:var(--s2);font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.04em">';
   ic += '<th style="padding:7px 10px;text-align:center;color:var(--t3)">#</th><th style="padding:7px 10px"></th><th style="padding:7px 10px;text-align:left">KOD / ÜRÜN ADI</th><th style="padding:7px 10px">MİKTAR</th><th style="padding:7px 10px">BİRİM</th><th style="padding:7px 10px;text-align:right">ALIŞ</th><th style="padding:7px 10px">MARJ %</th><th style="padding:7px 10px;text-align:right">SATIŞ</th><th style="padding:7px 10px;text-align:right">TOPLAM</th><th style="padding:7px 10px;text-align:right">KAR</th><th style="padding:7px 10px">MENŞEİ</th><th style="padding:7px 10px"></th></tr></thead>';
   ic += '<tbody id="st-urun-tbody"></tbody></table>';
   ic += '</div>';

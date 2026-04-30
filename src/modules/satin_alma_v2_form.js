@@ -876,7 +876,8 @@ window._saV2SatisTabloyuGuncelle = function() {
     var karRenk = urunKar > 0 ? '#0F6E56' : (urunKar < 0 ? '#DC2626' : 'var(--t3)');
     var karFormatted = (urunKar < 0 ? '-' : '') + paraSym
                      + Math.abs(urunKar).toLocaleString('tr-TR', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
-    return '<tr style="border-bottom:0.5px solid var(--b)">'
+    /* SATIS-MODAL-WIDTH-DESIGN-001: tr hover bg + transition */
+    return '<tr onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'" style="border-bottom:0.5px solid var(--b);transition:background .12s">'
       /* SATIS-MODAL-UX-FIX-001: ürün sıra no */
       + '<td style="padding:4px 6px;text-align:center;color:var(--t3);font-size:10px">' + (gIdx + 1) + '</td>'
       + '<td style="padding:4px 6px;width:28px">' + ((u.gorsel || u.image) ? '<img src="' + (u.gorsel || u.image) + '" style="width:26px;height:26px;border-radius:3px;object-fit:cover">' : '<div style="width:26px;height:26px;background:var(--s2);border-radius:3px;border:0.5px solid var(--b)"></div>') + '</td>'
@@ -888,7 +889,8 @@ window._saV2SatisTabloyuGuncelle = function() {
       + ['Adet','Kg','Ton','Mt','m²','m³','Lt','Koli','Çift','Paket','Set','Rulo','Takım'].map(function(b) { return '<option value="' + b + '"' + ((u.birim || 'Adet') === b ? ' selected' : '') + '>' + b + '</option>'; }).join('')
       + '</select></td>'
       + '<td style="padding:4px 6px;font-size:11px;color:#185FA5;font-weight:500;text-align:right;font-variant-numeric:tabular-nums">' + paraSym + (u.alisHedef || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</td>'
-      + '<td style="padding:4px 6px"><input type="text" inputmode="decimal" data-field="marj" value="' + (u.marj || 33) + '" oninput="event.stopPropagation();this.value=this.value.replace(/,/g,\'.\');window._saV2UrunMarj(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;min-width:40px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);text-align:center;box-sizing:border-box"></td>'
+      /* SATIS-MODAL-WIDTH-DESIGN-001: marj input hover border accent */
+      + '<td style="padding:4px 6px"><input type="text" inputmode="decimal" data-field="marj" value="' + (u.marj || 33) + '" oninput="event.stopPropagation();this.value=this.value.replace(/,/g,\'.\');window._saV2UrunMarj(\'' + (u.id || gIdx) + '\', this.value)" onmouseover="this.style.borderColor=\'var(--ac)\'" onmouseout="this.style.borderColor=\'var(--b)\'" style="width:100%;min-width:40px;font-size:10px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t);text-align:center;box-sizing:border-box;transition:border-color .15s"></td>'
       + '<td style="padding:3px 4px;color:#16A34A;font-weight:600;text-align:right"><input type="text" data-field="satisFiyat" value="' + (u.satisFiyat || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + '" onchange="event.stopPropagation();window._saV2UrunSatisFiyat(\'' + (u.id || gIdx) + '\', parseFloat(this.value.replace(/\\./g,\'\').replace(/,/g,\'.\'))||0)" oninput="event.stopPropagation()" style="width:100%;font-size:11px;padding:3px 5px;border:0.5px solid var(--b);border-radius:4px;background:#E1F5EE;color:#16A34A;font-family:inherit;font-weight:600;box-sizing:border-box;text-align:right;font-variant-numeric:tabular-nums"></td>'
       + '<td style="padding:4px 6px;font-size:11px;font-weight:500;text-align:right;font-variant-numeric:tabular-nums">' + paraSym + (u.toplam || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>'
       /* FEAT-01: KAR kolonu — renkli + bold */
@@ -897,7 +899,7 @@ window._saV2SatisTabloyuGuncelle = function() {
       + '<td style="padding:4px 6px"><select disabled onclick="event.stopPropagation()" onchange="event.stopPropagation();window._saV2UrunMensei(\'' + (u.id || gIdx) + '\', this.value)" style="width:100%;font-size:10px;padding:3px 4px;border:0.5px solid var(--b);border-radius:4px;background:var(--s2);color:var(--t2);cursor:not-allowed;opacity:0.85;font-family:inherit"><option value="">—</option>'
       + (window.MENSEI || ['Türkiye','Çin','Almanya','İtalya','Japonya','Hindistan','ABD','Diğer']).map(function(m) { return '<option value="' + m + '"' + ((u.mensei || '') === m ? ' selected' : '') + '>' + m + '</option>'; }).join('')
       + '</select></td>'
-      + '<td style="padding:4px 6px"><button onclick="event.stopPropagation();window._saV2UrunSil(\'' + u.id + '\')" title="Kald\u0131r" style="padding:2px 6px;border:0.5px solid #DC2626;border-radius:4px;background:transparent;color:#DC2626;font-size:14px;cursor:pointer;font-family:inherit">🗑</button></td>'
+      + '<td style="padding:4px 6px"><button onclick="event.stopPropagation();window._saV2UrunSil(\'' + u.id + '\')" title="Kald\u0131r" onmouseover="this.style.transform=\'scale(1.1)\'" onmouseout="this.style.transform=\'scale(1)\'" style="padding:2px 6px;border:0.5px solid #DC2626;border-radius:4px;background:transparent;color:#DC2626;font-size:14px;cursor:pointer;font-family:inherit;transition:transform .15s">🗑</button></td>'
       + '</tr>';
   }).join('');
   /* BUG-01: Focus restore — re-render sonrası input'a geri dön */
