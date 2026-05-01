@@ -1297,6 +1297,8 @@
       + '<div style="height:4px;background:var(--s2,#F1F5F9);border-radius:2px;overflow:hidden;margin-bottom:10px">'
         + '<div style="height:100%;width:' + pct + '%;background:' + stColor + ';transition:width .3s"></div>'
       + '</div>'
+      /* SHIPMENT-LIST-COLUMNS-001: konteynerNo chip (V133, conditional render) */
+      + (ed.konteynerNo ? '<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><span title="Konteyner / TIR" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:ui-monospace,monospace;color:#185FA5;background:#E6F1FB;padding:3px 8px;border-radius:6px;font-weight:500">🚛 ' + _uiEsc(ed.konteynerNo) + '</span></div>' : '')
       + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">'
         + '<div style="font-size:10px;color:var(--t3,#6B7280)">🗓 ' + etaStr + ' · 👤 ' + _uiEsc(sorumlu) + '</div>'
         + '<div style="display:flex;gap:4px">'
@@ -2004,7 +2006,10 @@
         + '<div>' + __yonBadge + '</div>'
         + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ed.ihracatId ? esc(String(ed.ihracatId).slice(0,15)) : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div><div style="font-weight:500;color:var(--t)">'+esc(ed.productName||'—')+'</div>'
-        + '<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(tedAd)+'</div></div>'
+        + '<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(tedAd)+'</div>'
+        /* SHIPMENT-LIST-COLUMNS-001: konteynerNo alt satır (V133, conditional) */
+        + (ed.konteynerNo ? '<div style="font-size:10px;color:#185FA5;margin-top:2px;font-family:ui-monospace,monospace">🚛 ' + esc(ed.konteynerNo) + '</div>' : '')
+        + '</div>'
         + '<div onclick="event.stopPropagation()"><select onchange="window._edStatusChange && window._edStatusChange(\'' + esc(ed.id) + '\', this.value)" style="padding:3px 8px;border-radius:10px;font-size:10px;font-weight:500;color:' + st['c'] + ';background:' + st['bg'] + ';border:0.5px solid ' + st['c'] + '33;cursor:pointer;font-family:inherit">' + STATUSES.map(function(__sk){var __s = STATUS[__sk];return '<option value="' + __sk + '"' + (ed.status === __sk ? ' selected' : '') + '>' + esc(__s ? __s['t'] : __sk) + '</option>';}).join('') + '</select></div>'
         + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+qd+'/'+qt+' <span style="color:var(--t3);font-size:10px">(%'+pct+')</span></div>'
         + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+esc(eta)+'</div>'
