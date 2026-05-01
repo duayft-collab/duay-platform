@@ -22,6 +22,16 @@
 (function() {
   'use strict';
 
+  /* SHIPMENT-DOC-UI-EDIT-001: type registry — alan tipini belirler (V126) */
+  const FIELD_TYPES = Object.freeze({
+    'yuk.brutKg': 'number', 'yuk.netKg': 'number', 'yuk.m3': 'number',
+    'yuk.tip': 'select:kati,sivi,gaz,toz,karisik',
+    'yuk.imo': 'boolean', 'yuk.unNo': 'string',
+    'paket.tip': 'select:palet,karton,koli,bigbag,fici,kasa',
+    'paket.adet': 'number',
+    'yerlesim.konteynerNo': 'string', 'yerlesim.sira': 'number', 'yerlesim.katman': 'number'
+  });
+
   /* XSS-KURAL-001: 5-char HTML escape (lokal, dependency-free) */
   function _esc(str) {
     if (str === null || str === undefined) return '';
@@ -66,9 +76,15 @@
     function _row(label, path, value, unit) {
       const isKritik = kritikAlanlar.indexOf(path) !== -1;
       const borderLeft = isKritik ? 'border-left:3px solid #A32D2D;padding-left:8px;' : 'padding-left:11px;';
+      /* SHIPMENT-DOC-UI-EDIT-001: KAPALI ise non-editable, diğer state'lerde click-to-edit (V126) */
+      const isKapali = sd.state === 'KAPALI';
+      const fieldType = FIELD_TYPES[path] || 'string';
+      const onclickAttr = isKapali ? '' : ' onclick="event.stopPropagation();window._shipmentDocUiEditField(\'' + _esc(edId) + '\',\'' + _esc(path) + '\',\'' + _esc(fieldType) + '\',this)"';
+      const cursorStyle = isKapali ? 'cursor:not-allowed;opacity:0.6' : 'cursor:pointer';
+      const titleAttr = isKapali ? ' title="KAPALI — değiştirilemez"' : ' title="Düzenlemek için tıkla"';
       return '<div style="display:flex;justify-content:space-between;padding:6px 0;' + borderLeft + '">' +
         '<span style="color:#666;font-size:12px">' + _esc(label) + (isKritik ? ' ⚠' : '') + '</span>' +
-        '<span style="font-weight:500">' + _esc(value === null || value === undefined || value === '' ? '—' : value) + (unit && value ? ' ' + _esc(unit) : '') + '</span>' +
+        '<span data-sd-path="' + _esc(path) + '"' + onclickAttr + titleAttr + ' style="font-weight:500;' + cursorStyle + ';padding:2px 6px;border-radius:3px">' + _esc(value === null || value === undefined || value === '' ? '—' : value) + (unit && value ? ' ' + _esc(unit) : '') + '</span>' +
         '</div>';
     }
 
@@ -208,6 +224,117 @@
       }
     };
     document.addEventListener('keydown', escHandler);
+  };
+
+  /* SHIPMENT-DOC-UI-EDIT-001: alan tıklandığında inline edit modu (V126) */
+
+  /* Aktif edit input'unu takip et — tek seferde tek alan editable */
+  let _activeEditInput = null;
+
+  /**
+   * Field span'ına tıklandığında çağrılır.
+   * Span'ı input'a dönüştürür, blur/Enter ile save tetikler, Esc ile cancel.
+   * @param {string} edId expected delivery id
+   * @param {string} path dotted path (ör. 'yuk.brutKg')
+   * @param {string} fieldType FIELD_TYPES değeri ('number', 'string', 'boolean', 'select:opt1,opt2')
+   * @param {HTMLElement} spanEl tıklanan span (this)
+   */
+  window._shipmentDocUiEditField = function(edId, path, fieldType, spanEl) {
+    /* Önceki edit varsa cancel et (tek seferde tek input) */
+    if (_activeEditInput && _activeEditInput.parentNode) {
+      _activeEditInput._cancel && _activeEditInput._cancel();
+    }
+
+    const sd = window._shipmentDocGet(edId);
+    if (!sd || sd.state === 'KAPALI') {
+      window.toast && window.toast('Bu alan düzenlenemez', 'err');
+      return;
+    }
+
+    /* Mevcut değeri sd objesinden al (ham, formatlı değil) */
+    const parts = path.split('.');
+    let currentVal = sd;
+    for (let i = 0; i < parts.length; i++) currentVal = currentVal && currentVal[parts[i]];
+    if (currentVal === null || currentVal === undefined) currentVal = '';
+
+    /* Span'ın orijinal HTML'ini sakla (cancel için) */
+    const originalHtml = spanEl.innerHTML;
+
+    /* Type'a göre input oluştur */
+    let inputEl;
+    if (fieldType.indexOf('select:') === 0) {
+      const opts = fieldType.substring(7).split(',');
+      inputEl = document.createElement('select');
+      inputEl.innerHTML = '<option value="">—</option>' +
+        opts.map(function(o) {
+          return '<option value="' + _esc(o) + '"' + (String(currentVal) === o ? ' selected' : '') + '>' + _esc(o) + '</option>';
+        }).join('');
+    } else if (fieldType === 'boolean') {
+      inputEl = document.createElement('select');
+      inputEl.innerHTML = '<option value="">—</option><option value="true"' + (currentVal === true ? ' selected' : '') + '>EVET</option><option value="false"' + (currentVal === false ? ' selected' : '') + '>HAYIR</option>';
+    } else {
+      inputEl = document.createElement('input');
+      inputEl.type = fieldType === 'number' ? 'number' : 'text';
+      inputEl.value = String(currentVal);
+    }
+    inputEl.style.cssText = 'font-size:12px;padding:2px 6px;border:1px solid #1976D2;border-radius:3px;width:120px;text-align:right;font-family:inherit';
+
+    /* Cancel handler */
+    inputEl._cancel = function() {
+      spanEl.style.display = '';
+      if (inputEl.parentNode) inputEl.parentNode.removeChild(inputEl);
+      _activeEditInput = null;
+    };
+
+    /* Save handler */
+    inputEl._save = function() {
+      let newVal = inputEl.value;
+      if (fieldType === 'number') newVal = newVal === '' ? null : Number(newVal);
+      else if (fieldType === 'boolean') newVal = newVal === '' ? null : (newVal === 'true');
+      else if (newVal === '') newVal = null;
+
+      if (newVal === currentVal) { inputEl._cancel(); return; }
+
+      /* Kritik alan + HAZIR/ONAYLI state → REVIEW prompt */
+      const kritikAlanlar = window._shipmentDocUtil.KRITIK_ALANLAR;
+      const isKritik = kritikAlanlar.indexOf(path) !== -1;
+      const needsReason = isKritik && (sd.state === 'HAZIR' || sd.state === 'ONAYLI');
+
+      const doSave = function(reason) {
+        const opts = reason ? { reason: reason } : {};
+        const result = window._shipmentDocUpdate(edId, path, newVal, opts);
+        if (result && result.success !== false) {
+          window.toast && window.toast('Kaydedildi: ' + path, 'ok');
+          /* Modal'ı yeniden render et (idempotent — V124 _shipmentDocUiOpen önce kapatır sonra açar) */
+          window._shipmentDocUiOpen(edId);
+        } else {
+          window.toast && window.toast('Kaydedilemedi: ' + (result && result.error || 'bilinmeyen'), 'err');
+          inputEl._cancel();
+        }
+      };
+
+      if (needsReason) {
+        const reason = prompt('⚠ Kritik alan değişiyor (' + path + '). Sebep:');
+        if (reason && reason.trim()) doSave(reason.trim());
+        else inputEl._cancel();
+      } else {
+        doSave();
+      }
+    };
+
+    /* Event handlers */
+    inputEl.addEventListener('blur', inputEl._save);
+    inputEl.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); inputEl._save(); }
+      else if (e.key === 'Escape') { e.preventDefault(); inputEl._cancel(); }
+    });
+
+    /* Span'ı gizle, input'u inject et */
+    spanEl.style.display = 'none';
+    spanEl.parentNode.insertBefore(inputEl, spanEl.nextSibling);
+    _activeEditInput = inputEl;
+    inputEl.focus();
+    if (inputEl.select) inputEl.select();
   };
 
   /* SHIPMENT-DOC-LIST-PROGRESS-001: card badge HTML üretici (V125) */

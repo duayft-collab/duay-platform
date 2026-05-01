@@ -95,8 +95,9 @@
 /* [CACHE-BUMP-2026-05-01-V126] SHIPMENT-DOC-UI-API-FIX-001 — Saha testinde yakalanan hotfix: ui.js'te _shipmentDocBelgeMeta + _shipmentDocKritikAlanlar getter fn olarak yanlış kullanılmıştı, _shipmentDocUtil namespace direkt frozen referansları geçildi (Object.keys(null) throw fix) (T2-prev: 6048d33) */
 /* [CACHE-BUMP-2026-05-01-V127] SHIPMENT-DOC-LIST-PROGRESS-001 — ED kart sağ üst köşesinde belge progress badge: 📦 5/9 (state-aware: ONAYLI=✓, REVIEW=⚠, KAPALI=🔒), tıklayınca _shipmentDocUiOpen modal açar, ed.shipmentDoc yoksa görünmez (sessiz), V117 stateColor 4 katman reuse (T2-prev: 4d5e16c) */
 /* [CACHE-BUMP-2026-05-01-V128] SHIPMENT-DOC-LIST-PROGRESS-FIX-001 — Saha testinde yakalanan hotfix: V125 _edRenderCard'a badge ekledi ama Lojistik Komuta Merkezi renderEdList kullanıyor (lojistik.js:170). renderEdList'in __ikonlar string'ine de _shipmentDocCardBadgeHtml append edildi (helper aynen reuse, kolon değişmedi) (T2-prev: b0daf61) */
-const CACHE_NAME    = 'duay-platform-v128';
-const CACHE_VERSION = '128.0.0';
+/* [CACHE-BUMP-2026-05-01-V129] SHIPMENT-DOC-UI-EDIT-001 — Modal'da inline alan editing: 11 alan tıklanır → type-aware input (number/string/select/boolean), Enter/blur=save, Esc=cancel. Save: _shipmentDocUpdate (V122 mutator) çağrılır. Kritik alan + HAZIR/ONAYLI state → prompt() ile sebep istenir (REVIEW transition). KAPALI state = field disable + tooltip. Save sonrası modal partial re-render. (T2-prev: 6e994b5) */
+const CACHE_NAME    = 'duay-platform-v129';
+const CACHE_VERSION = '129.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
