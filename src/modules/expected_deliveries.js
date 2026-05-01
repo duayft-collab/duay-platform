@@ -1995,7 +1995,9 @@
       var __sorumluInitials = __sorumluAd && __sorumluAd !== '—' ? __sorumluAd.split(' ').map(function(__p){return (__p[0]||'').toUpperCase();}).slice(0,2).join('') : '—';
       var __ikonlar = '';
       if (ed.belgeUrl) __ikonlar += '<a href="' + esc(ed.belgeUrl) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none;font-size:13px;margin-right:4px" title="Belge / PDF">📎</a>';
-      if (ed.trackingUrl) __ikonlar += '<a href="' + esc(ed.trackingUrl) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none;font-size:13px" title="Tracking">🔗</a>';
+      if (ed.trackingUrl) __ikonlar += '<a href="' + esc(ed.trackingUrl) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="text-decoration:none;font-size:13px;margin-right:4px" title="Tracking">🔗</a>';
+      /* SHIPMENT-DOC-LIST-PROGRESS-001: belge progress badge (V125.1, ed.shipmentDoc varsa) */
+      if (window._shipmentDocCardBadgeHtml) __ikonlar += window._shipmentDocCardBadgeHtml(ed);
       if (!__ikonlar) __ikonlar = '<span style="color:var(--t3);font-size:10px">—</span>';
       /* LOJISTIK-RENK-001: 11-kolon grid (8→11) + İhracat ID hücresi */
       return '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 0.8fr 0.8fr 0.7fr 1fr 0.7fr 0.7fr auto;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'

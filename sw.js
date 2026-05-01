@@ -94,8 +94,9 @@
 /* [CACHE-BUMP-2026-05-01-V125] SHIPMENT-DOC-UI-MINIMAL-001 — İLK GÖRÜNÜR ÖZELLİK: ED ⋯ → "📦 Belgeler" → modal aç (read-only: state badge + 9 belge slot + Yük/Paket/Yerleşim + History toggle), yeni dosya expected_deliveries_docs_ui.js (213 satır), probe → "🧪 Probe (DevTools)" rename (T2-prev: 523f09f) */
 /* [CACHE-BUMP-2026-05-01-V126] SHIPMENT-DOC-UI-API-FIX-001 — Saha testinde yakalanan hotfix: ui.js'te _shipmentDocBelgeMeta + _shipmentDocKritikAlanlar getter fn olarak yanlış kullanılmıştı, _shipmentDocUtil namespace direkt frozen referansları geçildi (Object.keys(null) throw fix) (T2-prev: 6048d33) */
 /* [CACHE-BUMP-2026-05-01-V127] SHIPMENT-DOC-LIST-PROGRESS-001 — ED kart sağ üst köşesinde belge progress badge: 📦 5/9 (state-aware: ONAYLI=✓, REVIEW=⚠, KAPALI=🔒), tıklayınca _shipmentDocUiOpen modal açar, ed.shipmentDoc yoksa görünmez (sessiz), V117 stateColor 4 katman reuse (T2-prev: 4d5e16c) */
-const CACHE_NAME    = 'duay-platform-v127';
-const CACHE_VERSION = '127.0.0';
+/* [CACHE-BUMP-2026-05-01-V128] SHIPMENT-DOC-LIST-PROGRESS-FIX-001 — Saha testinde yakalanan hotfix: V125 _edRenderCard'a badge ekledi ama Lojistik Komuta Merkezi renderEdList kullanıyor (lojistik.js:170). renderEdList'in __ikonlar string'ine de _shipmentDocCardBadgeHtml append edildi (helper aynen reuse, kolon değişmedi) (T2-prev: b0daf61) */
+const CACHE_NAME    = 'duay-platform-v128';
+const CACHE_VERSION = '128.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
