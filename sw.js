@@ -86,8 +86,9 @@
 /* [CACHE-BUMP-2026-04-30-V117] SHIPMENT-DOC-SCHEMA-001 — Shipment Doc şema + util (Object.freeze sabitleri, BELGE_META, JSDoc) (T2-prev: 71e1768) */
 /* [CACHE-BUMP-2026-05-01-V118] SHIPMENT-DOC-CREATE-001 — _shipmentDocCreate + _shipmentDocGet + _createEmptyDoc (idempotent + try/catch + toast) (T2-prev: c51b19a) */
 /* [CACHE-BUMP-2026-05-01-V119] SHIPMENT-DOC-AUDIT-001 — _logHistory + _shipmentDocLog + _maskName (K05 audit + K14 PII, çift kayıt + dedup tuzağı önlendi + FIFO 100 + archivedCount) (T2-prev: 05aaf5b) */
-const CACHE_NAME    = 'duay-platform-v119';
-const CACHE_VERSION = '119.0.0';
+/* [CACHE-BUMP-2026-05-01-V120] SHIPMENT-DOC-STATE-001 — STATE_TRANSITIONS matrix + _canTransition + _isFieldKritik + _suggestNextState + 5 public API (UI CTA/tooltip/dropdown altyapısı) (T2-prev: 2d80a79) */
+const CACHE_NAME    = 'duay-platform-v120';
+const CACHE_VERSION = '120.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]

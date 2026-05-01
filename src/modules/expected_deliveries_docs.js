@@ -410,4 +410,112 @@
   /** Action meta getter (UI için). @param {string} action @returns {Object|null} */
   window._shipmentDocAuditMeta = function(action) { return AUDIT_TYPE_META[action] || null; };
 
+  /* SHIPMENT-DOC-STATE-001: state transition matrix (unidirectional, Object.freeze) */
+  const STATE_TRANSITIONS = Object.freeze({
+    BOS:    Object.freeze(['TASLAK']),
+    TASLAK: Object.freeze(['HAZIR', 'KAPALI']),
+    HAZIR:  Object.freeze(['ONAYLI', 'REVIEW', 'TASLAK']),
+    ONAYLI: Object.freeze(['REVIEW', 'KAPALI']),
+    REVIEW: Object.freeze(['HAZIR', 'ONAYLI']),
+    KAPALI: Object.freeze([])
+  });
+
+  /* SHIPMENT-DOC-STATE-001: transition sebepleri (UI tooltip için) */
+  const STATE_TRANSITION_REASONS = Object.freeze({
+    'BOS->TASLAK':    'İlk değişiklik yapıldı',
+    'TASLAK->HAZIR':  'Zorunlu belgeler tamamlandı',
+    'TASLAK->KAPALI': 'Taslak iptal edildi',
+    'HAZIR->ONAYLI':  'Onay verildi',
+    'HAZIR->REVIEW':  'Kritik alan değişti, inceleme bekliyor',
+    'HAZIR->TASLAK':  'Belge silindi, taslağa düştü',
+    'ONAYLI->REVIEW': 'Onaylı kayıtta kritik alan değişti',
+    'ONAYLI->KAPALI': 'Sevkiyat tamamlandı',
+    'REVIEW->HAZIR':  'İnceleme reddedildi, eski hâle döndü',
+    'REVIEW->ONAYLI': 'İnceleme onaylandı'
+  });
+
+  /**
+   * State geçişi izinli mi kontrol et (K10 null guard).
+   * @param {string} fromState mevcut state
+   * @param {string} toState hedef state
+   * @returns {{allowed: boolean, reason?: string}}
+   */
+  function _canTransition(fromState, toState) {
+    if (!fromState || !toState) {
+      return { allowed: false, reason: 'state parametre eksik' };
+    }
+    if (fromState === toState) {
+      return { allowed: false, reason: 'aynı state' };
+    }
+    const allowed = STATE_TRANSITIONS[fromState];
+    if (!allowed) {
+      return { allowed: false, reason: 'bilinmeyen mevcut state: ' + fromState };
+    }
+    if (allowed.indexOf(toState) === -1) {
+      return { allowed: false, reason: fromState + ' state\'inden ' + toState + ' state\'ine geçilemez' };
+    }
+    return { allowed: true };
+  }
+
+  /**
+   * Bir field path kritik mi (KRITIK_ALANLAR exact match veya parent match).
+   * Örn: 'yuk.brutKg' kritik ise 'yuk' veya 'yuk.brutKg.x' da kritik sayılır.
+   * @param {string} fieldPath
+   * @returns {boolean}
+   */
+  function _isFieldKritik(fieldPath) {
+    if (!fieldPath || typeof fieldPath !== 'string') return false;
+    for (let i = 0; i < KRITIK_ALANLAR.length; i++) {
+      const k = KRITIK_ALANLAR[i];
+      if (fieldPath === k) return true;
+      if (fieldPath.indexOf(k + '.') === 0) return true;
+      if (k.indexOf(fieldPath + '.') === 0) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Mevcut sd durumuna göre olası sonraki state'i öner (UI CTA için).
+   * @param {Object} sd shipmentDoc
+   * @returns {string|null} sonraki state veya null
+   */
+  function _suggestNextState(sd) {
+    if (!sd || !sd.state) return null;
+    const cur = sd.state;
+    if (cur === 'BOS') return 'TASLAK';
+    if (cur === 'TASLAK') {
+      const b = sd.belgeler || {};
+      const hazir = ZORUNLU_BELGELER.every(function(slot) { return !!b[slot]; });
+      return hazir ? 'HAZIR' : null;
+    }
+    if (cur === 'HAZIR') return 'ONAYLI';
+    if (cur === 'REVIEW') return 'ONAYLI';
+    return null;
+  }
+
+  /* SHIPMENT-DOC-STATE-001: Window expose */
+
+  /** State geçişi izinli mi. @param {string} from @param {string} to @returns {Object} */
+  window._shipmentDocCanTransition = function(from, to) { return _canTransition(from, to); };
+
+  /** Field kritik mi (UI badge için). @param {string} fieldPath @returns {boolean} */
+  window._shipmentDocIsFieldKritik = function(fieldPath) { return _isFieldKritik(fieldPath); };
+
+  /** Önerilen sonraki state (UI CTA için). @param {string} edId @returns {string|null} */
+  window._shipmentDocSuggestNextState = function(edId) {
+    const sd = window._shipmentDocGet(edId);
+    return sd ? _suggestNextState(sd) : null;
+  };
+
+  /** Transition sebep tooltip metni. @param {string} from @param {string} to @returns {string} */
+  window._shipmentDocTransitionReason = function(from, to) {
+    return STATE_TRANSITION_REASONS[from + '->' + to] || '';
+  };
+
+  /** İzinli sonraki state listesi (UI dropdown için). @param {string} state @returns {Array<string>} */
+  window._shipmentDocAllowedNextStates = function(state) {
+    const list = STATE_TRANSITIONS[state];
+    return list ? list.slice() : [];
+  };
+
 })();
