@@ -89,8 +89,9 @@
 /* [CACHE-BUMP-2026-05-01-V120] SHIPMENT-DOC-STATE-001 — STATE_TRANSITIONS matrix + _canTransition + _isFieldKritik + _suggestNextState + 5 public API (UI CTA/tooltip/dropdown altyapısı) (T2-prev: 2d80a79) */
 /* [CACHE-BUMP-2026-05-01-V121] SHIPMENT-DOC-PROBE-001 — Manager-only DevTools probe (console.group + console.table, modal YOK, ED menüsünde "📦 Shipment Doc" buton) (T2-prev: 5721e5e) */
 /* [CACHE-BUMP-2026-05-01-V122] SHIPMENT-DOC-UPDATE-001 — _shipmentDocUpdate ilk mutator (flat patch + diff + REVIEW state + pendingApprovals + audit STATE_CHANGE/UPDATE), K01 803/800 bilinçli aşım (V123 split ile çözülecek) (T2-prev: a4c7734) */
-const CACHE_NAME    = 'duay-platform-v122';
-const CACHE_VERSION = '122.0.0';
+/* [CACHE-BUMP-2026-05-01-V123] SHIPMENT-DOC-PROBE-EXTRACT-001 — Probe fn ayrı dosyaya çıkarıldı (expected_deliveries_docs_probe.js, ~106 satır), docs.js 803→713 (K01 ≤800 ✓ borç KAPANDI), pure refactor 0 davranış değişikliği (T2-prev: 1edd997) */
+const CACHE_NAME    = 'duay-platform-v123';
+const CACHE_VERSION = '123.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
