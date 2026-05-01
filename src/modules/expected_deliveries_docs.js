@@ -622,7 +622,14 @@
       if (unknownPaths.length) {
         console.warn('[SHIPMENT-DOC-UPDATE-001] bilinmeyen path(lar) atlandı:', unknownPaths);
       }
-      return { success: true, sd: sd, changed: [], requiresReview: false, noop: true };
+      return {
+        success: true,
+        sd: sd,
+        changed: [],
+        requiresReview: false,
+        noop: true,
+        unknownPaths: unknownPaths.length ? unknownPaths : undefined
+      };
     }
 
     /* 6. Kritik + HAZIR/ONAYLI ise reason zorunlu */
