@@ -90,11 +90,22 @@
       const downloadLink = downloadUrl
         ? '<a href="' + _esc(downloadUrl) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="position:absolute;bottom:4px;right:6px;font-size:11px;color:#1976D2;text-decoration:none" title="İndir">↓</a>'
         : '';
+      /* SHIPMENT-DOC-TIR-SHARE-BADGE-001: paylaşımlı belge badge (V131, sağ üst, count >= 2) */
+      let sharedBadge = '';
+      if (filled && window._sdApply && typeof window._sdApply.countSharedEds === 'function') {
+        try {
+          const sharedCount = window._sdApply.countSharedEds(slot, value);
+          if (sharedCount >= 2) {
+            sharedBadge = '<div title="Bu belge ' + sharedCount + ' ED\'de paylaşılıyor" style="position:absolute;top:4px;right:6px;font-size:10px;color:#1976D2;background:#E3F2FD;padding:2px 5px;border-radius:8px;font-weight:600;pointer-events:none">🔗 ' + sharedCount + '</div>';
+          }
+        } catch (e) { /* defensive: badge ekleme başarısızsa skip */ }
+      }
       return '<div' + slotOnclick + slotTitle + ' style="position:relative;padding:8px 10px;border:1px solid #e5e5e5;border-radius:6px;background:' +
         (filled ? '#F0F9F5' : '#FAFAFA') + ';' + slotCursor + '">' +
         '<div style="font-size:18px;color:' + color + ';font-weight:600">' + icon + ' ' + _esc(meta.icon || '📄') + '</div>' +
         '<div style="font-size:11px;color:#666;margin-top:4px;word-break:break-all">' + zorunluPrefix + _esc(displayName) + '</div>' +
         downloadLink +
+        sharedBadge +
         '</div>';
     }).join('');
 

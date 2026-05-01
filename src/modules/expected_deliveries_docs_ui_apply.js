@@ -238,14 +238,63 @@
     return { successEdIds: successEdIds, failEdIds: failEdIds };
   }
 
+  /**
+   * Slot'taki belgenin (veya belgelerin) kaç ED'de paylaşıldığını say.
+   * uploadGroupId üzerinden runtime aggregate. Threshold count >= 2 → paylaşım var.
+   * @param {string} slot belge slot key (ör. 'soforFotos')
+   * @param {object|Array} value tek slotMeta veya array (multi)
+   * @returns {number} En yüksek paylaşım sayısı (0 = yok, 1 = tek ED, 2+ = paylaşımlı)
+   */
+  function _countSharedEds(slot, value) {
+    if (!value) return 0;
+    if (typeof window.loadExpectedDeliveries !== 'function') return 0;
+    /* uploadGroupId'leri topla (Set) */
+    const groupIds = new Set();
+    if (Array.isArray(value)) {
+      for (let i = 0; i < value.length; i++) {
+        if (value[i] && value[i].uploadGroupId) groupIds.add(value[i].uploadGroupId);
+      }
+    } else if (value.uploadGroupId) {
+      groupIds.add(value.uploadGroupId);
+    }
+    if (groupIds.size === 0) return 0;
+    /* Her uploadGroupId için ED count, max döndür */
+    try {
+      const allEds = window.loadExpectedDeliveries({raw: true}) || [];
+      let maxCount = 0;
+      groupIds.forEach(function(gId) {
+        let count = 0;
+        for (let i = 0; i < allEds.length; i++) {
+          const ed = allEds[i];
+          if (!ed || !ed.shipmentDoc || !ed.shipmentDoc.belgeler) continue;
+          const slotVal = ed.shipmentDoc.belgeler[slot];
+          if (!slotVal) continue;
+          if (Array.isArray(slotVal)) {
+            for (let j = 0; j < slotVal.length; j++) {
+              if (slotVal[j] && slotVal[j].uploadGroupId === gId) { count++; break; }
+            }
+          } else if (slotVal.uploadGroupId === gId) {
+            count++;
+          }
+        }
+        if (count > maxCount) maxCount = count;
+      });
+      return maxCount;
+    } catch (e) {
+      return 0;
+    }
+  }
+
   /* SHIPMENT-DOC-UI-EXTRACT-001: public namespace (V130) — V117 _shipmentDocUtil pattern reuse */
+  /* V131 GENİŞLETME: countSharedEds eklendi */
   window._sdApply = Object.freeze({
     SHARED_SLOTS: SHARED_SLOTS,
     findGroupedEds: _findGroupedEds,
     genUploadGroupId: _genUploadGroupId,
     showApplyModal: _showApplyModal,
     saveToSingleEd: _saveToSingleEd,
-    saveToMultipleEds: _saveToMultipleEds
+    saveToMultipleEds: _saveToMultipleEds,
+    countSharedEds: _countSharedEds
   });
 
 })();
