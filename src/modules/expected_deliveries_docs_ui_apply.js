@@ -343,9 +343,130 @@
     }
   }
 
+  /**
+   * Verilen slot + uploadGroupId ile aynı grupta olan DİĞER ED'leri bul.
+   * V132.1 cascade için: paylaşımlı belge silmede hangi ED'lerden de silinebilir.
+   * @param {string} currentEdId şu anki ED (hariç tutulacak)
+   * @param {string} slot belge slot key
+   * @param {string} uploadGroupId V129 batch grup ID
+   * @returns {Array} [{edId, productName, supplierId}], max 20
+   */
+  function _findEdsWithSameGroupId(currentEdId, slot, uploadGroupId) {
+    if (!uploadGroupId || typeof window.loadExpectedDeliveries !== 'function') return [];
+    try {
+      const allEds = window.loadExpectedDeliveries({raw: true}) || [];
+      const matched = [];
+      for (let i = 0; i < allEds.length && matched.length < 20; i++) {
+        const ed = allEds[i];
+        if (!ed || ed.id === currentEdId) continue;
+        if (!ed.shipmentDoc || !ed.shipmentDoc.belgeler) continue;
+        const slotVal = ed.shipmentDoc.belgeler[slot];
+        if (!slotVal) continue;
+        let hasGroupId = false;
+        if (Array.isArray(slotVal)) {
+          for (let j = 0; j < slotVal.length; j++) {
+            if (slotVal[j] && slotVal[j].uploadGroupId === uploadGroupId) { hasGroupId = true; break; }
+          }
+        } else if (slotVal.uploadGroupId === uploadGroupId) {
+          hasGroupId = true;
+        }
+        if (hasGroupId) {
+          matched.push({
+            edId: ed.id,
+            productName: ed.productName || '—',
+            supplierId: ed.supplierId || ''
+          });
+        }
+      }
+      return matched;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /**
+   * N ED'den slot belgesini sil (cascade) — per-ED try/catch + snapshots dön.
+   * V132 _deleteFromSingleEd reuse, loop ile.
+   * @param {Array<string>} edIds hedef ED'ler
+   * @param {string} slot belge slot key
+   * @param {number} [multiIndex] V132.2 hazırlığı (undefined = tüm slot)
+   * @returns {object} { successEdIds, failEdIds, snapshots: [{edId, snapshot}] }
+   */
+  function _deleteFromMultipleEds(edIds, slot, multiIndex) {
+    const successEdIds = [];
+    const failEdIds = [];
+    const snapshots = [];
+    for (let i = 0; i < edIds.length; i++) {
+      const edId = edIds[i];
+      try {
+        const r = _deleteFromSingleEd(edId, slot, multiIndex);
+        if (r.success) {
+          successEdIds.push(edId);
+          if (r.snapshot) snapshots.push({ edId: edId, snapshot: r.snapshot });
+        } else {
+          failEdIds.push(edId);
+        }
+      } catch (e) {
+        failEdIds.push(edId);
+      }
+    }
+    return { successEdIds: successEdIds, failEdIds: failEdIds, snapshots: snapshots };
+  }
+
+  /**
+   * Cascade silme modal — V129 _showApplyModal pattern reuse.
+   * Tüm grup ED'leri checkbox liste, current ED disabled+checked.
+   * Default: tümü checked. "Sil" buton kırmızı.
+   * @param {string} currentEdId tıklanan ED
+   * @param {string} currentProductName tıklanan ED ürün adı
+   * @param {Array} sharedEds [{edId, productName, supplierId}]
+   * @param {string} slot belge slot key
+   * @param {Function} callback (selectedEdIds: Array<string>) => void
+   */
+  function _showDeleteCascadeModal(currentEdId, currentProductName, sharedEds, slot, callback) {
+    /* Backdrop + modal HTML */
+    const backdrop = document.createElement('div');
+    backdrop.id = 'sd-cascade-backdrop';
+    backdrop.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10002;display:flex;align-items:center;justify-content:center';
+    const modal = document.createElement('div');
+    modal.style.cssText = 'background:#fff;border-radius:8px;padding:20px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 4px 24px rgba(0,0,0,0.2)';
+    /* Başlık */
+    const totalCount = sharedEds.length + 1;
+    let html = '<h3 style="margin:0 0 8px 0;font-size:16px;color:#C62828">🗑 Paylaşımlı belge silinecek</h3>';
+    html += '<p style="margin:0 0 12px 0;font-size:13px;color:#555">Bu belge ' + totalCount + ' ED\'de paylaşılıyor. Hangilerinden silinsin?</p>';
+    /* Checkbox liste */
+    html += '<div style="border:1px solid #e5e5e5;border-radius:4px;padding:8px;margin-bottom:12px;max-height:280px;overflow-y:auto">';
+    html += '<label style="display:flex;align-items:center;gap:8px;padding:6px;background:#FFF3E0;border-radius:4px;font-size:13px;font-weight:600"><input type="checkbox" checked disabled> ' + _esc(currentProductName) + ' <span style="color:#888;font-size:11px">(seçili ED, zorunlu)</span></label>';
+    for (let i = 0; i < sharedEds.length; i++) {
+      const g = sharedEds[i];
+      html += '<label style="display:flex;align-items:center;gap:8px;padding:6px;font-size:13px;cursor:pointer"><input type="checkbox" data-cascade-ed="' + _esc(g.edId) + '" checked> ' + _esc(g.productName) + ' <span style="color:#888;font-size:11px">' + _esc(g.supplierId || '') + '</span></label>';
+    }
+    html += '</div>';
+    /* Butonlar */
+    html += '<div style="display:flex;justify-content:flex-end;gap:8px"><button id="sd-cascade-cancel" style="background:#eee;border:0;padding:8px 16px;border-radius:4px;cursor:pointer">Vazgeç</button><button id="sd-cascade-confirm" style="background:#C62828;color:#fff;border:0;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600">🗑 Sil</button></div>';
+    modal.innerHTML = html;
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+    /* Event handlers */
+    const cancelBtn = modal.querySelector('#sd-cascade-cancel');
+    const confirmBtn = modal.querySelector('#sd-cascade-confirm');
+    const cleanup = function() { try { backdrop.remove(); } catch (e) {} };
+    cancelBtn.onclick = cleanup;
+    confirmBtn.onclick = function() {
+      const checkedEds = [currentEdId];
+      const checkboxes = modal.querySelectorAll('input[data-cascade-ed]');
+      for (let i = 0; i < checkboxes.length; i++) {
+        if (checkboxes[i].checked) checkedEds.push(checkboxes[i].getAttribute('data-cascade-ed'));
+      }
+      cleanup();
+      callback(checkedEds);
+    };
+  }
+
   /* SHIPMENT-DOC-UI-EXTRACT-001: public namespace (V130) — V117 _shipmentDocUtil pattern reuse */
   /* V131 GENİŞLETME: countSharedEds eklendi */
   /* V132 GENİŞLETME: deleteFromSingleEd + undoDelete eklendi */
+  /* V132.1 GENİŞLETME: findEdsWithSameGroupId + deleteFromMultipleEds + showDeleteCascadeModal eklendi */
   window._sdApply = Object.freeze({
     SHARED_SLOTS: SHARED_SLOTS,
     findGroupedEds: _findGroupedEds,
@@ -355,7 +476,10 @@
     saveToMultipleEds: _saveToMultipleEds,
     countSharedEds: _countSharedEds,
     deleteFromSingleEd: _deleteFromSingleEd,
-    undoDelete: _undoDelete
+    undoDelete: _undoDelete,
+    findEdsWithSameGroupId: _findEdsWithSameGroupId,
+    deleteFromMultipleEds: _deleteFromMultipleEds,
+    showDeleteCascadeModal: _showDeleteCascadeModal
   });
 
 })();
