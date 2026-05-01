@@ -1283,9 +1283,11 @@
             + '<div style="font-size:10px;color:var(--t3,#6B7280);letter-spacing:.02em;margin-top:2px">' + _uiEsc(ed.supplierId || '—') + '</div>'
           + '</div>'
         + '</div>'
-        + '<div style="display:flex;gap:4px;flex-shrink:0">'
+        + '<div style="display:flex;gap:4px;flex-shrink:0;align-items:center">'
           + '<span style="font-size:9px;padding:2px 8px;border-radius:10px;background:' + stColor + '22;color:' + stColor + ';font-weight:500;letter-spacing:.04em">' + _uiEsc(stLabel).toUpperCase() + '</span>'
           + (pri === 'CRITICAL' ? '<span style="font-size:9px;padding:2px 8px;border-radius:10px;background:' + priColor + '22;color:' + priColor + ';font-weight:600;letter-spacing:.04em">⚠ ' + _uiEsc(priLabel).toUpperCase() + '</span>' : '')
+          /* SHIPMENT-DOC-LIST-PROGRESS-001: belge progress badge (V125, ed.shipmentDoc varsa görünür) */
+          + (window._shipmentDocCardBadgeHtml ? window._shipmentDocCardBadgeHtml(ed) : '')
         + '</div>'
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;flex-wrap:wrap">'

@@ -210,4 +210,57 @@
     document.addEventListener('keydown', escHandler);
   };
 
+  /* SHIPMENT-DOC-LIST-PROGRESS-001: card badge HTML üretici (V125) */
+
+  /**
+   * ED card top-right için kompakt belge progress badge HTML üret.
+   * Doc yoksa boş string döner (gürültü yok).
+   * Tıklanınca _shipmentDocUiOpen çağrılır.
+   * @param {Object} ed expected delivery objesi
+   * @returns {string} HTML veya boş string
+   */
+  window._shipmentDocCardBadgeHtml = function(ed) {
+    if (!ed || !ed.shipmentDoc) return '';
+    const sd = ed.shipmentDoc;
+    const stateColor = window._shipmentDocStateColor(sd.state);
+    const stateLabel = window._shipmentDocStateLabel(sd.state);
+
+    /* Belge sayısı (BELGE_META frozen ref reuse) */
+    const belgeMeta = window._shipmentDocUtil.BELGE_META;
+    const belgeKeys = Object.keys(belgeMeta);
+    const total = belgeKeys.length;
+    const filled = belgeKeys.filter(function(slot) {
+      const v = sd.belgeler[slot];
+      return Array.isArray(v) ? v.length > 0 : !!v;
+    }).length;
+
+    /* State'e göre içerik (mikro tasarım 1) */
+    let inner;
+    if (sd.state === 'KAPALI') {
+      inner = '🔒';
+    } else if (sd.state === 'REVIEW') {
+      inner = '⚠';
+    } else if (sd.state === 'ONAYLI') {
+      inner = '✓';
+    } else if (filled === total && total > 0) {
+      inner = filled + '/' + total;
+    } else {
+      inner = filled + '/' + total;
+    }
+
+    const tooltip = 'Belge: ' + filled + '/' + total + ' · ' + _esc(stateLabel) + ' (tıkla)';
+    const edIdSafe = _esc(ed.id);
+
+    return '<span ' +
+      'onclick="event.stopPropagation();window._shipmentDocUiOpen && window._shipmentDocUiOpen(\'' + edIdSafe + '\')" ' +
+      'title="' + _esc(tooltip) + '" ' +
+      'style="display:inline-flex;align-items:center;gap:4px;background:' + stateColor.bg + ';color:' + stateColor.fg +
+      ';border:1px solid ' + stateColor.border + ';padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;' +
+      'cursor:pointer;transition:transform 0.1s ease;line-height:1.4" ' +
+      'onmouseover="this.style.transform=\'scale(1.05)\'" ' +
+      'onmouseout="this.style.transform=\'scale(1)\'">' +
+      '📦 ' + _esc(inner) +
+      '</span>';
+  };
+
 })();

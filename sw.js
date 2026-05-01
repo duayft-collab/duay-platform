@@ -93,8 +93,9 @@
 /* [CACHE-BUMP-2026-05-01-V124] SHIPMENT-DOC-UPDATE-RETURN-FIX-001 — Saha testinde yakalanan hotfix: _shipmentDocUpdate noop early return'a unknownPaths field eklendi (Mikro tasarım 3 tutarlılığı), 720/800 (T2-prev: 3c22767) */
 /* [CACHE-BUMP-2026-05-01-V125] SHIPMENT-DOC-UI-MINIMAL-001 — İLK GÖRÜNÜR ÖZELLİK: ED ⋯ → "📦 Belgeler" → modal aç (read-only: state badge + 9 belge slot + Yük/Paket/Yerleşim + History toggle), yeni dosya expected_deliveries_docs_ui.js (213 satır), probe → "🧪 Probe (DevTools)" rename (T2-prev: 523f09f) */
 /* [CACHE-BUMP-2026-05-01-V126] SHIPMENT-DOC-UI-API-FIX-001 — Saha testinde yakalanan hotfix: ui.js'te _shipmentDocBelgeMeta + _shipmentDocKritikAlanlar getter fn olarak yanlış kullanılmıştı, _shipmentDocUtil namespace direkt frozen referansları geçildi (Object.keys(null) throw fix) (T2-prev: 6048d33) */
-const CACHE_NAME    = 'duay-platform-v126';
-const CACHE_VERSION = '126.0.0';
+/* [CACHE-BUMP-2026-05-01-V127] SHIPMENT-DOC-LIST-PROGRESS-001 — ED kart sağ üst köşesinde belge progress badge: 📦 5/9 (state-aware: ONAYLI=✓, REVIEW=⚠, KAPALI=🔒), tıklayınca _shipmentDocUiOpen modal açar, ed.shipmentDoc yoksa görünmez (sessiz), V117 stateColor 4 katman reuse (T2-prev: 4d5e16c) */
+const CACHE_NAME    = 'duay-platform-v127';
+const CACHE_VERSION = '127.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
