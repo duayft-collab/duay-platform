@@ -56,6 +56,38 @@
     return Math.ceil((est - Date.now()) / 86400000);
   };
 
+  /* SHIPMENT-LIST-COLUMNS-002: konteyner kapasite hesaplayıcı (V133.1) */
+  window._edCalculateContainers = function(ed) {
+    var wt = parseFloat(ed && ed.weightKg) || 0;
+    var vol = parseFloat(ed && ed.volumeM3) || 0;
+    if (wt === 0 && vol === 0) return null;
+    var C20_VOL = 33, C20_WT = 28000;
+    var C40_VOL = 67, C40_WT = 26500;
+    var need20 = Math.max(Math.ceil(vol / C20_VOL), Math.ceil(wt / C20_WT));
+    var limitedBy = (wt / C20_WT) > (vol / C20_VOL) ? 'ağırlık' : 'hacim';
+    var fits40 = vol <= C40_VOL && wt <= C40_WT;
+    var fillVol = Math.round((vol / C20_VOL) * 100);
+    var fillWt = Math.round((wt / C20_WT) * 100);
+    if (need20 === 1) {
+      return { wt: wt, vol: vol, need20: 1, limitedBy: limitedBy, level: 'ok',
+               text: '✅ 1 × 20ft yeter (' + fillVol + '% hacim, ' + fillWt + '% ağırlık)',
+               color: '#3B6D11' };
+    }
+    if (need20 === 2 && fits40) {
+      return { wt: wt, vol: vol, need20: 2, limitedBy: limitedBy, level: 'warn',
+               text: '⚠️ 2 × 20ft veya 1 × 40ft (' + limitedBy + ' limiti)',
+               color: '#BA7517' };
+    }
+    if (need20 === 2) {
+      return { wt: wt, vol: vol, need20: 2, limitedBy: limitedBy, level: 'warn',
+               text: '⚠️ 2 × 20ft gerekli (' + limitedBy + ' limiti)',
+               color: '#BA7517' };
+    }
+    return { wt: wt, vol: vol, need20: need20, limitedBy: limitedBy, level: 'critical',
+             text: '🔴 ' + need20 + ' × 20ft gerekli (' + limitedBy + ' limiti)',
+             color: '#A32D2D' };
+  };
+
   window._edEnrich = function(ed) {
     if (!ed) return ed;
     ed.quantityDelivered = window._edCalculateDelivered(ed);
@@ -250,6 +282,8 @@
         + '<div>' + _edWizardLabel('Satınalma Sorumlusu') + '<select id="ede-satinAlmaSorumlusu" style="' + _edWizardInput + '">' + _edUserOpts(ed.satinAlmaSorumlusu || '') + '</select></div>'
         + '<div style="grid-column:span 2;font-size:11px;font-weight:600;color:var(--t2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--b)">Sevkiyat & Takip</div>'
         + '<div>' + _edWizardLabel('Konteyner No') + '<input id="ede-konteynerNo" style="' + _edWizardInput + '" value="' + _uiEsc(ed.konteynerNo || '') + '"></div>'
+        + '<div>' + _edWizardLabel('Ağırlık (kg)') + '<input id="ede-weightKg" type="number" min="0" step="0.1" placeholder="örn: 2450" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.weightKg || '') + '"></div>'
+        + '<div>' + _edWizardLabel('Hacim (m³)') + '<input id="ede-volumeM3" type="number" min="0" step="0.1" placeholder="örn: 12.5" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.volumeM3 || '') + '"></div>'
         + '<div>' + _edWizardLabel('Armatör') + '<select id="ede-armator" onchange="window._edAutoFillTrackingUrl && window._edAutoFillTrackingUrl()" style="' + _edWizardInput + '">' + ['','MSC','Maersk','CMA CGM','COSCO','Hapag-Lloyd','ONE','Evergreen','Yang Ming','HMM','ZIM','PIL','OOCL','Diger'].map(function(__c){return '<option value="' + __c + '"' + (ed.armator === __c ? ' selected' : '') + '>' + (__c || '— Seçin —') + '</option>';}).join('') + '</select></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Yükleme Firma') + '<input id="ede-yuklemeFirmaAd" style="' + _edWizardInput + '" value="' + _uiEsc(ed.yuklemeFirmaAd || '') + '"></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Tracking URL') + '<div style="display:flex;gap:6px;align-items:stretch">' + '<input id="ede-trackingUrl" type="url" style="' + _edWizardInput + ';flex:1" value="' + _uiEsc(ed.trackingUrl || '') + '" placeholder="https://...">' + '<button type="button" onclick="window._edOpenTrackingUrl && window._edOpenTrackingUrl()" style="padding:8px 14px;border:0.5px solid var(--b);background:var(--s2);color:var(--t2);border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap" title="Yeni sekmede aç">🔗 Aç</button>' + '</div></div>'
@@ -293,6 +327,8 @@
         avansOdemeTarihi: document.getElementById('ede-avansOdemeTarihi')?.value || '',
         satinAlmaSorumlusu: document.getElementById('ede-satinAlmaSorumlusu')?.value || '',
         konteynerNo: document.getElementById('ede-konteynerNo')?.value || '',
+        weightKg: parseFloat(document.getElementById('ede-weightKg')?.value) || null,
+        volumeM3: parseFloat(document.getElementById('ede-volumeM3')?.value) || null,
         armator: document.getElementById('ede-armator')?.value || '',
         yuklemeFirmaAd: document.getElementById('ede-yuklemeFirmaAd')?.value || '',
         trackingUrl: document.getElementById('ede-trackingUrl')?.value || '',
@@ -321,6 +357,8 @@
     list[idx].avansOdemeTarihi = document.getElementById('ede-avansOdemeTarihi')?.value || '';
     list[idx].satinAlmaSorumlusu = document.getElementById('ede-satinAlmaSorumlusu')?.value || '';
     list[idx].konteynerNo = document.getElementById('ede-konteynerNo')?.value || '';
+    list[idx].weightKg = parseFloat(document.getElementById('ede-weightKg')?.value) || null;
+    list[idx].volumeM3 = parseFloat(document.getElementById('ede-volumeM3')?.value) || null;
     list[idx].armator = document.getElementById('ede-armator')?.value || '';
     list[idx].yuklemeFirmaAd = document.getElementById('ede-yuklemeFirmaAd')?.value || '';
     list[idx].trackingUrl = document.getElementById('ede-trackingUrl')?.value || '';
@@ -1299,6 +1337,8 @@
       + '</div>'
       /* SHIPMENT-LIST-COLUMNS-001: konteynerNo chip (V133, conditional render) */
       + (ed.konteynerNo ? '<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><span title="Konteyner / TIR" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:ui-monospace,monospace;color:#185FA5;background:#E6F1FB;padding:3px 8px;border-radius:6px;font-weight:500">🚛 ' + _uiEsc(ed.konteynerNo) + '</span></div>' : '')
+      /* SHIPMENT-LIST-COLUMNS-002: KG/m³ chip + konteyner uyarı (V133.1, conditional) */
+      + ((ed.weightKg || ed.volumeM3) ? '<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"><div style="display:flex;gap:8px;flex-wrap:wrap"><span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:ui-monospace,monospace;color:#0F6E56;background:#E1F5EE;padding:3px 8px;border-radius:6px;font-weight:500">⚖ ' + (ed.weightKg ? Math.round(ed.weightKg).toLocaleString('tr-TR') + ' kg' : '—') + (ed.volumeM3 ? ' / ' + ed.volumeM3.toLocaleString('tr-TR') + ' m³' : '') + '</span></div>' + (function(){ var __c = window._edCalculateContainers && window._edCalculateContainers(ed); return __c ? '<div style="font-size:10px;color:' + __c.color + ';font-weight:500">' + __c.text + '</div>' : ''; })() + '</div>' : '')
       + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">'
         + '<div style="font-size:10px;color:var(--t3,#6B7280)">🗓 ' + etaStr + ' · 👤 ' + _uiEsc(sorumlu) + '</div>'
         + '<div style="display:flex;gap:4px">'
@@ -1991,7 +2031,8 @@
       var qd = ed.quantityDelivered || 0, qt = ed.quantityTotal || 0;
       var pct = qt > 0 ? Math.round(qd/qt*100) : 0;
       var __yon = ed.yon || 'GIDEN';
-      var __rowBg = __yon === 'GELEN' ? 'rgba(59,130,246,0.06)' : 'rgba(249,115,22,0.06)';
+      /* SHIPMENT-LIST-COLUMNS-002: TIR grup tint — konteynerNo varsa #E3F2FD override (V133.1) */
+      var __rowBg = ed.konteynerNo ? '#E3F2FD' : (__yon === 'GELEN' ? 'rgba(59,130,246,0.06)' : 'rgba(249,115,22,0.06)');
       var __yonBadge = __yon === 'GELEN' ? '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#DBEAFE;color:#1E40AF;font-weight:500">📥 GELEN</span>' : '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#FED7AA;color:#9A3412;font-weight:500">📤 GIDEN</span>';
       var __sorumluAd = ed.responsibleUserId ? _edUserAd(ed.responsibleUserId) : '';
       var __sorumluInitials = __sorumluAd && __sorumluAd !== '—' ? __sorumluAd.split(' ').map(function(__p){return (__p[0]||'').toUpperCase();}).slice(0,2).join('') : '—';
@@ -2002,16 +2043,17 @@
       if (window._shipmentDocCardBadgeHtml) __ikonlar += window._shipmentDocCardBadgeHtml(ed);
       if (!__ikonlar) __ikonlar = '<span style="color:var(--t3);font-size:10px">—</span>';
       /* LOJISTIK-RENK-001: 11-kolon grid (8→11) + İhracat ID hücresi */
-      return '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 0.8fr 0.8fr 0.7fr 1fr 0.7fr 0.7fr auto;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
+      return '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 1fr 0.8fr 0.9fr 0.8fr 0.7fr 1fr 0.7fr 0.7fr auto;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
         + '<div>' + __yonBadge + '</div>'
         + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ed.ihracatId ? esc(String(ed.ihracatId).slice(0,15)) : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div><div style="font-weight:500;color:var(--t)">'+esc(ed.productName||'—')+'</div>'
-        + '<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(tedAd)+'</div>'
-        /* SHIPMENT-LIST-COLUMNS-001: konteynerNo alt satır (V133, conditional) */
-        + (ed.konteynerNo ? '<div style="font-size:10px;color:#185FA5;margin-top:2px;font-family:ui-monospace,monospace">🚛 ' + esc(ed.konteynerNo) + '</div>' : '')
-        + '</div>'
+        + '<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(tedAd)+'</div></div>'
+        /* SHIPMENT-LIST-COLUMNS-002: Konteyner ayrı sütun (V133.1, mockup'a sadık — V133 chip kaldırıldı) */
+        + '<div style="font-family:ui-monospace,monospace;font-size:10px;color:#185FA5">' + (ed.konteynerNo ? '🚛 ' + esc(ed.konteynerNo) : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div onclick="event.stopPropagation()"><select onchange="window._edStatusChange && window._edStatusChange(\'' + esc(ed.id) + '\', this.value)" style="padding:3px 8px;border-radius:10px;font-size:10px;font-weight:500;color:' + st['c'] + ';background:' + st['bg'] + ';border:0.5px solid ' + st['c'] + '33;cursor:pointer;font-family:inherit">' + STATUSES.map(function(__sk){var __s = STATUS[__sk];return '<option value="' + __sk + '"' + (ed.status === __sk ? ' selected' : '') + '>' + esc(__s ? __s['t'] : __sk) + '</option>';}).join('') + '</select></div>'
         + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+qd+'/'+qt+' <span style="color:var(--t3);font-size:10px">(%'+pct+')</span></div>'
+        /* SHIPMENT-LIST-COLUMNS-002: KG/m³ + konteyner uyarı (V133.1) */
+        + '<div style="font-size:10px;line-height:1.3">' + ((ed.weightKg || ed.volumeM3) ? '<div style="font-family:ui-monospace,monospace;color:var(--t2);font-weight:500">' + (ed.weightKg ? Math.round(ed.weightKg).toLocaleString('tr-TR') + ' kg' : '—') + (ed.volumeM3 ? ' / ' + ed.volumeM3.toLocaleString('tr-TR') + ' m³' : '') + '</div>' + (function() { var c = window._edCalculateContainers && window._edCalculateContainers(ed); return c ? '<div style="color:' + c.color + ';margin-top:2px">' + c.text + '</div>' : ''; })() : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+esc(eta)+'</div>'
         + '<div style="font-size:11px;font-weight:600;color:var(--t2);text-align:center" title="' + esc(__sorumluAd || 'Atanmamış') + '">' + esc(__sorumluInitials) + '</div>'
         /* LOJISTIK-RENK-001: Sipariş Kodu + Renk hücreleri */
@@ -2023,8 +2065,8 @@
     }).join('');
 
     /* LOJISTIK-RENK-001: 8→11 kolon (Yön | İhracatID | Ürün/Ted | Durum | Miktar | Tahmini | Sorumlu | SipKod | Renk | İkon | Aksiyon) */
-    var hdrRow = '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 0.8fr 0.8fr 0.7fr 1fr 0.7fr 0.7fr auto;gap:10px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
-      + '<div>Yön</div><div>İhracat ID</div><div>Ürün / Tedarikçi</div><div>Durum</div><div>Miktar</div><div>Tahmini</div><div>Sorumlu</div><div>Sipariş Kodu</div><div>Renk</div><div>İkon</div><div></div></div>';
+    var hdrRow = '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 1fr 0.8fr 0.9fr 0.8fr 0.7fr 1fr 0.7fr 0.7fr auto;gap:10px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
+      + '<div>Yön</div><div>İhracat ID</div><div>Ürün / Tedarikçi</div><div style="background:#FFF8E1;border-radius:4px 4px 0 0;padding:4px 6px;margin:-4px -6px">Konteyner</div><div>Durum</div><div>Miktar</div><div style="background:#E8F5E9;border-radius:4px 4px 0 0;padding:4px 6px;margin:-4px -6px">KG / m³</div><div>Tahmini</div><div>Sorumlu</div><div>Sipariş Kodu</div><div>Renk</div><div>İkon</div><div></div></div>';
 
     return '<div id="ed-list-container" style="'+card+'">'
       + '<div style="'+hdr+'">'
