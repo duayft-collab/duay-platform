@@ -91,8 +91,9 @@
 /* [CACHE-BUMP-2026-05-01-V122] SHIPMENT-DOC-UPDATE-001 — _shipmentDocUpdate ilk mutator (flat patch + diff + REVIEW state + pendingApprovals + audit STATE_CHANGE/UPDATE), K01 803/800 bilinçli aşım (V123 split ile çözülecek) (T2-prev: a4c7734) */
 /* [CACHE-BUMP-2026-05-01-V123] SHIPMENT-DOC-PROBE-EXTRACT-001 — Probe fn ayrı dosyaya çıkarıldı (expected_deliveries_docs_probe.js, ~106 satır), docs.js 803→713 (K01 ≤800 ✓ borç KAPANDI), pure refactor 0 davranış değişikliği (T2-prev: 1edd997) */
 /* [CACHE-BUMP-2026-05-01-V124] SHIPMENT-DOC-UPDATE-RETURN-FIX-001 — Saha testinde yakalanan hotfix: _shipmentDocUpdate noop early return'a unknownPaths field eklendi (Mikro tasarım 3 tutarlılığı), 720/800 (T2-prev: 3c22767) */
-const CACHE_NAME    = 'duay-platform-v124';
-const CACHE_VERSION = '124.0.0';
+/* [CACHE-BUMP-2026-05-01-V125] SHIPMENT-DOC-UI-MINIMAL-001 — İLK GÖRÜNÜR ÖZELLİK: ED ⋯ → "📦 Belgeler" → modal aç (read-only: state badge + 9 belge slot + Yük/Paket/Yerleşim + History toggle), yeni dosya expected_deliveries_docs_ui.js (213 satır), probe → "🧪 Probe (DevTools)" rename (T2-prev: 523f09f) */
+const CACHE_NAME    = 'duay-platform-v125';
+const CACHE_VERSION = '125.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
