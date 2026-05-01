@@ -58,17 +58,41 @@
     const belgeMeta = window._shipmentDocUtil.BELGE_META;
     const kritikAlanlar = window._shipmentDocUtil.KRITIK_ALANLAR;
 
-    /* 9 belge slot grid */
+    /* 9 belge slot grid (V127: tıklanabilir, filename + indir + zorunlu *) */
     const belgeSlots = Object.keys(belgeMeta).map(function(slot) {
       const meta = belgeMeta[slot];
       const value = sd.belgeler[slot];
       const filled = (Array.isArray(value) ? value.length > 0 : !!value);
       const icon = filled ? '✓' : '○';
       const color = filled ? '#1A8D6F' : '#999';
-      return '<div style="padding:8px 10px;border:1px solid #e5e5e5;border-radius:6px;background:' +
-        (filled ? '#F0F9F5' : '#FAFAFA') + '">' +
+      /* SHIPMENT-DOC-UPLOAD-001: filled state'te filename, multi'de count (V127) */
+      let displayName = meta.label || slot;
+      let downloadUrl = '';
+      if (filled && !meta.multi && value && value.filename) {
+        /* Single-file: filename kısalt (max 22 char, uzun ise ortadan …) */
+        displayName = value.filename.length > 22
+          ? value.filename.substring(0, 10) + '…' + value.filename.substring(value.filename.length - 10)
+          : value.filename;
+        downloadUrl = value.url || '';
+      } else if (filled && meta.multi && Array.isArray(value)) {
+        displayName = value.length + ' dosya';
+      }
+      /* SHIPMENT-DOC-UPLOAD-001: zorunlu * indicator (V127) */
+      const zorunluPrefix = meta.zorunlu ? '<span style="color:#A32D2D;font-weight:700">* </span>' : '';
+      /* SHIPMENT-DOC-UPLOAD-001: KAPALI guard + click handler (V127) */
+      const isKapali = sd.state === 'KAPALI';
+      const slotOnclick = isKapali ? '' : ' onclick="event.stopPropagation();window._shipmentDocUiUploadFile(\'' + _esc(edId) + '\',\'' + _esc(slot) + '\')"';
+      const slotCursor = isKapali ? 'cursor:not-allowed;opacity:0.6' : 'cursor:pointer';
+      const slotTitle = isKapali ? ' title="KAPALI — değiştirilemez"' : (filled ? ' title="Tıkla: değiştir"' : ' title="Tıkla: dosya yükle"');
+      /* İndir link (filled + url varsa, slot click'e propagate olmaz) */
+      const downloadLink = downloadUrl
+        ? '<a href="' + _esc(downloadUrl) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="position:absolute;bottom:4px;right:6px;font-size:11px;color:#1976D2;text-decoration:none" title="İndir">↓</a>'
+        : '';
+      return '<div' + slotOnclick + slotTitle + ' style="position:relative;padding:8px 10px;border:1px solid #e5e5e5;border-radius:6px;background:' +
+        (filled ? '#F0F9F5' : '#FAFAFA') + ';' + slotCursor + '">' +
         '<div style="font-size:18px;color:' + color + ';font-weight:600">' + icon + ' ' + _esc(meta.icon || '📄') + '</div>' +
-        '<div style="font-size:11px;color:#666;margin-top:4px">' + _esc(meta.label || slot) + '</div>' +
+        '<div style="font-size:11px;color:#666;margin-top:4px;word-break:break-all">' + zorunluPrefix + _esc(displayName) + '</div>' +
+        downloadLink +
         '</div>';
     }).join('');
 
@@ -335,6 +359,108 @@
     _activeEditInput = inputEl;
     inputEl.focus();
     if (inputEl.select) inputEl.select();
+  };
+
+  /* SHIPMENT-DOC-UPLOAD-001: belge slot dosya yükleme (V127) */
+
+  /**
+   * Belge slot tıklandığında çağrılır. Hidden file input açar, base64
+   * dönüştürür, _uploadBase64ToStorage ile Firebase'e yükler, sd.belgeler
+   * objesini günceller.
+   * @param {string} edId expected delivery id
+   * @param {string} slot slot key (ör. 'irsaliye', 'kantar')
+   */
+  window._shipmentDocUiUploadFile = function(edId, slot) {
+    /* Auto-create defensive (sd null ise yarat — fn no-arg, kendi fallback'ini kullanır) */
+    let sd = window._shipmentDocGet(edId);
+    if (!sd) {
+      window._shipmentDocCreate(edId);
+      sd = window._shipmentDocGet(edId);
+    }
+    if (!sd) { window.toast && window.toast('Belge takip dosyası açılamadı', 'err'); return; }
+    if (sd.state === 'KAPALI') { window.toast && window.toast('Bu ED kapalı, dosya yüklenemez', 'err'); return; }
+
+    const meta = window._shipmentDocUtil.BELGE_META[slot];
+    if (!meta) { window.toast && window.toast('Bilinmeyen slot: ' + slot, 'err'); return; }
+
+    /* V127 MVP: sadece single-file slot (multi V128'e ertelendi) */
+    if (meta.multi) { window.toast && window.toast('Çoklu dosya yükleme V128 cycle\'da gelecek', 'err'); return; }
+
+    /* Yüklü slot kontrolü — replace confirm */
+    const existingValue = sd.belgeler[slot];
+    if (existingValue && !confirm('Bu slotta zaten dosya var: ' + (existingValue.filename || 'dosya') + '\n\nDeğiştirmek istiyor musunuz?')) {
+      return;
+    }
+
+    /* Hidden file input yarat */
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = (meta.mimes || []).map(function(m) { return '.' + m; }).join(',');
+    inp.style.display = 'none';
+    document.body.appendChild(inp);
+
+    inp.onchange = async function() {
+      const file = inp.files && inp.files[0];
+      if (inp.parentNode) document.body.removeChild(inp);
+      if (!file) return;
+
+      /* MIME validation (browser-agnostic, .ext check) */
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      if (meta.mimes && meta.mimes.indexOf(ext) === -1) {
+        window.toast && window.toast('Geçersiz dosya tipi: .' + ext + ' (kabul: ' + meta.mimes.join(',') + ')', 'err');
+        return;
+      }
+
+      /* Boyut kontrolü (10MB sınır) */
+      const MAX_SIZE = 10 * 1024 * 1024;
+      if (file.size > MAX_SIZE) {
+        window.toast && window.toast('Dosya çok büyük: ' + Math.round(file.size / 1024 / 1024) + 'MB (max 10MB)', 'err');
+        return;
+      }
+
+      /* Toast loading */
+      window.toast && window.toast('Yükleniyor: ' + file.name, '');
+
+      try {
+        /* Base64 dönüşüm */
+        const base64 = await new Promise(function(resolve, reject) {
+          const reader = new FileReader();
+          reader.onload = function() { resolve(reader.result); };
+          reader.onerror = function() { reject(new Error('FileReader hatası')); };
+          reader.readAsDataURL(file);
+        });
+
+        /* Firebase storage upload */
+        if (typeof window._uploadBase64ToStorage !== 'function') {
+          throw new Error('Storage API yok (_uploadBase64ToStorage)');
+        }
+        const downloadUrl = await window._uploadBase64ToStorage(base64, file.name, 'shipment-docs/' + edId);
+
+        /* SlotMeta obje (uploadedBy: V117 helper) */
+        const slotMeta = {
+          url: downloadUrl,
+          filename: file.name,
+          size: file.size,
+          mime: ext,
+          uploadedAt: new Date().toISOString(),
+          uploadedBy: (window._shipmentDocUtil && window._shipmentDocUtil.cuId && window._shipmentDocUtil.cuId()) || 'system'
+        };
+
+        /* sd update via V122 mutator */
+        const result = window._shipmentDocUpdate(edId, 'belgeler.' + slot, slotMeta);
+        if (result && result.success !== false) {
+          window.toast && window.toast('Yüklendi: ' + file.name, 'ok');
+          window._shipmentDocUiOpen(edId);
+        } else {
+          window.toast && window.toast('Kayıt başarısız: ' + (result && result.error || 'bilinmeyen'), 'err');
+        }
+      } catch (e) {
+        window.toast && window.toast('Yükleme hatası: ' + (e.message || 'bilinmeyen'), 'err');
+      }
+    };
+
+    /* File picker'ı tetikle */
+    inp.click();
   };
 
   /* SHIPMENT-DOC-LIST-PROGRESS-001: card badge HTML üretici (V125) */
