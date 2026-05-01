@@ -610,4 +610,194 @@
     if (typeof window.toast === 'function') window.toast('Probe console\'a yazıldı (F12 → Console)', 'info');
   };
 
+  /* SHIPMENT-DOC-UPDATE-001: ilk gerçek mutator — flat patch + diff + REVIEW state */
+
+  /**
+   * Schema'da tanınan dotted path mı kontrol et (bilinmeyen path warn için).
+   * Kabul: belgeler.*, yuk.*, paket.*, yerlesim.*, paydaslar.*, ayrıca
+   *        state, ownerId, reviewRequired üst-level alanlar.
+   * @param {string} path
+   * @returns {boolean}
+   */
+  function _isKnownPath(path) {
+    if (!path || typeof path !== 'string') return false;
+    const allowedRoots = ['belgeler', 'yuk', 'paket', 'yerlesim', 'paydaslar'];
+    const root = path.split('.')[0];
+    return allowedRoots.indexOf(root) !== -1;
+  }
+
+  /**
+   * Tek alan veya çoklu flat patch ile shipmentDoc'u güncelle.
+   * Storage'a yazar, audit log'a kaydeder, kritik alan değişiminde REVIEW
+   * state'ine geçer.
+   *
+   * @param {string} edId hedef ED
+   * @param {string|Object} pathOrPatch tek path string VEYA flat patch obj
+   * @param {*} [valueIfPath] path verilmişse yeni değer
+   * @param {Object} [opts] { reason?: string, severity?: string }
+   * @returns {{success: boolean, sd?: Object, changed?: Array<string>,
+   *            requiresReview?: boolean, error?: string}}
+   *
+   * Örnek kullanım:
+   *   _shipmentDocUpdate(edId, 'yuk.m3', 3.6)
+   *   _shipmentDocUpdate(edId, {'yuk.brutKg': 2400, 'paket.adet': 48}, null, {reason: 'kantar düzeltmesi'})
+   */
+  window._shipmentDocUpdate = function(edId, pathOrPatch, valueIfPath, opts) {
+    /* 1. Guard: edId */
+    if (!edId) return { success: false, error: 'edId_required' };
+
+    /* 2. Patch normalize: tek path → obje */
+    let patch;
+    if (typeof pathOrPatch === 'string') {
+      patch = {}; patch[pathOrPatch] = valueIfPath;
+    } else if (pathOrPatch && typeof pathOrPatch === 'object') {
+      patch = pathOrPatch;
+    } else {
+      return { success: false, error: 'invalid_patch' };
+    }
+    opts = opts || {};
+
+    /* 3. ED + sd guard */
+    const list = _edListRaw();
+    const idx = _edFindIdx(list, edId);
+    if (idx === -1) return { success: false, error: 'ed_not_found' };
+    const ed = list[idx];
+    const sd = ed.shipmentDoc;
+    if (!sd) return { success: false, error: 'sd_not_found' };
+
+    /* 4. KAPALI immutable (sahtecilik koruması — reopen V124+) */
+    if (sd.state === 'KAPALI') {
+      return { success: false, error: 'closed_immutable' };
+    }
+
+    /* 5. Diff hesapla */
+    const changed = [];
+    const beforeSnapshot = {};
+    const afterSnapshot = {};
+    let kritikDetected = false;
+    const kritikPaths = [];
+    const unknownPaths = [];
+
+    for (const path in patch) {
+      if (!Object.prototype.hasOwnProperty.call(patch, path)) continue;
+
+      /* Mikro tasarım 1: bilinmeyen path warn + atla */
+      if (!_isKnownPath(path)) {
+        unknownPaths.push(path);
+        continue;
+      }
+
+      const before = _getPath(sd, path);
+      const after = patch[path];
+
+      /* Strict equality + JSON deep compare (obje/array için) */
+      let isEqual = (before === after);
+      if (!isEqual && typeof before === 'object' && typeof after === 'object') {
+        try { isEqual = JSON.stringify(before) === JSON.stringify(after); } catch (e) { isEqual = false; }
+      }
+      if (isEqual) continue;
+
+      beforeSnapshot[path] = before;
+      afterSnapshot[path] = after;
+      changed.push(path);
+
+      if (_isFieldKritik(path)) {
+        kritikDetected = true;
+        kritikPaths.push(path);
+      }
+    }
+
+    /* Mikro tasarım 2: boş diff noop */
+    if (changed.length === 0) {
+      if (unknownPaths.length) {
+        console.warn('[SHIPMENT-DOC-UPDATE-001] bilinmeyen path(lar) atlandı:', unknownPaths);
+      }
+      return { success: true, sd: sd, changed: [], requiresReview: false, noop: true };
+    }
+
+    /* 6. Kritik + HAZIR/ONAYLI ise reason zorunlu */
+    const requiresReview = kritikDetected && (sd.state === 'HAZIR' || sd.state === 'ONAYLI');
+    if (requiresReview && (!opts.reason || !opts.reason.trim())) {
+      return { success: false, error: 'reason_required_for_critical_review', kritikPaths: kritikPaths };
+    }
+
+    /* 7. Patch uygula (storage'a değil, sd objesine) */
+    for (let i = 0; i < changed.length; i++) {
+      _setPath(sd, changed[i], afterSnapshot[changed[i]]);
+    }
+    sd.updatedAt = _now();
+
+    /* 8. State transition (BOS → TASLAK otomatik, HAZIR/ONAYLI → REVIEW kritikse) */
+    let stateChanged = false;
+    const prevState = sd.state;
+
+    if (sd.state === 'BOS') {
+      const can = _canTransition('BOS', 'TASLAK');
+      if (can.allowed) {
+        sd.state = 'TASLAK';
+        stateChanged = true;
+      }
+    } else if (requiresReview) {
+      const can = _canTransition(sd.state, 'REVIEW');
+      if (can.allowed) {
+        sd.reviewRequired = true;
+        if (!Array.isArray(sd.pendingApprovals)) sd.pendingApprovals = [];
+        sd.pendingApprovals.push({
+          id: 'pa_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          requestedBy: _cuId(),
+          requestedAt: _now(),
+          paths: kritikPaths.slice(),
+          reason: opts.reason,
+          status: 'pending'
+        });
+        sd.state = 'REVIEW';
+        stateChanged = true;
+      }
+    }
+
+    /* 9. Audit: önce STATE_CHANGE (varsa), sonra UPDATE */
+    if (stateChanged) {
+      _logHistory(sd, 'STATE_CHANGE', {
+        severity: requiresReview ? 'WARN' : 'INFO',
+        before: prevState,
+        after: sd.state,
+        reason: opts.reason || null,
+        details: requiresReview ? { kritikPaths: kritikPaths } : null
+      });
+    }
+
+    _logHistory(sd, 'UPDATE', {
+      severity: kritikDetected ? 'WARN' : (opts.severity || 'INFO'),
+      before: beforeSnapshot,
+      after: afterSnapshot,
+      reason: opts.reason || null,
+      details: { changedCount: changed.length, kritikDetected: kritikDetected }
+    });
+
+    /* 10. Storage'a yaz */
+    list[idx] = ed;
+    try {
+      _edListStore(list);
+    } catch (e) {
+      console.warn('[SHIPMENT-DOC-UPDATE-001] store fail:', e && e.message);
+      if (typeof window.toast === 'function') window.toast('Kayıt yazılamadı', 'err');
+      return { success: false, error: 'store_failed' };
+    }
+
+    if (unknownPaths.length) {
+      console.warn('[SHIPMENT-DOC-UPDATE-001] bilinmeyen path(lar) atlandı:', unknownPaths);
+    }
+
+    /* Mikro tasarım 3: zengin return */
+    return {
+      success: true,
+      sd: sd,
+      changed: changed,
+      requiresReview: requiresReview,
+      stateChanged: stateChanged,
+      kritikDetected: kritikDetected,
+      unknownPaths: unknownPaths.length ? unknownPaths : undefined
+    };
+  };
+
 })();
