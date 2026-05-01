@@ -264,4 +264,150 @@
     return sd;
   };
 
+  /* SHIPMENT-DOC-AUDIT-001: action sözlüğü (Object.freeze — UI cycle'larında reuse) */
+  const HISTORY_ACTIONS = Object.freeze([
+    'CREATE', 'UPDATE', 'STATE_CHANGE', 'UPLOAD', 'DELETE',
+    'REVIEW_OPEN', 'REVIEW_RESOLVE', 'APPROVE', 'REJECT', 'OVERRIDE', 'CLOSE'
+  ]);
+
+  const SEVERITY_LEVELS = Object.freeze(['INFO', 'WARN', 'CRIT']);
+
+  /* SHIPMENT-DOC-AUDIT-001: action meta — UI render için (icon/label/color) */
+  const AUDIT_TYPE_META = Object.freeze({
+    CREATE:         Object.freeze({ icon: '🆕', label: 'Oluşturuldu',     color: 'TASLAK' }),
+    UPDATE:         Object.freeze({ icon: '✏️', label: 'Güncellendi',     color: 'TASLAK' }),
+    STATE_CHANGE:   Object.freeze({ icon: '🔄', label: 'Durum değişti',   color: 'HAZIR'  }),
+    UPLOAD:         Object.freeze({ icon: '📎', label: 'Belge eklendi',   color: 'ONAYLI' }),
+    DELETE:         Object.freeze({ icon: '🗑️', label: 'Belge silindi',   color: 'REVIEW' }),
+    REVIEW_OPEN:    Object.freeze({ icon: '⚠️', label: 'İnceleme açıldı', color: 'REVIEW' }),
+    REVIEW_RESOLVE: Object.freeze({ icon: '✅', label: 'İnceleme bitti',  color: 'ONAYLI' }),
+    APPROVE:        Object.freeze({ icon: '👍', label: 'Onaylandı',       color: 'ONAYLI' }),
+    REJECT:         Object.freeze({ icon: '👎', label: 'Reddedildi',      color: 'REVIEW' }),
+    OVERRIDE:       Object.freeze({ icon: '🔓', label: 'Admin müdahale',  color: 'REVIEW' }),
+    CLOSE:          Object.freeze({ icon: '🔒', label: 'Kapatıldı',       color: 'KAPALI' })
+  });
+
+  const HISTORY_MAX = 100;
+
+  /**
+   * Ad maskele — K14 PII koruması (render aşamasında non-admin için).
+   * Storage'da ham tutulur; bu fn UI render'ında çağrılır.
+   * @param {string} name
+   * @returns {string} "Mehmet Kara" → "Me**** Ka"
+   */
+  function _maskName(name) {
+    if (!name || typeof name !== 'string') return '???';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) {
+      const w = parts[0];
+      if (w.length <= 4) return w[0] + '***';
+      return w.slice(0, 2) + '****' + w.slice(-2);
+    }
+    const first = parts[0];
+    const last = parts[parts.length - 1];
+    const fp = first.length <= 2 ? first[0] + '*' : first.slice(0, 2) + '****';
+    const lp = last.length <= 2 ? last : last.slice(0, 2);
+    return fp + ' ' + lp;
+  }
+
+  /**
+   * Audit kayıt id üret — kronolojik sort + dedup için unique.
+   * @returns {string} "aud_<ms>_<rand4>"
+   */
+  function _auditId() {
+    return 'aud_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+  }
+
+  /**
+   * shipmentDoc.history'ye kayıt ekler + window.logActivity'ye paslar (çift kayıt).
+   * FIFO: HISTORY_MAX aşılırsa en eski silinir, archivedCount artırılır.
+   * Dedup tuzağına karşı: window.logActivity'ye obje değil string detay verir.
+   *
+   * @param {Object} sd shipmentDoc objesi
+   * @param {string} action HISTORY_ACTIONS'tan biri
+   * @param {Object} [opts] { severity?, details?, before?, after?, reason? }
+   * @returns {Object|null} eklenen entry veya null (sd geçersizse)
+   */
+  function _logHistory(sd, action, opts) {
+    if (!sd || typeof sd !== 'object') return null;
+    if (HISTORY_ACTIONS.indexOf(action) === -1) {
+      console.warn('[SHIPMENT-DOC-AUDIT-001] geçersiz action:', action);
+      return null;
+    }
+    opts = opts || {};
+    const severity = SEVERITY_LEVELS.indexOf(opts.severity) !== -1 ? opts.severity : 'INFO';
+
+    const entry = {
+      id: _auditId(),
+      ts: _now(),
+      uid: _cuId(),
+      uname: _cuName(),
+      action: action,
+      severity: severity,
+      details: opts.details || null,
+      before: typeof opts.before === 'undefined' ? null : opts.before,
+      after: typeof opts.after === 'undefined' ? null : opts.after,
+      reason: opts.reason || null
+    };
+
+    if (!Array.isArray(sd.history)) sd.history = [];
+    if (typeof sd.archivedCount !== 'number') sd.archivedCount = 0;
+
+    sd.history.push(entry);
+
+    /* FIFO: 100 üstü en eski silinir, sayaç artar */
+    while (sd.history.length > HISTORY_MAX) {
+      sd.history.shift();
+      sd.archivedCount += 1;
+    }
+
+    sd.updatedAt = _now();
+
+    /* Çift kayıt: window.logActivity'ye string detay (dedup tuzağı önlendi) */
+    try {
+      if (typeof window.logActivity === 'function') {
+        const shortDetail = 'ed=' + (sd._edId || '?') + ' act=' + action + ' sev=' + severity;
+        window.logActivity('shipment_doc_' + action.toLowerCase(), shortDetail);
+      }
+    } catch (e) {
+      console.warn('[SHIPMENT-DOC-AUDIT-001] logActivity wrap fail:', e && e.message);
+    }
+
+    return entry;
+  }
+
+  /**
+   * Public audit log API — UI ve sonraki cycle'lar için.
+   * @param {string} edId
+   * @param {string} action HISTORY_ACTIONS'tan biri
+   * @param {Object} [opts] _logHistory ile aynı
+   * @returns {{success: boolean, entry?: Object, error?: string}}
+   */
+  window._shipmentDocLog = function(edId, action, opts) {
+    if (!edId) return { success: false, error: 'edId_required' };
+    const list = _edListRaw();
+    const idx = _edFindIdx(list, edId);
+    if (idx === -1) return { success: false, error: 'ed_not_found' };
+    if (!list[idx].shipmentDoc) return { success: false, error: 'sd_not_found' };
+
+    const entry = _logHistory(list[idx].shipmentDoc, action, opts);
+    if (!entry) return { success: false, error: 'log_failed' };
+
+    try {
+      _edListStore(list);
+    } catch (e) {
+      console.warn('[SHIPMENT-DOC-AUDIT-001] store fail:', e && e.message);
+      if (typeof window.toast === 'function') window.toast('Audit kaydı yazılamadı', 'err');
+      return { success: false, error: 'store_failed' };
+    }
+
+    return { success: true, entry: entry };
+  };
+
+  /** PII maskeleme — UI render için (K14). @param {string} name @returns {string} */
+  window._shipmentDocMaskName = function(name) { return _maskName(name); };
+
+  /** Action meta getter (UI için). @param {string} action @returns {Object|null} */
+  window._shipmentDocAuditMeta = function(action) { return AUDIT_TYPE_META[action] || null; };
+
 })();
