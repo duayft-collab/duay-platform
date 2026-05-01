@@ -285,8 +285,67 @@
     }
   }
 
+  /**
+   * Tek ED'den slot belgesini sil — soft-delete schema (direkt null/array).
+   * V132 MVP: multiIndex undefined her zaman, tüm slot temizlenir.
+   * V132.1 hazırlığı: multiIndex int verilirse array'den o index çıkar.
+   * @param {string} edId hedef ED
+   * @param {string} slot belge slot key (ör. 'soforFotos')
+   * @param {number} [multiIndex] multi slot için item index (undefined = tüm slot)
+   * @returns {object} { success, snapshot } - snapshot undo için
+   */
+  function _deleteFromSingleEd(edId, slot, multiIndex) {
+    if (typeof window._shipmentDocGet !== 'function' || typeof window._shipmentDocUpdate !== 'function') {
+      return { success: false, error: 'shipmentDoc API yok' };
+    }
+    try {
+      const sd = window._shipmentDocGet(edId);
+      if (!sd || !sd.belgeler) return { success: false, error: 'sd.belgeler yok' };
+      const oldValue = sd.belgeler[slot];
+      if (!oldValue) return { success: false, error: 'slot zaten boş' };
+      /* Snapshot al — undo için JSON deep copy */
+      const snapshot = JSON.parse(JSON.stringify(oldValue));
+      /* Yeni değer hesapla */
+      let newValue;
+      if (Array.isArray(oldValue) && typeof multiIndex === 'number') {
+        /* V132.1 hazırlığı: tek item çıkar */
+        newValue = oldValue.filter(function(_, i) { return i !== multiIndex; });
+        if (newValue.length === 0) newValue = null;
+      } else {
+        /* V132 MVP: tüm slot temizle */
+        newValue = null;
+      }
+      /* V122 _shipmentDocUpdate çağır (audit log otomatik) */
+      const r = window._shipmentDocUpdate(edId, 'belgeler.' + slot, newValue);
+      return { success: !!r, snapshot: snapshot };
+    } catch (e) {
+      return { success: false, error: e && e.message };
+    }
+  }
+
+  /**
+   * Silinen belgeyi geri al — snapshot ile restore (V122 _shipmentDocUpdate reuse).
+   * @param {string} edId hedef ED
+   * @param {string} slot belge slot key
+   * @param {object|Array} snapshot _deleteFromSingleEd'den dönen oldValue kopyası
+   * @returns {object} { success }
+   */
+  function _undoDelete(edId, slot, snapshot) {
+    if (typeof window._shipmentDocUpdate !== 'function') {
+      return { success: false, error: 'shipmentDoc API yok' };
+    }
+    if (!snapshot) return { success: false, error: 'snapshot yok' };
+    try {
+      const r = window._shipmentDocUpdate(edId, 'belgeler.' + slot, snapshot);
+      return { success: !!r };
+    } catch (e) {
+      return { success: false, error: e && e.message };
+    }
+  }
+
   /* SHIPMENT-DOC-UI-EXTRACT-001: public namespace (V130) — V117 _shipmentDocUtil pattern reuse */
   /* V131 GENİŞLETME: countSharedEds eklendi */
+  /* V132 GENİŞLETME: deleteFromSingleEd + undoDelete eklendi */
   window._sdApply = Object.freeze({
     SHARED_SLOTS: SHARED_SLOTS,
     findGroupedEds: _findGroupedEds,
@@ -294,7 +353,9 @@
     showApplyModal: _showApplyModal,
     saveToSingleEd: _saveToSingleEd,
     saveToMultipleEds: _saveToMultipleEds,
-    countSharedEds: _countSharedEds
+    countSharedEds: _countSharedEds,
+    deleteFromSingleEd: _deleteFromSingleEd,
+    undoDelete: _undoDelete
   });
 
 })();

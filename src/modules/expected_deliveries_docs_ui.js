@@ -100,12 +100,18 @@
           }
         } catch (e) { /* defensive: badge ekleme başarısızsa skip */ }
       }
+      /* SHIPMENT-DOC-DELETE-001: silme butonu (V132, sol alt köşe, KAPALI guard) */
+      let deleteBtn = '';
+      if (filled && !isKapali) {
+        deleteBtn = '<a href="javascript:void(0)" onclick="event.stopPropagation();window._shipmentDocUiDeleteSlot(\'' + _esc(edId) + '\',\'' + _esc(slot) + '\')" style="position:absolute;bottom:4px;left:6px;font-size:11px;color:#C62828;text-decoration:none;font-weight:600" title="Belgeyi sil (30sn undo)">🗑</a>';
+      }
       return '<div' + slotOnclick + slotTitle + ' style="position:relative;padding:8px 10px;border:1px solid #e5e5e5;border-radius:6px;background:' +
         (filled ? '#F0F9F5' : '#FAFAFA') + ';' + slotCursor + '">' +
         '<div style="font-size:18px;color:' + color + ';font-weight:600">' + icon + ' ' + _esc(meta.icon || '📄') + '</div>' +
         '<div style="font-size:11px;color:#666;margin-top:4px;word-break:break-all">' + zorunluPrefix + _esc(displayName) + '</div>' +
         downloadLink +
         sharedBadge +
+        deleteBtn +
         '</div>';
     }).join('');
 
@@ -583,6 +589,79 @@
       'onmouseout="this.style.transform=\'scale(1)\'">' +
       '📦 ' + _esc(inner) +
       '</span>';
+  };
+
+  /**
+   * SHIPMENT-DOC-DELETE-001: Slot belgesini sil + 30sn undo toast (V132).
+   * confirmModal (K06) → _sdApply.deleteFromSingleEd → custom toast
+   * @param {string} edId hedef ED
+   * @param {string} slot belge slot key (ör. 'soforFotos')
+   */
+  window._shipmentDocUiDeleteSlot = function(edId, slot) {
+    if (!window._sdApply || typeof window._sdApply.deleteFromSingleEd !== 'function') {
+      window.toast && window.toast('Silme API yüklenmedi', 'err');
+      return;
+    }
+    /* Pending undo toast varsa önce temizle (tek seferde tek toast) */
+    if (window.__sdDeletePending) {
+      try { clearTimeout(window.__sdDeletePending.timer); } catch (e) {}
+      try { clearInterval(window.__sdDeletePending.interval); } catch (e) {}
+      try { window.__sdDeletePending.element.remove(); } catch (e) {}
+      window.__sdDeletePending = null;
+    }
+    /* K06 confirm zorunlu */
+    const confirmFn = window.confirmModal || window.confirm;
+    Promise.resolve(confirmFn('Bu belgeyi silmek istediğine emin misin?\n\n30 saniye içinde geri alabilirsin.')).then(function(ok) {
+      if (!ok) return;
+      /* Sil */
+      const r = window._sdApply.deleteFromSingleEd(edId, slot);
+      if (!r || !r.success) {
+        window.toast && window.toast('Silme başarısız: ' + (r && r.error || 'bilinmeyen'), 'err');
+        return;
+      }
+      /* Modal yeniden render (slot grid güncellensin) */
+      window._shipmentDocUiOpen(edId);
+      /* Custom undo toast (30sn countdown) */
+      const toastEl = document.createElement('div');
+      toastEl.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#323232;color:#fff;padding:12px 16px;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:10003;font-size:13px;display:flex;align-items:center;gap:12px';
+      let remaining = 30;
+      const countdownSpan = document.createElement('span');
+      countdownSpan.textContent = 'Belge silindi (' + remaining + 's)';
+      const undoBtn = document.createElement('button');
+      undoBtn.textContent = '↶ Geri al';
+      undoBtn.style.cssText = 'background:#FFB300;color:#000;border:0;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:600;font-size:12px';
+      toastEl.appendChild(countdownSpan);
+      toastEl.appendChild(undoBtn);
+      document.body.appendChild(toastEl);
+      /* Countdown */
+      const interval = setInterval(function() {
+        remaining--;
+        countdownSpan.textContent = 'Belge silindi (' + remaining + 's)';
+        if (remaining <= 0) clearInterval(interval);
+      }, 1000);
+      /* Otomatik kapan timer */
+      const timer = setTimeout(function() {
+        clearInterval(interval);
+        try { toastEl.remove(); } catch (e) {}
+        window.__sdDeletePending = null;
+      }, 30000);
+      /* Geri al click */
+      undoBtn.onclick = function() {
+        clearTimeout(timer);
+        clearInterval(interval);
+        const ur = window._sdApply.undoDelete(edId, slot, r.snapshot);
+        if (ur && ur.success) {
+          window.toast && window.toast('Geri alındı', 'ok');
+          window._shipmentDocUiOpen(edId);
+        } else {
+          window.toast && window.toast('Geri alma başarısız', 'err');
+        }
+        try { toastEl.remove(); } catch (e) {}
+        window.__sdDeletePending = null;
+      };
+      /* Pending state kaydet (yeni delete varsa eski temizlenebilsin) */
+      window.__sdDeletePending = { element: toastEl, timer: timer, interval: interval };
+    });
   };
 
 })();

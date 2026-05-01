@@ -1528,10 +1528,10 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <script src="src/modules/expected_deliveries_docs.js?v=20260501V123"></script>
 <!-- SHIPMENT-DOC-PROBE-EXTRACT-001: probe ayrı dosya, docs.js sonrası yüklenmeli (window._shipmentDocGet/Create reuse) -->
 <script src="src/modules/expected_deliveries_docs_probe.js?v=20260501V123"></script>
-<!-- SHIPMENT-DOC-UI-EXTRACT-001 + TIR-SHARE-BADGE-001: TIR-share apply modülü + countSharedEds helper (V130-V131) — ui.js'ten ÖNCE yüklenmeli (window._sdApply expose) -->
-<script src="src/modules/expected_deliveries_docs_ui_apply.js?v=20260501V131"></script>
-<!-- SHIPMENT-DOC-UI-MINIMAL-001 + LIST-PROGRESS-001 + UI-EDIT-001 + UPLOAD-001 + MULTI-FILE-001 + TIR-SHARE-001 + UI-EXTRACT-001 + TIR-SHARE-BADGE-001: modal UI + card badge + inline editing + single/multi upload + TIR ortak belge + 🔗 paylaşım badge, docs.js + probe.js + apply.js sonrası yüklenmeli (V124-V131) -->
-<script src="src/modules/expected_deliveries_docs_ui.js?v=20260501V131"></script>
+<!-- SHIPMENT-DOC-UI-EXTRACT-001 + TIR-SHARE-BADGE-001 + DELETE-001: TIR-share apply modülü + countSharedEds + delete/undo helpers (V130-V132) — ui.js'ten ÖNCE yüklenmeli (window._sdApply expose) -->
+<script src="src/modules/expected_deliveries_docs_ui_apply.js?v=20260501V132"></script>
+<!-- SHIPMENT-DOC-UI-MINIMAL-001 + LIST-PROGRESS-001 + UI-EDIT-001 + UPLOAD-001 + MULTI-FILE-001 + TIR-SHARE-001 + UI-EXTRACT-001 + TIR-SHARE-BADGE-001 + DELETE-001: modal UI + card badge + inline editing + single/multi upload + TIR ortak belge + 🔗 paylaşım badge + 🗑 silme/undo, docs.js + probe.js + apply.js sonrası yüklenmeli (V124-V132) -->
+<script src="src/modules/expected_deliveries_docs_ui.js?v=20260501V132"></script>
 
 <!-- 4. APP INIT — her zaman en son -->
 <script src="src/core/draft_manager.js?v=20260428EP"></script>
