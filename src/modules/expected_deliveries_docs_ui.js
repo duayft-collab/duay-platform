@@ -45,8 +45,8 @@
   function _renderModal(edId, sd) {
     const stateColor = window._shipmentDocStateColor(sd.state);
     const stateLabel = window._shipmentDocStateLabel(sd.state);
-    const belgeMeta = window._shipmentDocBelgeMeta;
-    const kritikAlanlar = window._shipmentDocKritikAlanlar;
+    const belgeMeta = window._shipmentDocUtil.BELGE_META;
+    const kritikAlanlar = window._shipmentDocUtil.KRITIK_ALANLAR;
 
     /* 9 belge slot grid */
     const belgeSlots = Object.keys(belgeMeta).map(function(slot) {
