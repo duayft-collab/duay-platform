@@ -49,15 +49,15 @@
 
   /* SHIPMENT-DOC-SCHEMA-001: belge slot meta — UI cycle'larında ikon/etiket/MIME (Object.freeze nested) */
   const BELGE_META = Object.freeze({
-    irsaliye:      Object.freeze({ icon: '📋', label: 'İrsaliye',             mimes: Object.freeze(['pdf','jpg','png']),                multi: false, zorunlu: true  }),
-    kantar:        Object.freeze({ icon: '⚖️', label: 'Kantar fişi',          mimes: Object.freeze(['pdf','jpg','png']),                multi: false, zorunlu: true  }),
-    teslimImza:    Object.freeze({ icon: '✍️', label: 'Teslim imzası',        mimes: Object.freeze(['pdf','jpg','png']),                multi: false, zorunlu: false }),
-    soforFotos:    Object.freeze({ icon: '📷', label: 'Şoför fotoğrafları',   mimes: Object.freeze(['jpg','png']),                      multi: true,  zorunlu: false }),
-    yuklemeFotos:  Object.freeze({ icon: '📦', label: 'Yükleme fotoğrafları', mimes: Object.freeze(['jpg','png']),                      multi: true,  zorunlu: false }),
+    irsaliye:      Object.freeze({ icon: '📋', label: 'İrsaliye',             mimes: Object.freeze(['pdf','jpg','jpeg','png']),         multi: false, zorunlu: true  }),
+    kantar:        Object.freeze({ icon: '⚖️', label: 'Kantar fişi',          mimes: Object.freeze(['pdf','jpg','jpeg','png']),         multi: false, zorunlu: true  }),
+    teslimImza:    Object.freeze({ icon: '✍️', label: 'Teslim imzası',        mimes: Object.freeze(['pdf','jpg','jpeg','png']),         multi: false, zorunlu: false }),
+    soforFotos:    Object.freeze({ icon: '📷', label: 'Şoför fotoğrafları',   mimes: Object.freeze(['pdf','jpg','jpeg','png']),         multi: true,  zorunlu: false }),
+    yuklemeFotos:  Object.freeze({ icon: '📦', label: 'Yükleme fotoğrafları', mimes: Object.freeze(['pdf','jpg','jpeg','png']),         multi: true,  zorunlu: false }),
     nakliyeFatura: Object.freeze({ icon: '🚚', label: 'Nakliye faturası',     mimes: Object.freeze(['pdf','jpg','jpeg','png']),         multi: false, zorunlu: false }),
     saticiFatura:  Object.freeze({ icon: '🧾', label: 'Satıcı faturası',      mimes: Object.freeze(['pdf','jpg','jpeg','png']),         multi: false, zorunlu: false }),
     imoForm:       Object.freeze({ icon: '⚠️', label: 'IMO/DGD formu',        mimes: Object.freeze(['pdf']),                            multi: false, zorunlu: false }),
-    ekBelgeler:    Object.freeze({ icon: '📎', label: 'Ek belgeler',          mimes: Object.freeze(['pdf','jpg','png','xlsx','docx']), multi: true,  zorunlu: false }),
+    ekBelgeler:    Object.freeze({ icon: '📎', label: 'Ek belgeler',          mimes: Object.freeze(['pdf','jpg','jpeg','png','xlsx','docx']), multi: true,  zorunlu: false }),
     /* SHIPMENT-DOC-FIELDS-001 (V134): Alış faturası slot — alış belgesi (Duay'a kesilen fatura) */
     alisFatura:    Object.freeze({ icon: '💰', label: 'Alış faturası',        mimes: Object.freeze(['pdf','jpg','jpeg','png']),         multi: false, zorunlu: false })
   });
