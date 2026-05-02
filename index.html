@@ -438,11 +438,6 @@ function _doLogin() {
 
   <!-- ═══ MÜŞTERİ ═══ -->
   <div class="nsec-header nsec" id="nsec-satis" onclick="toggleNsec('nsec-satis')">MÜŞTERİ <span class="nsec-arrow">▾</span></div>
-      <button class="nb" onclick="nav('crm',this)">
-    <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="8" width="4" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="6" y="5" width="4" height="9" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="11" y="2" width="4" height="12" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
-    <span>CRM / Müşteriler</span>
-    <span class="nbdg" id="nb-crm-b" style="background:var(--gr);display:none">0</span>
-  </button>
       <button class="nb" onclick="nav('satis-teklifleri',this)">
         <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 7.5h6M5 10h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M8 11l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>Satış Teklifleri</span>
@@ -474,9 +469,6 @@ function _doLogin() {
       <button class="nb" onclick="nav('siparisler',this)">
         <span>📦</span>
         <span>Siparişler</span>
-      </button>
-      <button class="nb" onclick="if(window.canModule?.('numune-arsivi')!==false){nav('numune-arsivi',this);}else{window.toast?.('Bu bölüme erişim yetkiniz yok','warn');}">
-        <span>🧪</span><span>Numune Arşivi</span>
       </button>
 
   <!-- ═══ LOJİSTİK ═══ -->
@@ -1250,7 +1242,6 @@ function _importFullBackup(){var inp=document.createElement('input');inp.type='f
       <div id="panel-puantaj"   class="panel"></div>
       <div id="panel-izin"      class="panel"></div>
       <div id="panel-kpi"       class="panel"></div>
-      <div id="panel-crm"       class="panel"></div>
       <div id="panel-satin-alma" class="panel"></div>
       <div id="panel-ihracat-ops" class="panel"></div>
       <div id="panel-ihracat-formlar" class="panel"></div>
@@ -1264,7 +1255,6 @@ function _importFullBackup(){var inp=document.createElement('input');inp.type='f
       <div id="panel-alis-teklifleri" class="panel" style="display:none"></div>
       <div id="panel-siparisler" class="panel"></div>
       <div id="panel-satis-rapor" class="panel"></div>
-      <div id="panel-numune-arsivi" class="panel"></div>
       <div id="panel-teslimat-takip" class="panel"></div>
       <div id="panel-cari-karsilastirma" class="panel"></div>
       <div id="panel-donem-ozeti" class="panel"></div>
@@ -1304,7 +1294,6 @@ function _importFullBackup(){var inp=document.createElement('input');inp.type='f
       <div id="panel-cari" class="panel"></div>
       <div id="panel-kpi-panel" class="panel"></div>
       <div id="panel-links" class="panel"></div>
-      <div id="panel-numune" class="panel"></div>
       <div id="panel-evrak-paketi" class="panel"></div>
       <div id="panel-kdv-iadesi" class="panel"></div>
       <div id="panel-periyodik-kontrol" class="panel"></div>
@@ -1463,7 +1452,6 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <!-- PUSULA v3.0 — 8 modül -->
 <script src="src/modules/pusula_pro.js?v=20260428EP"></script>
 <script src="src/modules/ik.js?v=20260428EP"></script>
-<script src="src/modules/crm.js?v=20260428EP"></script>
 <script src="src/modules/stok.js?v=20260428EP"></script>
 <script src="src/modules/urun_db.js?v=20260428EP"></script>
 <script src="src/modules/satis_teklif.js?v=20260428EP"></script>
@@ -1503,7 +1491,6 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <script src="src/modules/ik_panel.js?v=20260428EP"></script>
 <script src="src/modules/puantaj.js?v=20260428EP"></script>
 <script src="src/modules/izin.js?v=20260428EP"></script>
-<script src="src/modules/crm_panel.js?v=20260428EP"></script>
 <script src="src/modules/extra_panels.js?v=20260428EP"></script>
 <script src="src/modules/docs.js?v=20260428EP"></script>
 <script src="src/modules/formlar.js?v=20260428EP"></script>
@@ -1517,7 +1504,6 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <script src="src/modules/dashboardDetay.js?v=20260428EP"></script>
 <script src="src/modules/urunler.js?v=20260428EP"></script>
 <script src="src/modules/ihracat_listesi.js?v=20260428EP"></script>
-<script src="src/modules/numuneler.js?v=20260428EP"></script>
 <script src="src/modules/ihracat_ops.js?v=20260428EP"></script>
 <script src="src/modules/ihracat_belgeler.js?v=20260428EP"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
@@ -1543,7 +1529,6 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <script src="src/modules/ik_hub.js?v=20260428EP"></script>
 <script src="src/modules/iddia.js?v=20260428EP"></script>
 <script src="src/modules/sozler.js?v=20260428EP"></script>
-<script src="src/modules/crm_hub.js?v=20260428EP"></script>
 
 
   <script>
