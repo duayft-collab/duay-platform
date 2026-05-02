@@ -880,14 +880,6 @@ function _dashMiniKpi(label, val, link) {
 
 function renderDashboard() {
   /* DASHBOARD-DEFAULT-DETAY-001 + HOTFIX-001: admin direkt dashboardDetay'a (CU önce, _CUo fallback; role+rol iki field) */
-  try {
-    var _cuDash = window.CU?.() || window._CUo?.() || {};
-    var _roleDash = _cuDash.role || _cuDash.rol || '';
-    if (_roleDash === 'admin' && window.App?.nav) {
-      window.App.nav('dashboardDetay');
-      return;
-    }
-  } catch(e) { console.warn('[DASHBOARD-DEFAULT-DETAY]', e.message); }
   /* DASHBOARD-IIFE-LOCAL-HIJACK-001: IIFE-local renderDashboard → yeni _dashYeniRender */
   if (window._dashYeniRender && window._dashYeniRender !== renderDashboard) {
     try { return window._dashYeniRender(); } catch(e) {}
