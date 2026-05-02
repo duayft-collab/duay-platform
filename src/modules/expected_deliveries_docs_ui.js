@@ -167,7 +167,7 @@
     const totalBelgeler = Object.keys(belgeMeta).length;
 
     return '<div id="sd-ui-backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this) window._shipmentDocUiClose()">' +
-      '<div style="background:#fff;border-radius:12px;max-width:760px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 12px 48px rgba(0,0,0,0.2)">' +
+      '<div style="background:#fff;border-radius:12px;max-width:min(95vw, 1100px);width:100%;max-height:90vh;overflow:auto;box-shadow:0 12px 48px rgba(0,0,0,0.2)">' +
         /* HEADER */
         '<div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;gap:12px">' +
           '<div style="display:flex;align-items:center;gap:12px">' +
@@ -204,7 +204,7 @@
         '</div>' +
         /* FOOTER */
         '<div style="padding:14px 20px;border-top:1px solid #eee;display:flex;gap:10px;justify-content:flex-end">' +
-          '<button type="button" onclick="window._shipmentDocProbe(\'' + _esc(edId) + '\')" style="padding:8px 14px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:12px" title="Ayrıntıları DevTools console\'a yazar">🧪 Console</button>' +
+          (window._edIsAdmin && window._edIsAdmin() ? '<button type="button" onclick="window._shipmentDocProbe(\'' + _esc(edId) + '\')" style="padding:8px 14px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:12px" title="Ayrıntıları DevTools console\'a yazar">🧪 Console</button>' : '') +
           '<button type="button" onclick="document.getElementById(\'sd-ui-history\').style.display=document.getElementById(\'sd-ui-history\').style.display===\'none\'?\'block\':\'none\'" style="padding:8px 14px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:12px">📜 Geçmişi göster/gizle</button>' +
           '<button type="button" onclick="window._shipmentDocUiClose()" style="padding:8px 14px;border:none;background:#222;color:#fff;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500">Kapat</button>' +
         '</div>' +
