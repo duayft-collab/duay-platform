@@ -772,7 +772,7 @@ function _renderPirimimWidget() {
     rows.slice(0, 8).forEach(function(r){
       h += '<div style="display:grid;grid-template-columns:1fr 80px 80px 80px;gap:6px;font-size:11px;padding:5px 0;border-bottom:0.5px solid var(--b)">'
         // PIRIM-DASH-CLICK-001: personel adı tıklanabilir → _pirimDetayGoster modal
-        + '<div onclick="event.stopPropagation();window._pirimDetayGoster?.(\'' + String(r.uid) + '\')" style="cursor:pointer;color:var(--ac);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Detay aç">' + r.ad + '</div>'
+        + '<div onclick="event.stopPropagation();window._pirimDetayGoster?.(\'' + String(r.uid) + '\')" style="cursor:pointer;color:var(--ac);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Detay aç">' + _esc(r.ad) + '</div>'
         + '<div style="text-align:right;color:var(--t);font-weight:500">' + fmt(r.toplam) + '</div>'
         + '<div style="text-align:right;color:#16A34A">' + fmt(r.odenen) + '</div>'
         + '<div style="text-align:right;color:#D97706">' + fmt(r.bekleyen) + '</div>'
@@ -806,7 +806,7 @@ function _dashYeniRender() {
   var h = '<div style="padding:24px 32px;max-width:1400px;margin:0 auto">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:16px">';
   h += '<div>';
-  h += '<div style="font-size:22px;font-weight:500">' + greet + ', ' + ((cu && (cu.name || cu.displayName)) || 'Misafir') + '</div>';
+  h += '<div style="font-size:22px;font-weight:500">' + greet + ', ' + _esc((cu && (cu.name || cu.displayName)) || 'Misafir') + '</div>';
   h += '<div style="font-size:11px;color:var(--t3);margin-top:3px">' + new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) + '</div>';
   h += '</div>';
   h += '<div style="display:flex;gap:10px">';
@@ -857,7 +857,7 @@ function _dashYeniRender() {
     alerts.slice(0, 3).forEach(function(a) {
       var bg = a.tip === 'kirmizi' ? '#FCEBEB' : a.tip === 'turuncu' ? '#FAEEDA' : '#FAECE7';
       var fg = a.tip === 'kirmizi' ? '#791F1F' : a.tip === 'turuncu' ? '#854F0B' : '#712B13';
-      var _m = window._esc ? window._esc(a.msg) : a.msg;
+      var _m = _esc(a.msg);
       h += '<div onclick="window.App && window.App.nav && window.App.nav(\'' + a.link + '\')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:' + bg + ';border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:12px;color:' + fg + '"><span>' + a.ikon + '</span><span style="flex:1">' + _m + '</span><span style="opacity:.6">→</span></div>';
     });
     if (alerts.length > 3) {
@@ -920,7 +920,7 @@ function renderDashboard() {
       var _dbAlertColor = _dbH.hasRed ? '#791F1F' : '#633806';
       var _dbAlertBg = _dbH.hasRed ? '#FCEBEB' : '#FAEEDA';
       var _dbAlertMsg = _dbH.alerts[0]?.msg || 'Anormallik';
-      h += '<div onclick="window._showSyncDetails?.()" style="cursor:pointer;padding:8px 16px;background:' + _dbAlertBg + ';border-radius:8px;margin-bottom:10px;display:flex;align-items:center;gap:8px;border:1px solid ' + _dbAlertColor + '22"><span style="font-size:14px">' + (_dbH.hasRed ? '🔴' : '🟡') + '</span><span style="font-size:12px;font-weight:500;color:' + _dbAlertColor + ';flex:1">' + _dbAlertMsg + '</span><span style="font-size:10px;color:' + _dbAlertColor + '">Ayarlar →</span></div>';
+      h += '<div onclick="window._showSyncDetails?.()" style="cursor:pointer;padding:8px 16px;background:' + _dbAlertBg + ';border-radius:8px;margin-bottom:10px;display:flex;align-items:center;gap:8px;border:1px solid ' + _dbAlertColor + '22"><span style="font-size:14px">' + (_dbH.hasRed ? '🔴' : '🟡') + '</span><span style="font-size:12px;font-weight:500;color:' + _dbAlertColor + ';flex:1">' + _esc(_dbAlertMsg) + '</span><span style="font-size:10px;color:' + _dbAlertColor + '">Ayarlar →</span></div>';
     }
   }
   h += _renderPirimimWidget();
