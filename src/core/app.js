@@ -3657,7 +3657,6 @@ var _TN2_GROUPS = {
   ]},
   satis: { label:'Satış', mods: [
     { id:'sales-crm',        label:'🎯 Satış CRM Pro'   },
-    { id:'crm',              label:'Müşteri İlişkileri' },
     { id:'satis-teklifleri', label:'Proforma Teklifler' },
     { id:'cari',             label:'Cari Hesaplar'      },
   ]},
