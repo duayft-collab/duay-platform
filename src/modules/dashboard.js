@@ -797,11 +797,11 @@ function _dashYeniRender() {
   var greet = saat < 6 ? 'İyi geceler' : saat < 12 ? 'Günaydın' : saat < 18 ? 'İyi günler' : 'İyi akşamlar';
 
   var pending = ((typeof window.loadTasks === 'function' ? window.loadTasks() : []) || [])
-    .filter(function(t){ return t && !t.isDeleted && !t.completed; }).length;
+    .filter(function(t){ return t && !t.isDeleted && !t.done; }).length;
   var acikSA = ((typeof window.loadAlisTeklifleri === 'function' ? window.loadAlisTeklifleri() : []) || [])
     .filter(function(t){ return t && !t.isDeleted && t.durum !== 'tamamlandi' && t.durum !== 'iptal'; }).length;
   var gecikmis = ((typeof window.loadTahsilat === 'function' ? window.loadTahsilat() : []) || [])
-    .filter(function(t){ return t && !t.isDeleted && t.durum !== 'tahsil_edildi' && t.vade && new Date(t.vade).getTime() < Date.now(); }).length;
+    .filter(function(t){ return t && !t.isDeleted && !t.collected && t.due && new Date(t.due).getTime() < Date.now(); }).length;
 
   var h = '<div style="padding:24px 32px;max-width:1400px;margin:0 auto">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:16px">';
@@ -821,8 +821,8 @@ function _dashYeniRender() {
   try {
     var _tah = (typeof window.loadTahsilat === 'function' ? window.loadTahsilat() : []) || [];
     _tah.forEach(function(t) {
-      if (t && !t.isDeleted && t.durum !== 'tahsil_edildi' && t.vade && new Date(t.vade).getTime() < _now) {
-        alerts.push({ tip: 'kirmizi', ikon: '🚨', msg: 'Gecikmiş tahsilat: ' + (t.musteriAd || '—') + ' · ' + (Number(t.tutar)||0).toLocaleString('tr-TR') + ' ' + (t.para || ''), link: 'tahsilat' });
+      if (t && !t.isDeleted && !t.collected && t.due && new Date(t.due).getTime() < _now) {
+        alerts.push({ tip: 'kirmizi', ikon: '🚨', msg: 'Gecikmiş tahsilat: ' + (t.cari || t.cariAd || '—') + ' · ' + (Number(t.tutar)||0).toLocaleString('tr-TR') + ' ' + (t.para || ''), link: 'tahsilat' });
       }
     });
   } catch(e) {}
