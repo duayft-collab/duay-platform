@@ -18,6 +18,8 @@
     }
     try {
       core.loadLocal();
+      var ui = window.SalesCRM.ui;
+      if (ui && ui.mountPanel) ui.mountPanel();
       var pages = window.SalesCRM.pages;
       if (pages && pages.renderAll) pages.renderAll();
       console.log('[SalesCRM] bootstrap OK');
