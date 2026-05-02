@@ -43,7 +43,7 @@
       return;
     }
     const meta = window._shipmentDocUtil && window._shipmentDocUtil.BELGE_META && window._shipmentDocUtil.BELGE_META[slot];
-    const slotName = meta && meta.name ? meta.name : slot;
+    const slotName = meta && meta.label ? meta.label : slot;
     const slotIcon = meta && meta.icon ? meta.icon : '📎';
     const isMulti = Array.isArray(slotValue);
     const files = isMulti ? slotValue : [slotValue];
