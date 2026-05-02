@@ -46,15 +46,16 @@
   function resetAll() {
     var core = window.SalesCRM.core;
     if (!core) return;
-    if (!confirm('DİKKAT! Tüm Sales CRM verileri silinecek. Devam edilsin mi?')) return;
-    Object.keys(core.D).forEach(function(k) {
-      if (Array.isArray(core.D[k])) core.D[k] = [];
-      else if (typeof core.D[k] === 'object') core.D[k] = {};
+    core.confirmAction('DİKKAT! Tüm Sales CRM verileri silinecek. Devam edilsin mi?', function() {
+      Object.keys(core.D).forEach(function(k) {
+        if (Array.isArray(core.D[k])) core.D[k] = [];
+        else if (typeof core.D[k] === 'object') core.D[k] = {};
+      });
+      core.saveAll();
+      var pages = window.SalesCRM.pages;
+      if (pages && pages.renderAll) pages.renderAll();
+      core.toast('Sıfırlandı', '🔄');
     });
-    core.saveAll();
-    var pages = window.SalesCRM.pages;
-    if (pages && pages.renderAll) pages.renderAll();
-    core.toast('Sıfırlandı', '🔄');
   }
 
   function exportExcel() {

@@ -155,20 +155,21 @@
   function delContact(id) {
     var core = window.SalesCRM.core;
     if (!core) return;
-    if (!confirm('Bu müşteriyi silmek istiyor musunuz?')) return;
-    core.D.contacts = core.D.contacts.filter(function(c) { return c.id !== id; });
-    core.D.deals = core.D.deals.filter(function(d) { return d.musteriId !== id; });
-    core.D.activities = core.D.activities.filter(function(a) { return a.musteriId !== id; });
-    core.D.interviewQ = core.D.interviewQ.filter(function(q) { return q.musteriId !== id; });
-    core.D.actionPlan = core.D.actionPlan.filter(function(a) { return a.musteriId !== id; });
-    core.saveAll();
-    var pages = window.SalesCRM.pages;
-    if (pages) {
-      if (pages.rdContacts) pages.rdContacts();
-      if (pages.rdDash) pages.rdDash();
-      if (pages.updBadges) pages.updBadges();
-    }
-    core.toast('Silindi', '🗑');
+    core.confirmAction('Bu müşteriyi silmek istiyor musunuz?', function() {
+      core.D.contacts = core.D.contacts.filter(function(c) { return c.id !== id; });
+      core.D.deals = core.D.deals.filter(function(d) { return d.musteriId !== id; });
+      core.D.activities = core.D.activities.filter(function(a) { return a.musteriId !== id; });
+      core.D.interviewQ = core.D.interviewQ.filter(function(q) { return q.musteriId !== id; });
+      core.D.actionPlan = core.D.actionPlan.filter(function(a) { return a.musteriId !== id; });
+      core.saveAll();
+      var pages = window.SalesCRM.pages;
+      if (pages) {
+        if (pages.rdContacts) pages.rdContacts();
+        if (pages.rdDash) pages.rdDash();
+        if (pages.updBadges) pages.updBadges();
+      }
+      core.toast('Silindi', '🗑');
+    });
   }
 
   function addActivity() {

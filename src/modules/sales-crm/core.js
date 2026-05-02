@@ -117,11 +117,47 @@
     }, 2800);
   }
 
+  function _esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function confirmAction(msg, onConfirm, onCancel) {
+    var existing = document.getElementById('scrm-confirm-modal');
+    if (existing) existing.remove();
+    var ov = document.createElement('div');
+    ov.id = 'scrm-confirm-modal';
+    ov.className = 'ov open';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+    ov.innerHTML = '<div class="modal" style="background:#fff;border:1px solid #d1d1d6;border-radius:14px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.2);font-family:-apple-system,BlinkMacSystemFont,Inter,sans-serif">' +
+      '<div style="padding:18px 20px 14px;border-bottom:1px solid #f2f2f7"><h2 style="font-size:15px;font-weight:600;color:#1d1d1f;margin:0">Onay</h2></div>' +
+      '<div style="padding:18px 20px;font-size:13px;color:#3a3a3c;line-height:1.5">' + _esc(msg) + '</div>' +
+      '<div style="padding:12px 20px;border-top:1px solid #f2f2f7;display:flex;justify-content:flex-end;gap:8px">' +
+      '<button id="scrm-cf-no" style="padding:6px 13px;border-radius:20px;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid #d1d1d6;background:#f2f2f7;color:#3a3a3c">İptal</button>' +
+      '<button id="scrm-cf-yes" style="padding:6px 13px;border-radius:20px;font-size:12.5px;font-weight:500;cursor:pointer;border:none;background:#ff3b30;color:#fff">Evet, devam</button>' +
+      '</div></div>';
+    document.body.appendChild(ov);
+    var cleanup = function() { ov.remove(); };
+    ov.querySelector('#scrm-cf-yes').addEventListener('click', function() {
+      cleanup();
+      if (typeof onConfirm === 'function') onConfirm();
+    });
+    ov.querySelector('#scrm-cf-no').addEventListener('click', function() {
+      cleanup();
+      if (typeof onCancel === 'function') onCancel();
+    });
+    ov.addEventListener('click', function(e) {
+      if (e.target === ov) { cleanup(); if (typeof onCancel === 'function') onCancel(); }
+    });
+  }
+
   window.SalesCRM.core = {
     STORAGE_KEY: STORAGE_KEY,
     D: D, EID: EID, FS: FS, STATE: STATE,
     loadLocal: loadLocal, saveAll: saveAll,
     uid: uid, fD: fD, fDT: fDT, fM: fM, ini: ini, gC: gC, dL: dL,
-    pb: pb, sb: sb, potB: potB, adCls: adCls, toast: toast
+    pb: pb, sb: sb, potB: potB, adCls: adCls, toast: toast,
+    confirmAction: confirmAction
   };
 })();
