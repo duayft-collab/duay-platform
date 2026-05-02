@@ -284,6 +284,10 @@
         + '<div>' + _edWizardLabel('Konteyner No') + '<input id="ede-konteynerNo" style="' + _edWizardInput + '" value="' + _uiEsc(ed.konteynerNo || '') + '"></div>'
         + '<div>' + _edWizardLabel('Ağırlık (kg)') + '<input id="ede-weightKg" type="number" min="0" step="0.1" placeholder="örn: 2450" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.weightKg || '') + '"></div>'
         + '<div>' + _edWizardLabel('Hacim (m³)') + '<input id="ede-volumeM3" type="number" min="0" step="0.1" placeholder="örn: 12.5" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.volumeM3 || '') + '"></div>'
+        + '<div style="grid-column:span 2;font-size:11px;font-weight:600;color:var(--t2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--b)">Paket Bilgisi</div>'
+        + '<div>' + _edWizardLabel('Paket Türü') + '<select id="ede-paketTuru" style="' + _edWizardInput + '"><option value="">— Seç —</option>' + ['palet','koli','big-bag','kafes','cuval','dokme','diger'].map(function(__o){var __l = {palet:'Palet',koli:'Koli','big-bag':'Big Bag',kafes:'Kafes/Kasa',cuval:'Çuval',dokme:'Dökme',diger:'Diğer'}[__o];return '<option value="' + __o + '"' + (ed.paketTuru === __o ? ' selected' : '') + '>' + __l + '</option>';}).join('') + '</select></div>'
+        + '<div>' + _edWizardLabel('Paket Adedi') + '<input id="ede-paketAdedi" type="number" min="0" placeholder="örn: 24" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.paketAdedi || '') + '"></div>'
+        + '<div style="grid-column:span 2">' + _edWizardLabel('Paket Ebatları') + '<input id="ede-paketEbatlari" placeholder="örn: 120×80×100 cm" style="' + _edWizardInput + '" value="' + _uiEsc(ed.paketEbatlari || '') + '"></div>'
         + '<div>' + _edWizardLabel('Armatör') + '<select id="ede-armator" onchange="window._edAutoFillTrackingUrl && window._edAutoFillTrackingUrl()" style="' + _edWizardInput + '">' + ['','MSC','Maersk','CMA CGM','COSCO','Hapag-Lloyd','ONE','Evergreen','Yang Ming','HMM','ZIM','PIL','OOCL','Diger'].map(function(__c){return '<option value="' + __c + '"' + (ed.armator === __c ? ' selected' : '') + '>' + (__c || '— Seçin —') + '</option>';}).join('') + '</select></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Yükleme Firma') + '<input id="ede-yuklemeFirmaAd" style="' + _edWizardInput + '" value="' + _uiEsc(ed.yuklemeFirmaAd || '') + '"></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Tracking URL') + '<div style="display:flex;gap:6px;align-items:stretch">' + '<input id="ede-trackingUrl" type="url" style="' + _edWizardInput + ';flex:1" value="' + _uiEsc(ed.trackingUrl || '') + '" placeholder="https://...">' + '<button type="button" onclick="window._edOpenTrackingUrl && window._edOpenTrackingUrl()" style="padding:8px 14px;border:0.5px solid var(--b);background:var(--s2);color:var(--t2);border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap" title="Yeni sekmede aç">🔗 Aç</button>' + '</div></div>'
@@ -329,6 +333,9 @@
         konteynerNo: document.getElementById('ede-konteynerNo')?.value || '',
         weightKg: parseFloat(document.getElementById('ede-weightKg')?.value) || null,
         volumeM3: parseFloat(document.getElementById('ede-volumeM3')?.value) || null,
+        paketTuru: document.getElementById('ede-paketTuru')?.value || null,
+        paketAdedi: parseInt(document.getElementById('ede-paketAdedi')?.value, 10) || null,
+        paketEbatlari: (document.getElementById('ede-paketEbatlari')?.value || '').trim() || null,
         armator: document.getElementById('ede-armator')?.value || '',
         yuklemeFirmaAd: document.getElementById('ede-yuklemeFirmaAd')?.value || '',
         trackingUrl: document.getElementById('ede-trackingUrl')?.value || '',
@@ -359,6 +366,9 @@
     list[idx].konteynerNo = document.getElementById('ede-konteynerNo')?.value || '';
     list[idx].weightKg = parseFloat(document.getElementById('ede-weightKg')?.value) || null;
     list[idx].volumeM3 = parseFloat(document.getElementById('ede-volumeM3')?.value) || null;
+    list[idx].paketTuru = document.getElementById('ede-paketTuru')?.value || null;
+    list[idx].paketAdedi = parseInt(document.getElementById('ede-paketAdedi')?.value, 10) || null;
+    list[idx].paketEbatlari = (document.getElementById('ede-paketEbatlari')?.value || '').trim() || null;
     list[idx].armator = document.getElementById('ede-armator')?.value || '';
     list[idx].yuklemeFirmaAd = document.getElementById('ede-yuklemeFirmaAd')?.value || '';
     list[idx].trackingUrl = document.getElementById('ede-trackingUrl')?.value || '';
