@@ -111,8 +111,9 @@
 /* [CACHE-BUMP-2026-05-02-V142] SHIPMENT-DOC-UNIVERSAL-MIME-001 — V135: docs.js BELGE_META 6 slot mime gevşetildi (irsaliye/kantar/teslimImza ['pdf','jpg','png']→['pdf','jpg','jpeg','png']; soforFotos/yuklemeFotos ['jpg','png']→['pdf','jpg','jpeg','png'] foto+pdf taranan; ekBelgeler ['pdf','jpg','png','xlsx','docx']→['pdf','jpg','jpeg','png','xlsx','docx']). Mobil iPhone .jpeg uzantısı + ekran görüntüsü PNG her slotta kabul. DOKUNULMADI: imoForm ['pdf'] only (yasal zorunluluk), saticiFatura/nakliyeFatura/alisFatura V134'te zaten gevşetilmiş. K01 docs.js 723 (değişmez, sadece array genişledi). KX9 yeni anayasa kuralı kayıt: 700+ dosyaya feature ekleme YASAK — yeni dosya yarat. (T2-prev: df75e48) */
 /* [CACHE-BUMP-2026-05-02-V143] SHIPMENT-DOC-SLOT-LABEL-FIX-001 — V136: ui_view.js L46 meta.name → meta.label bug fix. V133.2'den beri 3 cycle dolu slot view modal başlığı raw key gösteriyordu (yanlış: "saticiFatura", doğru: "Satıcı faturası"). BELGE_META gerçek field adı 'label' (V117'den beri), 'name' field YOK. V133.2 EDIT 2'de yeni dosya yarattığım için anchor view atladım — KX8 ihlali. DERS: Yeni dosya yaratırken bile referans veriyi (BELGE_META) anchor view ile doğrula. Net 0 satır (1 kelime swap). Etki: 9 slot label'ı doğru görünür. K01 ui_view.js 123/800 (değişmez). DOKUNULMADI: V117-V135 davranışları, BELGE_META schema. (T2-prev: 6552f26) */
 /* [CACHE-BUMP-2026-05-02-V144] SHIPMENT-DOC-MODAL-IMPROVE-001 — V137: Modal main container max-width 760px → min(95vw, 1100px) (+%45 geniş ekran). Console buton admin-only ternary ile sarıldı (window._edIsAdmin && window._edIsAdmin() ? button : ''). End-user UX temizlendi (Console manager/dev için DevTools probe aracı, son kullanıcıya gereksizdi). 0 davranış kırılması: admin hala Console'a erişebilir, non-admin sadece 📜 Geçmiş + Kapat görür. K01 ui.js 711/800 (değişmez, inline ternary). KX9 N/A — UI iyileştirmesi, yeni feature değil. (T2-prev: c71228c) */
-const CACHE_NAME    = 'duay-platform-v151';
-const CACHE_VERSION = '151.0.0';
+/* [CACHE-BUMP-2026-05-03-V152] SATIS-LIST-REV-TREE-001 — V152: Satis teklif listesinde ayni teklifId'ye sahip kayitlari parent-child hiyerarsi ile grupla (R01 = parent ustte, R02+ = child indented). app_patch.js:2152 renderSatisTeklifleri override edildi (yeni dosya satin_alma_v2_revize_render.js, 299 satir). Persistence/Firestore/data shape sifir degisiklik — sadece gorsel grouping. KX9 uyumu: app_patch.js (7475 satir) DOKUNULMAZ. KX8: item HTML deseni app_patch.js:2247-2335'ten birebir kopya + indent/toggle eklendi. (T2-prev: aaa657e) */
+const CACHE_NAME    = 'duay-platform-v152';
+const CACHE_VERSION = '152.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
@@ -157,6 +158,7 @@ const PRECACHE_URLS = [
   '/src/modules/satin_alma_v2_csv.js',
   '/src/modules/satin_alma_v2_duzenleme.js',
   '/src/modules/satin_alma_v2_pi.js',
+  '/src/modules/satin_alma_v2_revize_render.js',
   '/src/modules/fason.js',
   '/src/modules/fason_checklist.js',
   '/src/modules/platform_standartlari.js',
