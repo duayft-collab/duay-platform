@@ -183,8 +183,13 @@
 
     /* --- HEADER --- */
     html += '<div class="pdf-header">';
-    html += '<div class="pdf-co">DUAY ULUSLARARASI TICARET LTD. STI.</div>';
-    html += '<div class="pdf-co-sub">www.duaycor.com &middot; +90 212 625 5 444 &middot; WhatsApp: +90 532 270 5 113</div>';
+    var _meta = (window.DUAY_META && window.DUAY_META.sirket) || {};
+    var _coTr = _meta.unvan_tr || 'DUAY ULUSLARARASI TICARET LTD. STI.';
+    var _web  = _meta.web || 'www.duaycor.com';
+    var _tel  = _meta.tel || '+90 212 625 5 444';
+    var _wa   = _meta.whatsapp || '+90 532 270 5 113';
+    html += '<div class="pdf-co">' + _esc(_coTr) + '</div>';
+    html += '<div class="pdf-co-sub">' + _esc(_web) + ' &middot; ' + _esc(_tel) + ' &middot; WhatsApp: ' + _esc(_wa) + '</div>';
     html += '<div class="pdf-title">PROFORMA INVOICE</div>';
     html += '<div class="pdf-title-no">No: ' + _esc(piNo) + '</div>';
     html += '</div>';
