@@ -114,8 +114,9 @@
 /* [CACHE-BUMP-2026-05-03-V152] SATIS-LIST-REV-TREE-001 — V152: Satis teklif listesinde ayni teklifId'ye sahip kayitlari parent-child hiyerarsi ile grupla (R01 = parent ustte, R02+ = child indented). app_patch.js:2152 renderSatisTeklifleri override edildi (yeni dosya satin_alma_v2_revize_render.js, 299 satir). Persistence/Firestore/data shape sifir degisiklik — sadece gorsel grouping. KX9 uyumu: app_patch.js (7475 satir) DOKUNULMAZ. KX8: item HTML deseni app_patch.js:2247-2335'ten birebir kopya + indent/toggle eklendi. (T2-prev: aaa657e) */
 /* CACHE-BUMP-2026-05-03-V153 SATIS-PDF-ENHANCE-001 V153: 3 PDF formatinda banka blogu (Account Holder, Bank Name, Branch, IBAN, SWIFT/BIC), page-break-inside avoid, filename PI teklifId slug YYMMDD-HHMM optional Rev. window-open hijack pattern, 3 print fn override (yeni dosya satin_alma_v2_pdf_enhance.js, 310 satir). KX9: app_patch.js DOKUNULMAZ. T2-prev: 2c07048 */
 /* CACHE-BUMP-2026-05-03-V154 SATIS-PDF-PREVIEW-PARITY-001 V154: Modal canli onizleme tasarimi PDF cikti tasarimi olarak kullanilir (tek sistem). PDF Format Sec modal A B C BYPASS, _printSatisTeklif override edilir, direkt _saV2OpenPdfV2 cagrilir. Onizleme HTML birebir kopya, A4 optimize (8px font 11px scale up, var degiskenler hardcoded HEX, img 24x24 42x42), V153 banka 5 alan blok ve page-break CSS yeniden kullanilir. Filename PI- prefix YOK: teklifId slug YYMMDD-HHMM optional Rev. Yeni dosya satin_alma_v2_pdf_v2.js, 323 satir. KX9: app_patch.js DOKUNULMAZ. T2-prev: f4d3898 */
-const CACHE_NAME    = 'duay-platform-v154';
-const CACHE_VERSION = '154.0.0';
+/* CACHE-BUMP-2026-05-03-V155 SATIS-MODAL-BULK-FS-NEWTAB-001 V155: 3 ozellik. (1) Liste sayfasinda toplu silme: her satira checkbox + ust toolbar X Sil butonu, confirmModal onay, soft delete (isDeleted true). (2) Modal fullscreen: sag ust ⛶ ikon, toggle ile width 100vw, max-height 100vh, border-radius 0. (3) Modal yeni sekme: sag ust ↗ ikon, modal HTML kopyasi + sayfa CSS yeni window-open icine yazilir, sari uyari banner. KX9: app_patch.js ve satin_alma_v2_satis.js DOKUNULMAZ — DOM observer + render override pattern. Yeni dosya satin_alma_v2_bulk_fs_newtab.js, 354 satir. T2-prev: 861db2a */
+const CACHE_NAME    = 'duay-platform-v155';
+const CACHE_VERSION = '155.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
@@ -163,6 +164,7 @@ const PRECACHE_URLS = [
   '/src/modules/satin_alma_v2_revize_render.js',
   '/src/modules/satin_alma_v2_pdf_enhance.js',
   '/src/modules/satin_alma_v2_pdf_v2.js',
+  '/src/modules/satin_alma_v2_bulk_fs_newtab.js',
   '/src/modules/fason.js',
   '/src/modules/fason_checklist.js',
   '/src/modules/platform_standartlari.js',
