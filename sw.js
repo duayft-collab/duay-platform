@@ -120,8 +120,9 @@
 /* CACHE-BUMP-2026-05-03-V158 DASHBOARD-IMPROVE-001 V158: Mevcut dashboard SIFIRDAN YAZILMADAN gelistirildi. 4 is: placeholder kaldir, Detay Gorunum buton kaldir routing bozuk, bos alert spam tutar 0 cari dash gizle, greeting time-aware emoji sabah ogle aksam. 5 mikro tasarim fix: kart hover, hover lift, tabular-nums, greeting emoji, subtle shadow. KX9 dashboard.js DOKUNULMAZ — window.renderDashboard wrap pattern + DOM mutate + MutationObserver fallback. V155 observer cakismasi yok modal hedefli. Yeni dosya dashboard_improve.js 258 satir. T2-prev: 21b7dc4 */
 /* CACHE-BUMP-2026-05-03-V159 DASHBOARD-TODAY-ACTION-001 V159: Today's Action paneli — sistem-uretilen 5 madde (overdue offers 5+ gun, pending approvals 7+ gun, overdue payments vadesi gecmis, arriving shipments bugun, due payments 7 gun) + PusulaPro manuel gorevler max 5. Veri master fn'lerden delegate (loadSatisTeklifleri, loadAlisTeklifleri, loadTahsilat, loadKonteyner chain, loadOdemePlani, loadGorevler), KOPYA YOK. Liste UI: ikon + metin + sayi badge + tiklanabilir App.nav routing. Bos durum yesil onay mesaji. Idempotent v159-actions-wrap, periyodik 60sn refresh setInterval. KX9: dashboard.js + app_patch.js DOKUNULMAZ — window.renderDashboard wrap pattern. Yeni dosya dashboard_v2_actions.js 297 satir. T2-prev: f56e063 */
 /* CACHE-BUMP-2026-05-03-V160 SATIN-ALMA-URUN-ARAMA-X-001 V160: Alis teklif modal'da urun arama 3 alan yerine 10 alan + multi-token AND. Aranan: urunAdi turkceAdi duayKodu saticiKodu tedarikci marka mensei birim gtip urunTeslimat. Turkce karakter normalize lowercase + accent strip. Multi-token AND her token herhangi bir alanda. Orijinal HTML korunur KX8 — DOM filter pattern, full HTML 5sn cache, master cross-reference loadUrunler 5sn cache. Esleşme yok mesaji. Debounce 150ms. KX9 form.js DOKUNULMAZ — _saV2UrunListHTML + _saV2UrunAra wrap. Yeni dosya satin_alma_v2_arama_x.js. T2-prev: 5a04754 */
-const CACHE_NAME    = 'duay-platform-v160';
-const CACHE_VERSION = '160.0.0';
+/* CACHE-BUMP-2026-05-03-V161-1 SATIN-ALMA-MODAL-FS-NUM-001 V161.1: Alis Teklif modal sav2-form-modal — fullscreen + yeni sekme + urun satir sira no badge. V161 fail rollback edildi MutationObserver subtree:true infinite loop badge inject -> mutation -> observer -> tekrar. V161.1 fix: Observer YOK. setInterval(800ms) scan modal var mi + setInterval(500ms) renumber idempotent. Modal kapaninca document.body.contains check ile timer auto-clear WeakMap. .v161-fs-btn .v161-nt-btn header inject × oncesi. .v161-sira-no badge .sav2f-urun-satir icine. KX9 form.js DOKUNULMAZ. KX8 mevcut HTML kopyalanmadi. mo-urun-db cikarildi sadelestirildi. Yeni dosya satin_alma_v2_modal_fs_x.js 152 satir. T2-prev: 69136d0 */
+const CACHE_NAME    = 'duay-platform-v161-1';
+const CACHE_VERSION = '161.1.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
@@ -175,6 +176,7 @@ const PRECACHE_URLS = [
   '/src/modules/dashboard_improve.js',
   '/src/modules/dashboard_v2_actions.js',
   '/src/modules/satin_alma_v2_arama_x.js',
+  '/src/modules/satin_alma_v2_modal_fs_x.js',
   '/src/modules/fason.js',
   '/src/modules/fason_checklist.js',
   '/src/modules/platform_standartlari.js',
