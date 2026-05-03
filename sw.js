@@ -117,8 +117,9 @@
 /* CACHE-BUMP-2026-05-03-V155 SATIS-MODAL-BULK-FS-NEWTAB-001 V155: 3 ozellik. (1) Liste sayfasinda toplu silme: her satira checkbox + ust toolbar X Sil butonu, confirmModal onay, soft delete (isDeleted true). (2) Modal fullscreen: sag ust ⛶ ikon, toggle ile width 100vw, max-height 100vh, border-radius 0. (3) Modal yeni sekme: sag ust ↗ ikon, modal HTML kopyasi + sayfa CSS yeni window-open icine yazilir, sari uyari banner. KX9: app_patch.js ve satin_alma_v2_satis.js DOKUNULMAZ — DOM observer + render override pattern. Yeni dosya satin_alma_v2_bulk_fs_newtab.js, 354 satir. T2-prev: 861db2a */
 /* CACHE-BUMP-2026-05-03-V156 SATIS-SARTLAR-UI-PDF-001 V156: 2 ana is. (1) Modal sartlar UI yenileme: _saV2SartListeGuncelle override, bordered card (numara monospace + metin + Duzenle ikon + Sil), inline edit modu (sari bg, Enter kaydet Esc iptal), hover effect, X 10 sayac baslik yaninda, bos durum mesaji. Mevcut 65 35 grid (sol sartlar, sag HAZIR MANUEL) korunur. (2) PDF sartlar section: V154 _saV2RenderPdfHtml override, banka blogundan ONCE Terms Conditions section inject, numarali liste ol, page-break-inside avoid. Yeni dosya satin_alma_v2_sartlar_ui_pdf.js, 226 satir. KX9: app_patch.js ve satin_alma_v2_satis.js DOKUNULMAZ. T2-prev: c8d3776 */
 /* CACHE-BUMP-2026-05-03-V157 DUAY-META-CENTER-001 V157: Ortak veriler icin tek merkezi kaynak. window.DUAY_META (sirket meta unvan tel web), null-safe alias fn'ler: DUAY_BANKA cur, DUAY_KUR_GET cur, DUAY_TERMS, DUAY_PI_ADRES, DUAY_META_STATUS. Veri KOPYALAMAZ — mevcut master kaynaklara delegate (loadBankalar, _saKur, _saV2Sartlar, PI_ADRES). DUAY_KUR mevcut data, DUAY_KUR_GET yeni accessor — kafa karistirmaz. EDIT 4: pdf_v2.js header satiri minimal patch (DUAY_META fallback). Yeni dosya src core duay_meta.js, 187 satir. KX9: app_patch.js + master kaynak dosyalari DOKUNULMAZ. T2-prev: 5f03f82 */
-const CACHE_NAME    = 'duay-platform-v157';
-const CACHE_VERSION = '157.0.0';
+/* CACHE-BUMP-2026-05-03-V158 DASHBOARD-IMPROVE-001 V158: Mevcut dashboard SIFIRDAN YAZILMADAN gelistirildi. 4 is: placeholder kaldir, Detay Gorunum buton kaldir routing bozuk, bos alert spam tutar 0 cari dash gizle, greeting time-aware emoji sabah ogle aksam. 5 mikro tasarim fix: kart hover, hover lift, tabular-nums, greeting emoji, subtle shadow. KX9 dashboard.js DOKUNULMAZ — window.renderDashboard wrap pattern + DOM mutate + MutationObserver fallback. V155 observer cakismasi yok modal hedefli. Yeni dosya dashboard_improve.js 258 satir. T2-prev: 21b7dc4 */
+const CACHE_NAME    = 'duay-platform-v158';
+const CACHE_VERSION = '158.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
@@ -169,6 +170,7 @@ const PRECACHE_URLS = [
   '/src/modules/satin_alma_v2_pdf_v2.js',
   '/src/modules/satin_alma_v2_bulk_fs_newtab.js',
   '/src/modules/satin_alma_v2_sartlar_ui_pdf.js',
+  '/src/modules/dashboard_improve.js',
   '/src/modules/fason.js',
   '/src/modules/fason_checklist.js',
   '/src/modules/platform_standartlari.js',
