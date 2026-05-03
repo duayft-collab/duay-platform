@@ -2849,7 +2849,7 @@ window._pdfProformaUpload = async function(t, html, fmt) {
       .outputPdf('blob');
     /* Dosya adı: Proforma-{teklifNo}-R{revNo}.pdf */
     var revStr = String(t.revNo || '01').padStart(2, '0');
-    var name = 'Proforma-' + (t.teklifNo || t.teklifId || t.id) + '-R' + revStr + '.pdf';
+    var _d=new Date(); var _ts=_d.getFullYear().toString().slice(2)+String(_d.getMonth()+1).padStart(2,'0')+String(_d.getDate()).padStart(2,'0')+' '+String(_d.getHours()).padStart(2,'0')+String(_d.getMinutes()).padStart(2,'0'); var _musteri=(t.musteri||t.musteriAd||t.cariName||'').replace(/[\\/:*?"<>|]/g,'').trim(); var _idPart=(t.teklifNo || t.teklifId || t.id); var name = 'Proforma Invoice ' + _idPart + (_musteri?' '+_musteri:'') + ' ' + _ts + (Number(t.revNo)>1?' Rev'+revStr:'') + '.pdf';
     /* FEAT-07e: ORD varsa orders/{ord}/ altına gizle, yoksa proformas/ */
     var path = t.ordNo
       ? 'orders/' + t.ordNo + '/' + name
