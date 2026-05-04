@@ -125,8 +125,9 @@
 /* CACHE-BUMP-2026-05-04-V164b V164.b URUN-DB-MODAL-FS-NUM-001: mo-urun-db Tam ekran (⛶ + body scroll kilit) + Yeni sekme (↗ about:blank) + .udb-card sira no badge (siyah pill, kart sol ust absolute). Strateji V164 deseni — openUrunModal + _udbSatirEkle wrap. _udbSatirEkle closure-bound oldugu icin lazy-every-open pattern: her openUrunModal cagrisinda 50ms sonra wrap kontrol ve yeniden uygula (identity check + string marker). Observer YOK. KX9 urun_db.js DOKUNULMADI. KX8 mevcut HTML kopyalanmadi. Yeni dosya urun_db_modal_fs_x.js 230 satir. T2-prev: eed0d72 */
 /* CACHE-BUMP-2026-05-04-V166 V166 SATIN-ALMA-LISTE-GRUP-001: Alis Teklifleri Listesi gruplama — ana teklif kartlari altinda alt urun satirlari default kapali, ana karta tikla expand/collapse. _saV2RenderMain + renderSatinAlmaV2 wrap, 5x150ms retry kendini durduran. Row bazli idempotent (dataset.v166Setup), ANA tespiti +N badge, HEADER tespiti includes('ÜRÜN /'), click handler defaultPrevented + ic button/input/select/textarea skip. localStorage YOK — her render default kapali. Yeni dosya satin_alma_v2_liste_grup_x.js 199 satir. T2-prev: a90ccb7 */
 /* CACHE-BUMP-2026-05-04-V167 V167 PUSULA-PRO-SYNC-001: PusulaPro Abonelik/Odeme/Hayat Firestore sync. Tek document duay_tenant_default/pusula icinde field-level merge (abonelik, odemeler, hayat, _v167SyncedAt_<field>). data field (gorevler) DOKUNULMAZ. _ppAbonelikStore/Odeme/Hayat 3 store fn wrap + 3 load fn wrap. _isSame sira+key bagimsiz (id sort + stableStringify). _tsMs new Date().getTime() ms karsilastirma. _initialSyncUp guvenli kosul (snap.exists && Array.isArray). Per-field debounce 300ms spam koruma. _fsPath('pusula') hardcoded fallback. UI re-render hook + custom event v167:datasync. Yeni dosya pusula_pro_sync_x.js 277 satir. T2-prev: b366629 */
-const CACHE_NAME    = 'duay-platform-v167';
-const CACHE_VERSION = '167.0.0';
+/* CACHE-BUMP-2026-05-04-V168 V168 PUSULA-PRO-LOAD-FIX-001: PusulaPro gorev veri kurtarma — _ppLoad localStorage'dan 0 donduyse Firestore'dan duay_<tenant>/pusula doc.data field'ini cekip localStorage'a yaz. READ-ONLY (FS write yok). LZString sikistirma (>500 byte). _v168RestoredOnce tek seferlik flag. _isValidFsTaskArray genisletilmis kontrol (Array + her item object). 3 katmanli render fallback (_ppRender → renderPusulaPro → custom event v168:gorevkurtarma). KX9: pusula_pro.js DOKUNULMAZ. V167 ile catismaz: V167 abonelik/odeme/hayat field'lari yazma, V168 sadece data field okuma. Yeni dosya pusula_pro_load_fix_x.js 164 satir. T2-prev: ab7d19e */
+const CACHE_NAME    = 'duay-platform-v168';
+const CACHE_VERSION = '168.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
@@ -185,6 +186,7 @@ const PRECACHE_URLS = [
   '/src/modules/urun_db_modal_fs_x.js',
   '/src/modules/satin_alma_v2_liste_grup_x.js',
   '/src/modules/pusula_pro_sync_x.js',
+  '/src/modules/pusula_pro_load_fix_x.js',
   '/src/modules/fason.js',
   '/src/modules/fason_checklist.js',
   '/src/modules/platform_standartlari.js',
