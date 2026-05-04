@@ -1193,7 +1193,14 @@ window._saV2UrunAdAra = function(pre, deger, hedefId) {
       || _norm(u.duayAdi).includes(q)
       || _norm(u.duayName).includes(q)
       || _norm(u.duayKodu).includes(q)
-      || _norm(u.duayCode).includes(q);
+      || _norm(u.duayCode).includes(q)
+      || _norm(u.turkceAdi).includes(q)
+      || _norm(u.saticiKodu).includes(q)
+      || _norm(u.marka).includes(q)
+      || _norm(u.mensei).includes(q)
+      || _norm(u.birim).includes(q)
+      || _norm(u.gtip).includes(q)
+      || _norm(u.urunTeslimat).includes(q);
   }).slice(0, 8);
   if (!sonuc.length) { if (dd) dd.remove(); return; }
   if (!dd) {
