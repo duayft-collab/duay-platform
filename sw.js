@@ -122,8 +122,9 @@
 /* CACHE-BUMP-2026-05-03-V160 SATIN-ALMA-URUN-ARAMA-X-001 V160: Alis teklif modal'da urun arama 3 alan yerine 10 alan + multi-token AND. Aranan: urunAdi turkceAdi duayKodu saticiKodu tedarikci marka mensei birim gtip urunTeslimat. Turkce karakter normalize lowercase + accent strip. Multi-token AND her token herhangi bir alanda. Orijinal HTML korunur KX8 — DOM filter pattern, full HTML 5sn cache, master cross-reference loadUrunler 5sn cache. Esleşme yok mesaji. Debounce 150ms. KX9 form.js DOKUNULMAZ — _saV2UrunListHTML + _saV2UrunAra wrap. Yeni dosya satin_alma_v2_arama_x.js. T2-prev: 5a04754 */
 /* CACHE-BUMP-2026-05-04-V163 V162-gelismis-arama (form.js _saV2UrunAdAra 7 -> 14 alan: turkceAdi, saticiKodu, marka, mensei, birim, gtip, urunTeslimat) ve V163 SATIN-ALMA-MODAL-TOPSIL-001 (sav2-form-modal urun satir toplu sil — checkbox + tumunu sec + Secilenleri Sil + confirmModal danger). V162 cache atlandigi icin bu bump V162+V163'u birlikte canliya getirir. V161/V161.1 reverted, atlandi. Yeni dosya satin_alma_v2_modal_topsil_x.js 233 satir. KX9 form.js V162 ozel istisna ile dokunuldu, V163'te dokunulmadi. T2-prev: b32a81c */
 /* CACHE-BUMP-2026-05-04-V164 V164 SATIN-ALMA-MODAL-FS-NUM-001: sav2-form-modal Tam ekran (⛶ + body scroll kilit) + Yeni sekme (↗ about:blank) + Urun satir sira no badge ([1] [☑] format, V163 checkbox'tan once aynı 44px slot icinde flex). Strateji V163 deseni — _saV2YeniTeklif + _saV2UrunSatirEkle wrap, observer YOK, 5x100ms retry kendini kapatan. V163 toplu sil sonrasi renumber hook (350+800ms idempotent). KX9 form.js DOKUNULMADI. KX8 mevcut HTML kopyalanmadi. Yeni dosya satin_alma_v2_modal_fs_x.js 242 satir. T2-prev: 0434176 */
-const CACHE_NAME    = 'duay-platform-v164';
-const CACHE_VERSION = '164.0.0';
+/* CACHE-BUMP-2026-05-04-V164b V164.b URUN-DB-MODAL-FS-NUM-001: mo-urun-db Tam ekran (⛶ + body scroll kilit) + Yeni sekme (↗ about:blank) + .udb-card sira no badge (siyah pill, kart sol ust absolute). Strateji V164 deseni — openUrunModal + _udbSatirEkle wrap. _udbSatirEkle closure-bound oldugu icin lazy-every-open pattern: her openUrunModal cagrisinda 50ms sonra wrap kontrol ve yeniden uygula (identity check + string marker). Observer YOK. KX9 urun_db.js DOKUNULMADI. KX8 mevcut HTML kopyalanmadi. Yeni dosya urun_db_modal_fs_x.js 230 satir. T2-prev: eed0d72 */
+const CACHE_NAME    = 'duay-platform-v164-b';
+const CACHE_VERSION = '164.1.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
@@ -179,6 +180,7 @@ const PRECACHE_URLS = [
   '/src/modules/satin_alma_v2_arama_x.js',
   '/src/modules/satin_alma_v2_modal_topsil_x.js',
   '/src/modules/satin_alma_v2_modal_fs_x.js',
+  '/src/modules/urun_db_modal_fs_x.js',
   '/src/modules/fason.js',
   '/src/modules/fason_checklist.js',
   '/src/modules/platform_standartlari.js',
