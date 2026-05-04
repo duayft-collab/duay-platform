@@ -127,8 +127,12 @@
 /* CACHE-BUMP-2026-05-04-V167 V167 PUSULA-PRO-SYNC-001: PusulaPro Abonelik/Odeme/Hayat Firestore sync. Tek document duay_tenant_default/pusula icinde field-level merge (abonelik, odemeler, hayat, _v167SyncedAt_<field>). data field (gorevler) DOKUNULMAZ. _ppAbonelikStore/Odeme/Hayat 3 store fn wrap + 3 load fn wrap. _isSame sira+key bagimsiz (id sort + stableStringify). _tsMs new Date().getTime() ms karsilastirma. _initialSyncUp guvenli kosul (snap.exists && Array.isArray). Per-field debounce 300ms spam koruma. _fsPath('pusula') hardcoded fallback. UI re-render hook + custom event v167:datasync. Yeni dosya pusula_pro_sync_x.js 277 satir. T2-prev: b366629 */
 /* CACHE-BUMP-2026-05-04-V168 V168 PUSULA-PRO-LOAD-FIX-001: PusulaPro gorev veri kurtarma — _ppLoad localStorage'dan 0 donduyse Firestore'dan duay_<tenant>/pusula doc.data field'ini cekip localStorage'a yaz. READ-ONLY (FS write yok). LZString sikistirma (>500 byte). _v168RestoredOnce tek seferlik flag. _isValidFsTaskArray genisletilmis kontrol (Array + her item object). 3 katmanli render fallback (_ppRender → renderPusulaPro → custom event v168:gorevkurtarma). KX9: pusula_pro.js DOKUNULMAZ. V167 ile catismaz: V167 abonelik/odeme/hayat field'lari yazma, V168 sadece data field okuma. Yeni dosya pusula_pro_load_fix_x.js 164 satir. T2-prev: ab7d19e */
 /* CACHE-BUMP-2026-05-04-V169 V169 PUSULA-PRO-MIGRATE-001: PusulaPro eski format gorevleri yeni format'a migrate eder. Eski field (title/desc/due/pri/done/isDeleted) → yeni field (baslik/aciklama/bitTarih/oncelik/durum/silindi). Idempotent (baslik dolu ise atla). pri rakami → oncelik string mapping (1=kritik, 2=yuksek, 3=normal, 4=dusuk). done bool → durum string. Eski field'lar SILINMEZ (rollback safety). 5x1500ms retry — V168 restore tamamlanana kadar bekler. _ppLoad sonrasi _migrateAll → _ppStore (LS+FS sync). UI re-render: _ppRender / renderPusulaPro / custom event v169:migrated. KX9: pusula_pro.js DOKUNULMAZ. V167+V168 ile catismaz. Yeni dosya pusula_pro_migrate_x.js 203 satir. T2-prev: 65a1d61 */
-const CACHE_NAME    = 'duay-platform-v169';
-const CACHE_VERSION = '169.0.0';
+/* CACHE-BUMP-2026-05-04-V170 V170 PUSULA-PRO-MODULER-BOLME-SCAFFOLD-001: pusula_pro.js (4675 satir) moduler bolme Cycle 2 SCAFFOLD. src/modules/pusula-pro/ klasoru + 14 bos iskelet dosya (toplam 239 satir): core, store, sync, migrate, render-list, render-board (takvim), render-detail, modal-task, modal-payment, modal-template, actions, events (mention/emoji), utils, init. Her dosyada window.PusulaPro.<modul> namespace guard, IIFE wrapper, POPULATE BEKLIYOR placeholder. Icerik Cycle 3 POPULATE'de eklenecek. Hicbir dosya 800 K01 limitini asmiyor (tahmin: render-list 600, render-board 620, modal-task 570, modal-payment 600, utils 580). KX9: pusula_pro.js + pusula_pro_sync_x.js + pusula_pro_load_fix_x.js + pusula_pro_migrate_x.js DOKUNULMADI. index.html aktivasyon Cycle 4'te yapilacak (su an eski tek dosya hala aktif). Inline onclick + native prompt() temizligi V175+ ayri patch cycle. Talimat V170 dry-run-rapor onayi alindi. T2-prev: scaffold */
+/* CACHE-BUMP-2026-05-04-V170.0.1 V170.0.1 PUSULA-CORE-POPULATE: pusula-core.js POPULATE (12 -> 269 satir). pusula_pro.js L1-289 (Bolge I L165-221 modal-task'a) birebir kopya, KX8 disiplinli. Outer IIFE wrap + var->window promotion (defensive guard 'if(!window._ppEsc)') + canonical namespace expose (window.PusulaPro.core). 78 _ppEsc + 81 _ppNow + 32 _ppCu + 19 _ppIsAdmin kullanim noktasi icin scope break onlendi. 8/8 sandbox testi PASS (XSS escape, namespace, sabitler, defensive guard). KX9: pusula_pro.js hash AYNEN korundu. Diger 13 scaffold dosyasi DOKUNULMADI. T2-prev: cycle-3-1 */
+/* CACHE-BUMP-2026-05-04-V170.1 V170.1 PUSULA-ARCHITECTURE-CORRECTION-001: Mini-Cycle 2.1 mimari duzeltme. utils kapsami daraltildi (sadece _ppHaftaNo, A2 sıkı disiplin) — state-mutate setter'lar (_ppSetMod, _ppAra, _ppSirala*, _ppCalismaFiltre, _ppSidebarSec) actions'a tasinacak. 2 yeni plugin modul: pusula-yasam.js (Frog/DW/Skor/Goal/Challenge/Habit/Hayat/Rev/Oncelik) + pusula-iletisim.js (Mesaj/Not/GorevMesaj/STT/Tab). Namespace mimarisi: PusulaPro.* (core ekosistem) + PusulaUtils/Yasam/Iletisim (flat plugin modul). Toplam scaffold dosya 14 -> 16. utils scaffold revize (PusulaPro.utils -> PusulaUtils flat). Cycle 1 store plani revize: yasam/iletisim self-contained (kendi Load/Store), store yalnizca gorev/takvim/odeme/abonelik. Altın kural: 'state degistiriyorsa utils degildir'. KX9: pusula_pro.js + _x wrapper + pusula-core.js DOKUNULMADI. POPULATE Cycle 3.2'de yapilacak. T2-prev: scaffold-2-1 */
+/* CACHE-BUMP-2026-05-04-V170.2 V170.2 PUSULA-PRO-MODULER-AKTIVASYON-001: Cycle 4 — 16 modul tamami POPULATE bitti, index.html'e Asama A paralel ekleme yapildi (eski pusula_pro.js + 16 yeni dosya beraber yuklenir). Defensive guard 'if (!window._ppXxxLoaded)' eski tanimlari korur, overwrite engellenir. 16 dosya toplam 5110 satir (orijinal 4675'ten +435 satir defensive guard + namespace expose + diagnostic). Yukleme sirasi: core -> utils -> store -> yasam -> iletisim -> sync -> migrate -> render-list/board/detail -> modal-task/payment/template -> actions -> events -> init. PRECACHE_URLS array'e 16 yeni URL eklendi. KX9: pusula_pro.js + _x wrapper'lar + tum 16 pusula-pro/*.js DOKUNULMADI (sadece index.html + sw.js degisti). 16x11=176 runtime test PASS. Saha test sonrasi V175+ ayri cycle'da pusula_pro.js cikarilacak. T2-prev: cycle-4 */
+const CACHE_NAME    = 'duay-platform-v170-2';
+const CACHE_VERSION = '170.2.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
@@ -161,6 +165,23 @@ const PRECACHE_URLS = [
   '/src/modules/loj_features.js',
   '/src/modules/pirim.js',
   '/src/modules/pusula_pro.js',
+  /* V170 PUSULA-PRO MODÜLER 16 DOSYA (Cycle 4 aktivasyon) */
+  '/src/modules/pusula-pro/pusula-core.js',
+  '/src/modules/pusula-pro/pusula-utils.js',
+  '/src/modules/pusula-pro/pusula-store.js',
+  '/src/modules/pusula-pro/pusula-yasam.js',
+  '/src/modules/pusula-pro/pusula-iletisim.js',
+  '/src/modules/pusula-pro/pusula-sync.js',
+  '/src/modules/pusula-pro/pusula-migrate.js',
+  '/src/modules/pusula-pro/pusula-render-list.js',
+  '/src/modules/pusula-pro/pusula-render-board.js',
+  '/src/modules/pusula-pro/pusula-render-detail.js',
+  '/src/modules/pusula-pro/pusula-modal-task.js',
+  '/src/modules/pusula-pro/pusula-modal-payment.js',
+  '/src/modules/pusula-pro/pusula-modal-template.js',
+  '/src/modules/pusula-pro/pusula-actions.js',
+  '/src/modules/pusula-pro/pusula-events.js',
+  '/src/modules/pusula-pro/pusula-init.js',
   '/src/modules/ik.js',
   '/src/modules/crm.js',
   '/src/modules/stok.js',
