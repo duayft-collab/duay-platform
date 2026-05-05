@@ -126,36 +126,36 @@
     var unitOpts = ['adet', 'kg', 'palet', 'ton', 'm³', 'lt', 'kutu'];
     var supplierOpts = (typeof window._edSupplierOpts === 'function') ? window._edSupplierOpts(d.supplierId) : '<option value="">— Tedarikçi —</option>';
     return '<div style="padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px">'
-      + '<div style="grid-column:span 2">' + lbl('Ürün Adı *')
+      + '<div style="grid-column:span 2">' + lbl(_t('ed.label.productName'))
         + '<input type="text" oninput="window._v186SetField(\'productName\', this.value)" value="' + _val(d.productName) + '" style="' + INPUT_CSS + '" placeholder="Ürün adı...">'
       + '</div>'
-      + '<div style="grid-column:span 2">' + lbl('Tedarikçi *')
+      + '<div style="grid-column:span 2">' + lbl(_t('ed.label.supplier'))
         + '<select onchange="window._v186SetField(\'supplierId\', this.value); window._edRotaPrefill && window._edRotaPrefill(this.value)" style="' + INPUT_CSS + '">' + supplierOpts + '</select>'
       + '</div>'
-      + '<div>' + lbl('Miktar *')
+      + '<div>' + lbl(_t('ed.label.quantity'))
         + '<input type="number" min="1" step="1" oninput="window._v186SetField(\'quantityTotal\', this.value)" value="' + _val(d.quantityTotal) + '" style="' + INPUT_CSS + ';font-variant-numeric:tabular-nums;text-align:right">'
       + '</div>'
-      + '<div>' + lbl('Birim')
+      + '<div>' + lbl(_t('ed.label.unit'))
         + '<select onchange="window._v186SetField(\'unit\', this.value)" style="' + INPUT_CSS + '">'
         + unitOpts.map(function (u) { return '<option value="' + u + '"' + (d.unit === u ? ' selected' : '') + '>' + u + '</option>'; }).join('')
         + '</select>'
       + '</div>'
-      + '<div>' + lbl('Ağırlık (kg)')
+      + '<div>' + lbl(_t('ed.label.weightKg'))
         + '<input type="number" min="0" step="0.1" oninput="window._v186SetField(\'weightKg\', this.value)" value="' + _val(d.weightKg) + '" placeholder="örn: 2450" style="' + INPUT_CSS + ';font-variant-numeric:tabular-nums">'
       + '</div>'
-      + '<div>' + lbl('Hacim (m³)')
+      + '<div>' + lbl(_t('ed.label.volumeM3'))
         + '<input type="number" min="0" step="0.1" oninput="window._v186SetField(\'volumeM3\', this.value)" value="' + _val(d.volumeM3) + '" placeholder="örn: 12.5" style="' + INPUT_CSS + ';font-variant-numeric:tabular-nums">'
       + '</div>'
-      + '<div>' + lbl('Proforma Tarihi')
+      + '<div>' + lbl(_t('ed.label.proformaDate'))
         + '<input type="date" oninput="window._v186SetField(\'proformaDate\', this.value)" value="' + _val(d.proformaDate) + '" style="' + INPUT_CSS + '">'
       + '</div>'
-      + '<div>' + lbl('Tahmini Teslim *')
+      + '<div>' + lbl(_t('ed.label.estimatedDeliveryDate'))
         + '<input type="date" oninput="window._v186SetField(\'estimatedDeliveryDate\', this.value)" value="' + _val(d.estimatedDeliveryDate) + '" style="' + INPUT_CSS + '">'
       + '</div>'
-      + '<div>' + lbl('Termin (gün)')
+      + '<div>' + lbl(_t('ed.label.deliveryTermDays'))
         + '<input type="number" min="1" oninput="window._v186SetField(\'deliveryTermDays\', this.value)" value="' + _val(d.deliveryTermDays) + '" style="' + INPUT_CSS + ';font-variant-numeric:tabular-nums">'
       + '</div>'
-      + '<div>' + lbl('Tolerans (gün)')
+      + '<div>' + lbl(_t('ed.label.toleranceDays'))
         + '<input type="number" min="0" oninput="window._v186SetField(\'toleranceDays\', this.value)" value="' + _val(d.toleranceDays) + '" style="' + INPUT_CSS + ';font-variant-numeric:tabular-nums">'
       + '</div>'
       + '</div>';
@@ -167,59 +167,59 @@
     var paketOpts = [['', '— Seç —'], ['palet', 'Palet'], ['koli', 'Koli'], ['big-bag', 'Big Bag'], ['kafes', 'Kafes/Kasa'], ['cuval', 'Çuval'], ['dokme', 'Dökme'], ['diger', 'Diğer']];
     var armatorList = ['', 'MSC', 'Maersk', 'CMA CGM', 'COSCO', 'Hapag-Lloyd', 'ONE', 'Evergreen', 'Yang Ming', 'HMM', 'ZIM', 'PIL', 'OOCL', 'Diger'];
     return '<div style="padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px">'
-      + '<div style="grid-column:span 2">' + lbl('Yön')
+      + '<div style="grid-column:span 2">' + lbl(_t('ed.label.yon'))
         + '<select onchange="window._v186SetField(\'yon\', this.value)" style="' + INPUT_CSS + '">'
         + yonOpts.map(function (y) { return '<option value="' + y[0] + '"' + ((d.yon || 'GIDEN') === y[0] ? ' selected' : '') + '>' + y[1] + '</option>'; }).join('')
         + '</select>'
       + '</div>'
-      + sect('📤', 'Çıkış Lokasyonu', 'Türkiye içi')
-      + '<div>' + lbl('Çıkış Şehir *')
+      + sect('📤', _t('ed.sect.cikis'), _t('ed.sect.trIci'))
+      + '<div>' + lbl(_t('ed.label.originCity'))
         + '<input type="text" maxlength="50" oninput="window._v186SetField(\'originCity\', this.value)" value="' + _val(d.originCity) + '" style="' + INPUT_CSS + '">'
       + '</div>'
-      + '<div>' + lbl('Çıkış Bölge *')
+      + '<div>' + lbl(_t('ed.label.originDistrict'))
         + '<input type="text" maxlength="50" oninput="window._v186SetField(\'originDistrict\', this.value)" value="' + _val(d.originDistrict) + '" style="' + INPUT_CSS + '">'
       + '</div>'
-      + sect('🎯', 'Varış Lokasyonu', 'Türkiye içi')
-      + '<div>' + lbl('Varış Şehir *')
+      + sect('🎯', _t('ed.sect.varis'), _t('ed.sect.trIci'))
+      + '<div>' + lbl(_t('ed.label.destinationCity'))
         + '<input type="text" maxlength="50" oninput="window._v186SetField(\'destinationCity\', this.value)" value="' + _val(d.destinationCity) + '" style="' + INPUT_CSS + '">'
       + '</div>'
-      + '<div>' + lbl('Varış Bölge *')
+      + '<div>' + lbl(_t('ed.label.destinationDistrict'))
         + '<input type="text" maxlength="50" oninput="window._v186SetField(\'destinationDistrict\', this.value)" value="' + _val(d.destinationDistrict) + '" style="' + INPUT_CSS + '">'
       + '</div>'
-      + sect('🚛', 'Yükleme & Teslim')
-      + '<div style="grid-column:span 2">' + lbl('Yükleme Firma')
+      + sect('🚛', _t('ed.sect.yuklemeTeslim'))
+      + '<div style="grid-column:span 2">' + lbl(_t('ed.label.yuklemeFirma'))
         + '<input type="text" oninput="window._v186SetField(\'yuklemeFirmaAd\', this.value)" value="' + _val(d.yuklemeFirmaAd) + '" style="' + INPUT_CSS + '">'
       + '</div>'
-      + '<div style="grid-column:span 2">' + lbl('Teslim Tipi')
+      + '<div style="grid-column:span 2">' + lbl(_t('ed.label.teslimTipi'))
         + '<select onchange="window._v186SetField(\'teslimTipi\', this.value)" style="' + INPUT_CSS + '">'
         + teslimOpts.map(function (t) { return '<option value="' + t[0] + '"' + ((d.teslimTipi || '') === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('')
         + '</select>'
       + '</div>'
-      + sect('📦', 'Paket Bilgisi')
-      + '<div>' + lbl('Paket Türü')
+      + sect('📦', _t('ed.sect.paket'))
+      + '<div>' + lbl(_t('ed.label.paketTuru'))
         + '<select onchange="window._v186SetField(\'paketTuru\', this.value)" style="' + INPUT_CSS + '">'
         + paketOpts.map(function (p) { return '<option value="' + p[0] + '"' + ((d.paketTuru || '') === p[0] ? ' selected' : '') + '>' + p[1] + '</option>'; }).join('')
         + '</select>'
       + '</div>'
-      + '<div>' + lbl('Paket Adedi')
+      + '<div>' + lbl(_t('ed.label.paketAdedi'))
         + '<input type="number" min="0" oninput="window._v186SetField(\'paketAdedi\', this.value)" value="' + _val(d.paketAdedi) + '" placeholder="örn: 24" style="' + INPUT_CSS + ';font-variant-numeric:tabular-nums">'
       + '</div>'
-      + '<div style="grid-column:span 2">' + lbl('Paket Ebatları')
+      + '<div style="grid-column:span 2">' + lbl(_t('ed.label.paketEbatlari'))
         + '<input type="text" oninput="window._v186SetField(\'paketEbatlari\', this.value)" value="' + _val(d.paketEbatlari) + '" placeholder="örn: 120×80×100 cm" style="' + INPUT_CSS + '">'
       + '</div>'
-      + sect('🚢', 'Sevkiyat & Takip')
-      + '<div>' + lbl('Konteyner No')
+      + sect('🚢', _t('ed.sect.sevkiyat'))
+      + '<div>' + lbl(_t('ed.label.konteynerNo'))
         + '<input type="text" oninput="window._v186SetField(\'konteynerNo\', this.value)" value="' + _val(d.konteynerNo) + '" style="' + INPUT_CSS + '">'
       + '</div>'
-      + '<div>' + lbl('Armatör')
+      + '<div>' + lbl(_t('ed.label.armator'))
         + '<select onchange="window._v186SetField(\'armator\', this.value)" style="' + INPUT_CSS + '">'
         + armatorList.map(function (c) { return '<option value="' + c + '"' + ((d.armator || '') === c ? ' selected' : '') + '>' + (c || '— Seçin —') + '</option>'; }).join('')
         + '</select>'
       + '</div>'
-      + '<div style="grid-column:span 2">' + lbl('Tracking URL')
+      + '<div style="grid-column:span 2">' + lbl(_t('ed.label.trackingUrl'))
         + '<input type="url" oninput="window._v186SetField(\'trackingUrl\', this.value)" value="' + _val(d.trackingUrl) + '" placeholder="https://..." style="' + INPUT_CSS + '">'
       + '</div>'
-      + '<div style="grid-column:span 2">' + lbl('Varış Zamanı')
+      + '<div style="grid-column:span 2">' + lbl(_t('ed.label.varisZamani'))
         + '<input type="datetime-local" oninput="window._v186SetField(\'varisZamani\', this.value)" value="' + _val(d.varisZamani) + '" style="' + INPUT_CSS + '">'
       + '</div>'
       + '</div>';
@@ -243,14 +243,14 @@
 
     return '<div style="padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px">'
       + rbacBanner
-      + sect('🌐', 'İhracat / Sipariş', canRestricted ? '' : 'Sadece admin / manager düzenleyebilir')
-      + '<div>' + lbl('İhracat ID' + (canRestricted ? '' : ' 🔒'))
+      + sect('🌐', _t('ed.sect.ihracatSiparis'), canRestricted ? '' : 'Sadece admin / manager')
+      + '<div>' + lbl(_t('ed.label.ihracatId') + (canRestricted ? '' : ' 🔒'))
         + '<input type="text" maxlength="30" oninput="window._v186SetField(\'ihracatId\', this.value)" value="' + _val(d.ihracatId) + '"' + dis(canRestricted) + ' style="' + INPUT_CSS + '">'
       + '</div>'
-      + '<div>' + lbl('Sipariş Kodu' + (canRestricted ? '' : ' 🔒'))
+      + '<div>' + lbl(_t('ed.label.siparisKodu') + (canRestricted ? '' : ' 🔒'))
         + '<input type="text" maxlength="30" oninput="window._v186SetField(\'siparisKodu\', this.value)" value="' + _val(d.siparisKodu) + '"' + dis(canRestricted) + ' style="' + INPUT_CSS + '">'
       + '</div>'
-      + '<div style="grid-column:span 2">' + lbl('Renk' + (canRestricted ? '' : ' 🔒'))
+      + '<div style="grid-column:span 2">' + lbl(_t('ed.label.renk') + (canRestricted ? '' : ' 🔒'))
         + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
         + _renkList().map(function (r) {
             var sel = d.renk === r.k;
@@ -261,29 +261,29 @@
           }).join('')
         + '</div>'
       + '</div>'
-      + sect('👤', 'Sorumluluk', canRestricted ? '' : 'Sorumlu atama: sadece admin / manager')
-      + '<div style="grid-column:span 2">' + lbl('Sorumlu *' + (canRestricted ? '' : ' 🔒'))
+      + sect('👤', _t('ed.sect.sorumluluk'), canRestricted ? '' : 'admin/manager')
+      + '<div style="grid-column:span 2">' + lbl(_t('ed.label.responsibleUser') + (canRestricted ? '' : ' 🔒'))
         + '<select onchange="window._v186SetField(\'responsibleUserId\', this.value)"' + dis(canRestricted) + ' style="' + INPUT_CSS + '">' + userOpts + '</select>'
       + '</div>'
-      + '<div>' + lbl('Teklif Onaylayan')
+      + '<div>' + lbl(_t('ed.label.teklifOnaylayan'))
         + '<select onchange="window._v186SetField(\'teklifOnaylayan\', this.value)"' + dis(canGeneral) + ' style="' + INPUT_CSS + '">' + teklifOnaylayanOpts + '</select>'
       + '</div>'
-      + '<div>' + lbl('Teklif Onay Tarihi')
+      + '<div>' + lbl(_t('ed.label.teklifOnayTarihi'))
         + '<input type="datetime-local" oninput="window._v186SetField(\'teklifOnayTarihi\', this.value)" value="' + _val(d.teklifOnayTarihi) + '"' + dis(canGeneral) + ' style="' + INPUT_CSS + '">'
       + '</div>'
-      + '<div>' + lbl('Avans Ödeme Tarihi')
+      + '<div>' + lbl(_t('ed.label.avansOdemeTarihi'))
         + '<input type="datetime-local" oninput="window._v186SetField(\'avansOdemeTarihi\', this.value)" value="' + _val(d.avansOdemeTarihi) + '"' + dis(canGeneral) + ' style="' + INPUT_CSS + '">'
       + '</div>'
-      + '<div>' + lbl('Satınalma Sorumlusu')
+      + '<div>' + lbl(_t('ed.label.satinAlmaSorumlusu'))
         + '<select onchange="window._v186SetField(\'satinAlmaSorumlusu\', this.value)"' + dis(canGeneral) + ' style="' + INPUT_CSS + '">' + satinAlmaOpts + '</select>'
       + '</div>'
-      + sect('🚦', 'Durum & Öncelik')
-      + '<div>' + lbl('Öncelik')
+      + sect('🚦', _t('ed.sect.durumOncelik'))
+      + '<div>' + lbl(_t('ed.label.priority'))
         + '<select onchange="window._v186SetField(\'priority\', this.value)"' + dis(canGeneral) + ' style="' + INPUT_CSS + '">'
         + V186_PRIORITY.map(function (p) { return '<option value="' + p[0] + '"' + ((d.priority || 'NORMAL') === p[0] ? ' selected' : '') + '>' + p[1] + '</option>'; }).join('')
         + '</select>'
       + '</div>'
-      + '<div>' + lbl('Durum')
+      + '<div>' + lbl(_t('ed.label.status'))
         + '<select onchange="window._v186SetField(\'status\', this.value)"' + dis(canGeneral) + ' style="' + INPUT_CSS + '">'
         + _statuses().map(function (s) { return '<option value="' + s[0] + '"' + ((d.status || 'SIPARIS_ASAMASINDA') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('')
         + '</select>'
@@ -308,8 +308,8 @@
     var rotaVaris = (d.destinationCity || '?') + (d.destinationDistrict ? ', ' + d.destinationDistrict : '');
 
     return '<div style="padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px">'
-      + sect('📄', 'Belge / Sözleşme')
-      + '<div style="grid-column:span 2">' + lbl('Belge / Sözleşme PDF')
+      + sect('📄', _t('ed.sect.belge'))
+      + '<div style="grid-column:span 2">' + lbl(_t('ed.label.belgeUrl'))
         + '<div style="display:flex;flex-direction:column;gap:6px">'
         + '<input type="file" accept=".pdf,application/pdf" onchange="window._v186BelgeUpload && window._v186BelgeUpload(this)"' + dis(canGeneral) + ' style="font-size:11px;padding:6px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t);font-family:inherit">'
         + '<input type="hidden" id="v186-belgeUrl" value="' + _val(d.belgeUrl) + '">'
@@ -320,23 +320,23 @@
         + '</div>'
         + '</div>'
       + '</div>'
-      + sect('📋', 'Özet — Tüm Bilgiler')
+      + sect('📋', _t('ed.sect.ozet'))
       + '<div style="grid-column:span 2;background:var(--s2,#F5F5F7);border-radius:10px;padding:16px;font-size:12px">'
-        + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">📦 Temel</div>'
+        + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">📦 ' + _t('ed.sect.temel') + '</div>'
         + row('Ürün Adı', d.productName)
         + row('Tedarikçi', supName)
         + row('Miktar', (d.quantityTotal ? d.quantityTotal + ' ' + (d.unit || 'adet') : ''))
         + row('Ağırlık / Hacim', ((d.weightKg ? d.weightKg + ' kg' : '—') + ' / ' + (d.volumeM3 ? d.volumeM3 + ' m³' : '—')))
         + row('Tahmini Teslim', d.estimatedDeliveryDate)
         + row('Tolerans', (d.toleranceDays ? d.toleranceDays + ' gün' : ''))
-        + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin:14px 0 10px;text-transform:uppercase;letter-spacing:.05em">🚛 Rota & Lojistik</div>'
+        + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin:14px 0 10px;text-transform:uppercase;letter-spacing:.05em">🚛 ' + _t('ed.sect.rotaLojistik') + '</div>'
         + row('Yön', (d.yon === 'GELEN' ? '📥 Gelen' : '📤 Giden'))
         + row('Çıkış → Varış', rotaCikis + ' → ' + rotaVaris)
         + row('Yükleme Firma', d.yuklemeFirmaAd)
         + row('Teslim Tipi', (d.teslimTipi === 'SATICI_TESLIM' ? '📦 Satıcı teslim' : (d.teslimTipi === 'FIRMA_ALIR' ? '🏭 Firma alır' : '')))
         + row('Konteyner', d.konteynerNo)
         + row('Armatör', d.armator)
-        + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin:14px 0 10px;text-transform:uppercase;letter-spacing:.05em">🌐 İhracat & Sorumluluk</div>'
+        + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin:14px 0 10px;text-transform:uppercase;letter-spacing:.05em">🌐 ' + _t('ed.sect.ihracatSorumluluk') + '</div>'
         + row('İhracat ID', d.ihracatId)
         + row('Sipariş Kodu', d.siparisKodu)
         + row('Renk', renkLabel)
