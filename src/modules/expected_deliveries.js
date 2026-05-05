@@ -281,6 +281,8 @@
         + '<div>' + _edWizardLabel('Varış Şehir *') + '<input id="ede-destinationCity" maxlength="50" style="' + _edWizardInput + '" value="' + _uiEsc(ed.destinationCity || '') + '"></div>'
         + '<div>' + _edWizardLabel('Varış Bölge *') + '<input id="ede-destinationDistrict" maxlength="50" style="' + _edWizardInput + '" value="' + _uiEsc(ed.destinationDistrict || '') + '"></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Yön') + '<select id="ede-yon" style="' + _edWizardInput + '">' + ['GIDEN','GELEN'].map(function(__y){var __l = __y === 'GIDEN' ? '📤 Giden' : '📥 Gelen'; return '<option value="' + __y + '"' + ((ed.yon || 'GIDEN') === __y ? ' selected' : '') + '>' + __l + '</option>';}).join('') + '</select></div>'
+        /* V184d / LOJ-METRICS-001: Teslim Tipi (opsiyonel) */
+        + '<div style="grid-column:span 2">' + _edWizardLabel('Teslim Tipi') + '<select id="ede-teslimTipi" style="' + _edWizardInput + '">' + ['','SATICI_TESLIM','FIRMA_ALIR'].map(function(__t){var __l = __t === 'SATICI_TESLIM' ? '📦 Satıcı teslim eder' : (__t === 'FIRMA_ALIR' ? '🏭 Firma alır' : '— Belirtilmedi —'); return '<option value="' + __t + '"' + ((ed.teslimTipi || '') === __t ? ' selected' : '') + '>' + __l + '</option>';}).join('') + '</select></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Sorumlu *') + '<select id="ede-responsibleUserId" style="' + _edWizardInput + '">' + _edUserOpts(ed.responsibleUserId) + '</select></div>'
         + '<div style="grid-column:span 2;font-size:11px;font-weight:600;color:var(--t2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--b)">Onay & Satınalma</div>'
         + '<div>' + _edWizardLabel('Teklif Onaylayan') + '<select id="ede-teklifOnaylayan" style="' + _edWizardInput + '">' + _edUserOpts(ed.teklifOnaylayan || '') + '</select></div>'
@@ -363,6 +365,7 @@
         deliveryTermDays: parseInt(document.getElementById('ede-deliveryTermDays')?.value) || list[idx].deliveryTermDays,
         toleranceDays: parseInt(document.getElementById('ede-toleranceDays')?.value) || 0,
         yon: document.getElementById('ede-yon')?.value || 'GIDEN',
+        teslimTipi: document.getElementById('ede-teslimTipi')?.value || '',
         responsibleUserId: document.getElementById('ede-responsibleUserId')?.value || list[idx].responsibleUserId,
         teklifOnaylayan: document.getElementById('ede-teklifOnaylayan')?.value || '',
         teklifOnayTarihi: document.getElementById('ede-teklifOnayTarihi')?.value || '',
@@ -401,6 +404,7 @@
     list[idx].deliveryTermDays = parseInt(document.getElementById('ede-deliveryTermDays')?.value) || list[idx].deliveryTermDays;
     list[idx].toleranceDays = parseInt(document.getElementById('ede-toleranceDays')?.value) || 0;
     list[idx].yon = document.getElementById('ede-yon')?.value || 'GIDEN';
+    list[idx].teslimTipi = document.getElementById('ede-teslimTipi')?.value || '';
     list[idx].responsibleUserId = document.getElementById('ede-responsibleUserId')?.value || list[idx].responsibleUserId;
     list[idx].teklifOnaylayan = document.getElementById('ede-teklifOnaylayan')?.value || '';
     list[idx].teklifOnayTarihi = document.getElementById('ede-teklifOnayTarihi')?.value || '';
@@ -1435,7 +1439,7 @@
       /* SHIPMENT-LIST-COLUMNS-001: konteynerNo chip (V133, conditional render) */
       + (ed.konteynerNo ? '<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap"><span title="Konteyner / TIR" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:ui-monospace,monospace;color:#185FA5;background:#E6F1FB;padding:3px 8px;border-radius:6px;font-weight:500">🚛 ' + _uiEsc(ed.konteynerNo) + '</span></div>' : '')
       /* SHIPMENT-LIST-COLUMNS-002: KG/m³ chip + konteyner uyarı (V133.1, conditional) */
-      + ((ed.weightKg || ed.volumeM3) ? '<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"><div style="display:flex;gap:8px;flex-wrap:wrap"><span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:ui-monospace,monospace;color:#0F6E56;background:#E1F5EE;padding:3px 8px;border-radius:6px;font-weight:500">⚖ ' + (ed.weightKg ? Math.round(ed.weightKg).toLocaleString('tr-TR') + ' kg' : '—') + (ed.volumeM3 ? ' / ' + ed.volumeM3.toLocaleString('tr-TR') + ' m³' : '') + '</span></div>' + (function(){ var __c = window._edCalculateContainers && window._edCalculateContainers(ed); return __c ? '<div style="font-size:10px;color:' + __c.color + ';font-weight:500">' + __c.text + '</div>' : ''; })() + '</div>' : '')
+      + ((ed.weightKg || ed.volumeM3) ? '<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"><div style="display:flex;gap:8px;flex-wrap:wrap"><span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:ui-monospace,monospace;color:#0F6E56;background:#E1F5EE;padding:3px 8px;border-radius:6px;font-weight:500">⚖ ' + (ed.weightKg ? Math.round(ed.weightKg).toLocaleString('tr-TR') + ' kg' : '—') + (ed.volumeM3 ? ' / ' + ed.volumeM3.toLocaleString('tr-TR') + ' m³' : '') + '</span></div></div>' : '')
       + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">'
         + '<div style="font-size:10px;color:var(--t3,#6B7280)">🗓 ' + etaStr + ' · 👤 ' + _uiEsc(sorumlu) + '</div>'
         + '<div style="display:flex;gap:4px">'
@@ -1737,6 +1741,8 @@
           + '<div style="grid-column:span 2;margin-top:6px;padding-top:8px;border-top:0.5px solid var(--b)"><div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:6px">🎯 Varış Lokasyonu <span style="color:var(--t3);font-weight:400">(Türkiye içi)</span></div></div>'
           + '<div>' + _edWizardLabel('Varış Şehir *') + '<input id="edw-destinationCity" maxlength="50" style="' + _edWizardInput + '" value="' + _uiEsc(s.data.destinationCity || '') + '"></div>'
           + '<div>' + _edWizardLabel('Varış Bölge *') + '<input id="edw-destinationDistrict" maxlength="50" style="' + _edWizardInput + '" value="' + _uiEsc(s.data.destinationDistrict || '') + '"></div>'
+          /* V184d / LOJ-METRICS-001: Teslim Tipi (opsiyonel) */
+          + '<div style="grid-column:span 2">' + _edWizardLabel('Teslim Tipi') + '<select id="edw-teslimTipi" style="' + _edWizardInput + '">' + ['','SATICI_TESLIM','FIRMA_ALIR'].map(function(__t){var __l = __t === 'SATICI_TESLIM' ? '📦 Satıcı teslim eder' : (__t === 'FIRMA_ALIR' ? '🏭 Firma alır' : '— Belirtilmedi —'); return '<option value="' + __t + '"' + ((s.data.teslimTipi || '') === __t ? ' selected' : '') + '>' + __l + '</option>';}).join('') + '</select></div>'
         + '</div>';
     } else if (s.step === 3) {
       content = progress + '<div style="font-size:11px;color:var(--t3);margin-bottom:14px">Adım 3 / 4 — Sorumluluk & Öncelik</div>'
@@ -1801,6 +1807,7 @@
       s.data.originDistrict = (g('edw-originDistrict') || '').trim().slice(0, 50);
       s.data.destinationCity = (g('edw-destinationCity') || '').trim().slice(0, 50);
       s.data.destinationDistrict = (g('edw-destinationDistrict') || '').trim().slice(0, 50);
+      s.data.teslimTipi = g('edw-teslimTipi') || '';
     } else if (s.step === 3) {
       var userSel = document.getElementById('edw-responsibleUserId');
       s.data.responsibleUserId = userSel ? userSel.value : '';
@@ -2173,9 +2180,9 @@
         + '<div onclick="event.stopPropagation()"><select onchange="window._edStatusChange && window._edStatusChange(\'' + esc(ed.id) + '\', this.value)" style="padding:3px 8px;border-radius:10px;font-size:10px;font-weight:500;color:' + st['c'] + ';background:' + st['bg'] + ';border:0.5px solid ' + st['c'] + '33;cursor:pointer;font-family:inherit">' + STATUSES.map(function(__sk){var __s = STATUS[__sk];return '<option value="' + __sk + '"' + (ed.status === __sk ? ' selected' : '') + '>' + esc(__s ? __s['t'] : __sk) + '</option>';}).join('') + '</select></div>'
         + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+qd+'/'+qt+' <span style="color:var(--t3);font-size:10px">(%'+pct+')</span></div>'
         /* SHIPMENT-LIST-COLUMNS-002: KG/m³ + konteyner uyarı (V133.1) */
-        + '<div style="font-size:10px;line-height:1.3">' + ((ed.weightKg || ed.volumeM3) ? '<div style="font-family:ui-monospace,monospace;color:var(--t2);font-weight:500">' + (ed.weightKg ? Math.round(ed.weightKg).toLocaleString('tr-TR') + ' kg' : '—') + (ed.volumeM3 ? ' / ' + ed.volumeM3.toLocaleString('tr-TR') + ' m³' : '') + '</div>' + (function() { var c = window._edCalculateContainers && window._edCalculateContainers(ed); return c ? '<div style="color:' + c.color + ';margin-top:2px">' + c.text + '</div>' : ''; })() : '<span style="color:var(--t3)">—</span>') + '</div>'
+        + '<div style="font-size:10px;line-height:1.3">' + ((ed.weightKg || ed.volumeM3) ? '<div style="font-family:ui-monospace,monospace;color:var(--t2);font-weight:500">' + (ed.weightKg ? Math.round(ed.weightKg).toLocaleString('tr-TR') + ' kg' : '—') + (ed.volumeM3 ? ' / ' + ed.volumeM3.toLocaleString('tr-TR') + ' m³' : '') + '</div>' : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+esc(eta)+'</div>'
-        + '<div style="font-size:11px;font-weight:600;color:var(--t2);text-align:center" title="' + esc(__sorumluAd || 'Atanmamış') + '">' + esc(__sorumluInitials) + '</div>'
+        + '<div style="text-align:center"><div style="font-size:11px;font-weight:600;color:var(--t2)" title="' + esc(__sorumluAd || 'Atanmamış') + '">' + esc(__sorumluInitials) + '</div>' + (ed.teslimTipi === 'SATICI_TESLIM' ? '<div style="font-size:9px;color:var(--t3);margin-top:1px" title="Satıcı teslim eder">📦</div>' : (ed.teslimTipi === 'FIRMA_ALIR' ? '<div style="font-size:9px;color:var(--t3);margin-top:1px" title="Firma alır">🏭</div>' : '')) + '</div>'
         /* LOJISTIK-RENK-001: Sipariş Kodu + Renk hücreleri */
         + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ed.siparisKodu ? esc(String(ed.siparisKodu)) : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div style="text-align:center">' + _lojRenkBadge(ed.koliRenk, ed.koliEmoji) + '</div>'
