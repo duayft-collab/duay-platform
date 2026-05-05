@@ -281,6 +281,7 @@
         + '<div>' + _edWizardLabel('Miktar *') + '<input id="ede-quantityTotal" type="number" min="1" step="1" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums;text-align:right" value="' + (ed.quantityTotal || '') + '"></div>'
         + '<div>' + _edWizardLabel('Birim') + '<select id="ede-unit" style="' + _edWizardInput + '">' + unitOpts.map(function(u) { return '<option value="' + u + '"' + (ed.unit === u ? ' selected' : '') + '>' + u + '</option>'; }).join('') + '</select></div>'
         + '<div>' + _edWizardLabel('Proforma Tarihi') + '<input id="ede-proformaDate" type="date" style="' + _edWizardInput + '" value="' + (ed.proformaDate || '') + '"></div>'
+        + '<div>' + _edWizardLabel('Proforma ID') + '<input id="ede-proformaId" type="text" maxlength="50" placeholder="PRF-2026-001" style="' + _edWizardInput + '" value="' + _uiEsc(ed.proformaId || '') + '"></div>'
         + '<div>' + _edWizardLabel('Tahmini Teslim *') + '<input id="ede-estimatedDeliveryDate" type="date" style="' + _edWizardInput + '" value="' + (ed.estimatedDeliveryDate || '') + '"></div>'
         + '<div>' + _edWizardLabel('Termin (gün)') + '<input id="ede-deliveryTermDays" type="number" min="1" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.deliveryTermDays || '') + '"></div>'
         + '<div>' + _edWizardLabel('Tolerans (gün)') + '<input id="ede-toleranceDays" type="number" min="0" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.toleranceDays || '') + '"></div>'
@@ -372,6 +373,7 @@
         productName: productName, supplierId: supplierId, quantityTotal: quantityTotal,
         unit: document.getElementById('ede-unit')?.value || list[idx].unit,
         proformaDate: document.getElementById('ede-proformaDate')?.value || '',
+        proformaId: document.getElementById('ede-proformaId')?.value || '',
         estimatedDeliveryDate: document.getElementById('ede-estimatedDeliveryDate')?.value || '',
         deliveryTermDays: parseInt(document.getElementById('ede-deliveryTermDays')?.value) || list[idx].deliveryTermDays,
         toleranceDays: parseInt(document.getElementById('ede-toleranceDays')?.value) || 0,
@@ -412,6 +414,7 @@
     list[idx].quantityTotal = quantityTotal;
     list[idx].unit = document.getElementById('ede-unit')?.value || list[idx].unit;
     list[idx].proformaDate = document.getElementById('ede-proformaDate')?.value || '';
+    list[idx].proformaId = document.getElementById('ede-proformaId')?.value || '';
     list[idx].estimatedDeliveryDate = document.getElementById('ede-estimatedDeliveryDate')?.value || '';
     list[idx].deliveryTermDays = parseInt(document.getElementById('ede-deliveryTermDays')?.value) || list[idx].deliveryTermDays;
     list[idx].toleranceDays = parseInt(document.getElementById('ede-toleranceDays')?.value) || 0;
@@ -1396,7 +1399,10 @@
     if (!r && !emoji) return '<span style="color:var(--t3);font-size:10px">—</span>';
     var em = emoji ? '<span style="font-size:11px">' + _uiEsc(String(emoji).slice(0,4)) + '</span>' : '';
     if (!r) return '<span style="font-size:11px">' + em + '</span>';
-    return '<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:4px;background:' + r.h + '15;border:0.5px solid ' + r.h + '40;font-size:10px"><span style="width:8px;height:8px;border-radius:2px;background:' + r.h + ';display:inline-block"></span>' + em + '</span>';
+    /* V187a: renk adı i18n'den (ed.color.X) — yoksa _LOJ_KOLI_RENK.a fallback */
+    var ad = (typeof window.t === 'function') ? window.t('ed.color.' + r.k) : r.a;
+    if (ad === 'ed.color.' + r.k) ad = r.a;
+    return '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:4px;background:' + r.h + '15;border:0.5px solid ' + r.h + '40;font-size:10px;white-space:nowrap"><span style="width:8px;height:8px;border-radius:2px;background:' + r.h + ';display:inline-block;flex-shrink:0"></span>' + em + '<span style="color:var(--t2);font-weight:500">' + _uiEsc(ad) + '</span></span>';
   };
   var _lojRenkPickerHtml = function(id, mevcut) {
     var opts = '<option value="">—</option>' + _LOJ_KOLI_RENK.map(function(r){
@@ -2278,7 +2284,7 @@
       var __yon = ed.yon || 'GIDEN';
       /* SHIPMENT-LIST-COLUMNS-002: TIR grup tint — konteynerNo varsa #E3F2FD override (V133.1) */
       var __rowBg = ed.konteynerNo ? '#E3F2FD' : (__yon === 'GELEN' ? 'rgba(59,130,246,0.06)' : 'rgba(249,115,22,0.06)');
-      var __yonBadge = __yon === 'GELEN' ? '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#DBEAFE;color:#1E40AF;font-weight:500">📥 GELEN</span>' : '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#FED7AA;color:#9A3412;font-weight:500">📤 GIDEN</span>';
+      var __yonBadge = __yon === 'GELEN' ? '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#DBEAFE;color:#1E40AF;font-weight:500">📥 Gelen</span>' : '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#FED7AA;color:#9A3412;font-weight:500">📤 Giden</span>';
       var __sorumluAd = ed.responsibleUserId ? _edUserAd(ed.responsibleUserId) : '';
       var __sorumluInitials = __sorumluAd && __sorumluAd !== '—' ? __sorumluAd.split(' ').map(function(__p){return (__p[0]||'').toUpperCase();}).slice(0,2).join('') : '—';
       var __ikonlar = '';
@@ -2299,7 +2305,7 @@
         /* SHIPMENT-LIST-COLUMNS-002: KG/m³ + konteyner uyarı (V133.1) */
         + '<div style="font-size:10px;line-height:1.3">' + ((ed.weightKg || ed.volumeM3) ? '<div style="font-family:ui-monospace,monospace;color:var(--t2);font-weight:500">' + (ed.weightKg ? Math.round(ed.weightKg).toLocaleString('tr-TR') + ' kg' : '—') + (ed.volumeM3 ? ' / ' + ed.volumeM3.toLocaleString('tr-TR') + ' m³' : '') + '</div>' : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div style="font-variant-numeric:tabular-nums;font-weight:' + (rd !== null && rd < 7 ? '600' : '400') + ';color:' + (rd !== null && rd < 0 ? '#DC2626' : (rd !== null && rd === 0 ? '#EA580C' : (rd !== null && rd < 7 ? '#CA8A04' : 'var(--t2)'))) + '">' + esc(eta) + (rd !== null && rd < 0 ? ' <span style="font-size:9px;font-weight:500">(' + Math.abs(rd) + ' gün geç)</span>' : (rd !== null && rd >= 0 && rd < 7 ? ' <span style="font-size:9px;font-weight:500">(' + (rd === 0 ? 'bugün' : rd + ' gün') + ')</span>' : '')) + '</div>'
-        + '<div style="text-align:center"><div style="font-size:11px;font-weight:600;color:var(--t2)" title="' + esc(__sorumluAd || 'Atanmamış') + '">' + esc(__sorumluInitials) + '</div>' + (ed.teslimTipi === 'SATICI_TESLIM' ? '<div style="font-size:9px;color:var(--t3);margin-top:1px" title="Satıcı teslim eder">📦</div>' : (ed.teslimTipi === 'FIRMA_ALIR' ? '<div style="font-size:9px;color:var(--t3);margin-top:1px" title="Firma alır">🏭</div>' : '')) + '</div>'
+        + '<div style="text-align:center"><div style="font-size:11px;font-weight:600;color:var(--t2)" title="' + esc(__sorumluAd || 'Atanmamış') + '">' + esc(__sorumluInitials) + '</div>' + (ed.teslimTipi === 'SATICI_TESLIM' ? '<div style="font-size:9px;color:var(--t3);margin-top:1px;white-space:nowrap" title="Satıcı teslim eder">' + (typeof window.t === 'function' ? window.t('ed.teslim.short.satici') : '📦 Satıcı') + '</div>' : (ed.teslimTipi === 'FIRMA_ALIR' ? '<div style="font-size:9px;color:var(--t3);margin-top:1px;white-space:nowrap" title="Firma alır">' + (typeof window.t === 'function' ? window.t('ed.teslim.short.firma') : '🏭 Firma') + '</div>' : '')) + '</div>'
         /* LOJISTIK-RENK-001: Sipariş Kodu + Renk hücreleri */
         + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ed.siparisKodu ? esc(String(ed.siparisKodu)) : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div style="text-align:center">' + _lojRenkBadge(ed.koliRenk, ed.koliEmoji) + '</div>'

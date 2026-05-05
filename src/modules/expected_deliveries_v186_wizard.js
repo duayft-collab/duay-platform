@@ -159,6 +159,9 @@
       + '<div>' + lbl(_t('ed.label.proformaDate'))
         + '<input type="date" oninput="window._v186SetField(\'proformaDate\', this.value)" value="' + _val(d.proformaDate) + '" style="' + INPUT_CSS + '">'
       + '</div>'
+      + '<div>' + lbl(_t('ed.label.proformaId'))
+        + '<input type="text" maxlength="50" oninput="window._v186SetField(\'proformaId\', this.value)" value="' + _val(d.proformaId) + '" placeholder="örn: PRF-2026-001" style="' + INPUT_CSS + '">'
+      + '</div>'
       + '<div>' + lbl(_t('ed.label.estimatedDeliveryDate'))
         + '<input type="date" oninput="window._v186SetField(\'estimatedDeliveryDate\', this.value)" value="' + _val(d.estimatedDeliveryDate) + '" style="' + INPUT_CSS + '">'
       + '</div>'
@@ -274,9 +277,12 @@
         + _renkList().map(function (r) {
             var sel = d.renk === r.k;
             var border = sel ? '3px solid var(--t)' : '0.5px solid var(--b)';
-            var click = canRestricted ? 'window._v186SetField(\'renk\',\'' + r.k + '\');document.querySelectorAll(\'[data-v186-renk]\').forEach(function(b){b.style.border=\'0.5px solid var(--b)\';});this.style.border=\'3px solid var(--t)\';' : '';
+            var click = canRestricted ? 'window._v186SetField(\'renk\',\'' + r.k + '\');document.querySelectorAll(\'[data-v186-renk-wrap]\').forEach(function(b){b.querySelector(\'.v186-renk-circle\').style.border=\'0.5px solid var(--b)\';b.querySelector(\'.v186-renk-name\').style.fontWeight=\'400\';});this.querySelector(\'.v186-renk-circle\').style.border=\'3px solid var(--t)\';this.querySelector(\'.v186-renk-name\').style.fontWeight=\'600\';' : '';
             var cur = canRestricted ? 'pointer' : 'not-allowed';
-            return '<button type="button" data-v186-renk="' + r.k + '" onclick="' + click + '" title="' + esc(_renkAd(r.k)) + '" style="width:34px;height:34px;border:' + border + ';border-radius:50%;background:' + r.h + ';cursor:' + cur + ';transition:.15s"' + (canRestricted ? '' : ' disabled') + '></button>';
+            return '<div data-v186-renk-wrap data-v186-renk="' + r.k + '" onclick="' + click + '" title="' + esc(_renkAd(r.k)) + '" style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;cursor:' + cur + ';padding:4px;border-radius:6px"' + (canRestricted ? '' : ' aria-disabled="true"') + '>'
+              + '<div class="v186-renk-circle" style="width:32px;height:32px;border:' + border + ';border-radius:50%;background:' + r.h + ';transition:.15s"></div>'
+              + '<div class="v186-renk-name" style="font-size:9px;color:var(--t2);font-weight:' + (sel ? '600' : '400') + ';text-align:center">' + esc(_renkAd(r.k)) + '</div>'
+              + '</div>';
           }).join('')
         + '</div>'
       + '</div>'
@@ -470,6 +476,10 @@
     if (!d.supplierId) errors.push({ step: 1, field: 'Tedarikçi' });
     if (!d.quantityTotal || parseFloat(d.quantityTotal) <= 0) errors.push({ step: 1, field: 'Miktar (>0)' });
     if (!d.estimatedDeliveryDate) errors.push({ step: 1, field: 'Tahmini Teslim' });
+    /* V187a: Proforma Date varsa Proforma ID zorunlu */
+    if (d.proformaDate && (!d.proformaId || !String(d.proformaId).trim())) {
+      errors.push({ step: 1, field: _t('ed.label.proformaId') });
+    }
     if (!d.originCity || !String(d.originCity).trim()) errors.push({ step: 2, field: 'Çıkış Şehir' });
     if (!d.originDistrict || !String(d.originDistrict).trim()) errors.push({ step: 2, field: 'Çıkış Bölge' });
     if (!d.destinationCity || !String(d.destinationCity).trim()) errors.push({ step: 2, field: 'Varış Şehir' });
