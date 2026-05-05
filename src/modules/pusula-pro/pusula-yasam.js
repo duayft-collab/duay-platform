@@ -263,12 +263,12 @@ window._ppRevYukle = function() {
     var bugunHafta = window._ppHaftaNo();
     var bugun = liste.find(function(r) { return r.hafta === bugunHafta; });
     if (bugun) {
-      /* XSS-SAFE: Number coercion */
-      var y = document.getElementById('pp-rev-yapti'); if (y) y.innerHTML = bugun.yapti || '';
-      /* XSS-SAFE: Number coercion */
-      var o = document.getElementById('pp-rev-ogrendi'); if (o) o.innerHTML = bugun.ogrendi || '';
-      /* XSS-SAFE: Number coercion */
-      var h = document.getElementById('pp-rev-hedef'); if (h) h.innerHTML = bugun.hedef || '';
+      /* XSS-SAFE: textContent */
+      var y = document.getElementById('pp-rev-yapti'); if (y) y.textContent = bugun.yapti || '';
+      /* XSS-SAFE: textContent */
+      var o = document.getElementById('pp-rev-ogrendi'); if (o) o.textContent = bugun.ogrendi || '';
+      /* XSS-SAFE: textContent */
+      var h = document.getElementById('pp-rev-hedef'); if (h) h.textContent = bugun.hedef || '';
     }
   } catch(e) { console.warn('[PP]', e); }
 };
