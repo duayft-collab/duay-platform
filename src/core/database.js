@@ -502,6 +502,10 @@ window._writeLocal = async function(key, value) {
  */
 window._writeRemote = async function(collection, data, options) {
   options = options || {};
+  /* V184.2 PUSULA-FIX-002: Defensive — undefined alanlar Firestore reject (database.js:1415, storeNotifs:1935) */
+  if (data && typeof data === 'object') {
+    data = JSON.parse(JSON.stringify(data, function(k, v) { return v === undefined ? null : v; }));
+  }
   if (!collection || typeof collection !== 'string') {
     return { ok: false, state: 'REJECTED_PRECHECK', error: 'invalid_collection' };
   }
