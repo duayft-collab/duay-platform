@@ -1,3 +1,7 @@
+> **Bu proje DUAY Platform Üst Amaç ve Mimari Yön Belgesi'ne göre geliştirilir.** ([docs/DUAY_PLATFORM_MANIFEST.md](docs/DUAY_PLATFORM_MANIFEST.md))
+>
+> Manifestoya aykırı feature reddedilir, manifestoya aykırı kod commit edilmez (KX11).
+
 # Duay Operasyon Platformu
 
 ## Firebase Rules Deploy
