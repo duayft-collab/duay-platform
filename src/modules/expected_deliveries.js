@@ -266,13 +266,20 @@
       + '<div style="font-size:15px;font-weight:600;margin-bottom:16px">✏️ Kayıt Düzenle</div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Ürün Adı *') + '<input id="ede-productName" style="' + _edWizardInput + '" value="' + _uiEsc(ed.productName || '') + '"></div>'
-        + '<div style="grid-column:span 2">' + _edWizardLabel('Tedarikçi *') + '<select id="ede-supplierId" style="' + _edWizardInput + '">' + _edSupplierOpts(ed.supplierId) + '</select></div>'
+        + '<div style="grid-column:span 2">' + _edWizardLabel('Tedarikçi *') + '<select id="ede-supplierId" onchange="window._edRotaPrefill && window._edRotaPrefill(this.value)" style="' + _edWizardInput + '">' + _edSupplierOpts(ed.supplierId) + '</select></div>'
         + '<div>' + _edWizardLabel('Miktar *') + '<input id="ede-quantityTotal" type="number" min="1" step="1" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums;text-align:right" value="' + (ed.quantityTotal || '') + '"></div>'
         + '<div>' + _edWizardLabel('Birim') + '<select id="ede-unit" style="' + _edWizardInput + '">' + unitOpts.map(function(u) { return '<option value="' + u + '"' + (ed.unit === u ? ' selected' : '') + '>' + u + '</option>'; }).join('') + '</select></div>'
         + '<div>' + _edWizardLabel('Proforma Tarihi') + '<input id="ede-proformaDate" type="date" style="' + _edWizardInput + '" value="' + (ed.proformaDate || '') + '"></div>'
         + '<div>' + _edWizardLabel('Tahmini Teslim *') + '<input id="ede-estimatedDeliveryDate" type="date" style="' + _edWizardInput + '" value="' + (ed.estimatedDeliveryDate || '') + '"></div>'
         + '<div>' + _edWizardLabel('Termin (gün)') + '<input id="ede-deliveryTermDays" type="number" min="1" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.deliveryTermDays || '') + '"></div>'
         + '<div>' + _edWizardLabel('Tolerans (gün)') + '<input id="ede-toleranceDays" type="number" min="0" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.toleranceDays || '') + '"></div>'
+        /* V184a2 / LOJ-ROTA-INFO-001: Çıkış-Varış lokasyonu (Türkiye içi) */
+        + '<div style="grid-column:span 2;margin-top:6px;padding-top:8px;border-top:0.5px solid var(--b)"><div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:6px">📤 Çıkış Lokasyonu <span style="color:var(--t3);font-weight:400">(Türkiye içi)</span></div></div>'
+        + '<div>' + _edWizardLabel('Çıkış Şehir *') + '<input id="ede-originCity" maxlength="50" style="' + _edWizardInput + '" value="' + _uiEsc(ed.originCity || '') + '"></div>'
+        + '<div>' + _edWizardLabel('Çıkış Bölge *') + '<input id="ede-originDistrict" maxlength="50" style="' + _edWizardInput + '" value="' + _uiEsc(ed.originDistrict || '') + '"></div>'
+        + '<div style="grid-column:span 2;margin-top:6px;padding-top:8px;border-top:0.5px solid var(--b)"><div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:6px">🎯 Varış Lokasyonu <span style="color:var(--t3);font-weight:400">(Türkiye içi)</span></div></div>'
+        + '<div>' + _edWizardLabel('Varış Şehir *') + '<input id="ede-destinationCity" maxlength="50" style="' + _edWizardInput + '" value="' + _uiEsc(ed.destinationCity || '') + '"></div>'
+        + '<div>' + _edWizardLabel('Varış Bölge *') + '<input id="ede-destinationDistrict" maxlength="50" style="' + _edWizardInput + '" value="' + _uiEsc(ed.destinationDistrict || '') + '"></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Yön') + '<select id="ede-yon" style="' + _edWizardInput + '">' + ['GIDEN','GELEN'].map(function(__y){var __l = __y === 'GIDEN' ? '📤 Giden' : '📥 Gelen'; return '<option value="' + __y + '"' + ((ed.yon || 'GIDEN') === __y ? ' selected' : '') + '>' + __l + '</option>';}).join('') + '</select></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Sorumlu *') + '<select id="ede-responsibleUserId" style="' + _edWizardInput + '">' + _edUserOpts(ed.responsibleUserId) + '</select></div>'
         + '<div style="grid-column:span 2;font-size:11px;font-weight:600;color:var(--t2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--b)">Onay & Satınalma</div>'
@@ -302,6 +309,37 @@
       + '</div>'
       + '</div>';
     document.body.appendChild(mo);
+    /* V184a2 / LOJ-ROTA-INFO-001: eski kayıt soft uyarısı (Q3) — 4 alan boşsa toast */
+    if (!ed.originCity || !ed.originDistrict || !ed.destinationCity || !ed.destinationDistrict) {
+      if (typeof window.toast === 'function') {
+        window.toast('Eski kayıt — rota bilgisi ekleyin', 'warn');
+      }
+    }
+  };
+
+  /* V184a2 / LOJ-ROTA-INFO-001: Tedarikçi seçilince cari.city → originCity prefill.
+   * Hem _edEditModal (ede- prefix) hem yeni kayıt wizard (edw- prefix) için çalışır.
+   * Override edilebilir: sadece input boşsa doldurur, mevcut değer korunur.
+   * Cari'de district yok (Q2), originDistrict manuel kalır. */
+  window._edRotaPrefill = function(supplierId) {
+    if (!supplierId) return;
+    try {
+      var cariList = (typeof window.loadCari === 'function') ? window.loadCari() : [];
+      var cari = null;
+      for (var i = 0; i < cariList.length; i++) {
+        if (String(cariList[i].id) === String(supplierId)) { cari = cariList[i]; break; }
+      }
+      if (!cari) return;
+      var city = cari.city || cari.sehir || '';
+      if (!city) return;
+      /* Hangi wizard açıksa onun input'unu doldur (ikisi aynı anda DOM'da olamaz) */
+      ['ede-originCity', 'edw-originCity'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.value) el.value = city;
+      });
+    } catch (err) {
+      console.warn('[V184a2] _edRotaPrefill hatası:', err);
+    }
   };
 
   window._edEditSubmit = function(edId) {
@@ -331,6 +369,11 @@
         avansOdemeTarihi: document.getElementById('ede-avansOdemeTarihi')?.value || '',
         satinAlmaSorumlusu: document.getElementById('ede-satinAlmaSorumlusu')?.value || '',
         konteynerNo: document.getElementById('ede-konteynerNo')?.value || '',
+        /* V184a2 / LOJ-ROTA-INFO-001: Çıkış-Varış lokasyonu (Q4: düzenleme'de validation yok) */
+        originCity: (document.getElementById('ede-originCity')?.value || '').trim().slice(0, 50),
+        originDistrict: (document.getElementById('ede-originDistrict')?.value || '').trim().slice(0, 50),
+        destinationCity: (document.getElementById('ede-destinationCity')?.value || '').trim().slice(0, 50),
+        destinationDistrict: (document.getElementById('ede-destinationDistrict')?.value || '').trim().slice(0, 50),
         weightKg: parseFloat(document.getElementById('ede-weightKg')?.value) || null,
         volumeM3: parseFloat(document.getElementById('ede-volumeM3')?.value) || null,
         paketTuru: document.getElementById('ede-paketTuru')?.value || null,
@@ -1630,7 +1673,7 @@
       content = progress + '<div style="font-size:11px;color:var(--t3);margin-bottom:14px">Adım 1 / 4 — Ürün & Tedarikçi</div>'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
           + '<div style="grid-column:span 2">' + _edWizardLabel('Ürün Adı *') + '<input id="edw-productName" style="' + _edWizardInput + '" value="' + _uiEsc(s.data.productName || '') + '" placeholder="Mesh Ofis Koltuğu"></div>'
-          + '<div style="grid-column:span 2">' + _edWizardLabel('Tedarikçi *') + '<select id="edw-supplierId" style="' + _edWizardInput + '">' + _edSupplierOpts(s.data.supplierId) + '</select></div>'
+          + '<div style="grid-column:span 2">' + _edWizardLabel('Tedarikçi *') + '<select id="edw-supplierId" onchange="window._edRotaPrefill && window._edRotaPrefill(this.value)" style="' + _edWizardInput + '">' + _edSupplierOpts(s.data.supplierId) + '</select></div>'
           + '<div>' + _edWizardLabel('Miktar *') + '<input id="edw-quantityTotal" type="number" min="1" step="1" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums;text-align:right" value="' + (s.data.quantityTotal || '') + '"></div>'
           + '<div>' + _edWizardLabel('Birim') + '<select id="edw-unit" style="' + _edWizardInput + '">'
               + ['adet','kg','palet','ton','m³','lt','kutu'].map(function(u) { return '<option value="' + u + '"' + (s.data.unit === u ? ' selected' : '') + '>' + u + '</option>'; }).join('')
@@ -1643,6 +1686,13 @@
           + '<div>' + _edWizardLabel('Tahmini Teslim *') + '<input id="edw-estimatedDeliveryDate" type="date" style="' + _edWizardInput + '" value="' + (s.data.estimatedDeliveryDate || '') + '"></div>'
           + '<div>' + _edWizardLabel('Termin (gün)') + '<input id="edw-deliveryTermDays" type="number" min="1" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (s.data.deliveryTermDays || 45) + '"></div>'
           + '<div>' + _edWizardLabel('Tolerans (gün)') + '<input id="edw-toleranceDays" type="number" min="0" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (s.data.toleranceDays || 3) + '"></div>'
+          /* V184a2 / LOJ-ROTA-INFO-001: Çıkış-Varış lokasyonu (Türkiye içi) */
+          + '<div style="grid-column:span 2;margin-top:6px;padding-top:8px;border-top:0.5px solid var(--b)"><div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:6px">📤 Çıkış Lokasyonu <span style="color:var(--t3);font-weight:400">(Türkiye içi)</span></div></div>'
+          + '<div>' + _edWizardLabel('Çıkış Şehir *') + '<input id="edw-originCity" maxlength="50" style="' + _edWizardInput + '" value="' + _uiEsc(s.data.originCity || '') + '"></div>'
+          + '<div>' + _edWizardLabel('Çıkış Bölge *') + '<input id="edw-originDistrict" maxlength="50" style="' + _edWizardInput + '" value="' + _uiEsc(s.data.originDistrict || '') + '"></div>'
+          + '<div style="grid-column:span 2;margin-top:6px;padding-top:8px;border-top:0.5px solid var(--b)"><div style="font-size:11px;font-weight:600;color:var(--t2);margin-bottom:6px">🎯 Varış Lokasyonu <span style="color:var(--t3);font-weight:400">(Türkiye içi)</span></div></div>'
+          + '<div>' + _edWizardLabel('Varış Şehir *') + '<input id="edw-destinationCity" maxlength="50" style="' + _edWizardInput + '" value="' + _uiEsc(s.data.destinationCity || '') + '"></div>'
+          + '<div>' + _edWizardLabel('Varış Bölge *') + '<input id="edw-destinationDistrict" maxlength="50" style="' + _edWizardInput + '" value="' + _uiEsc(s.data.destinationDistrict || '') + '"></div>'
         + '</div>';
     } else if (s.step === 3) {
       content = progress + '<div style="font-size:11px;color:var(--t3);margin-bottom:14px">Adım 3 / 4 — Sorumluluk & Öncelik</div>'
@@ -1702,6 +1752,11 @@
       s.data.estimatedDeliveryDate = g('edw-estimatedDeliveryDate');
       s.data.deliveryTermDays = parseInt(g('edw-deliveryTermDays'), 10) || 45;
       s.data.toleranceDays = parseInt(g('edw-toleranceDays'), 10) || 3;
+      /* V184a2 / LOJ-ROTA-INFO-001: rota alanları (yeni kayıtta zorunlu - validate'de) */
+      s.data.originCity = (g('edw-originCity') || '').trim().slice(0, 50);
+      s.data.originDistrict = (g('edw-originDistrict') || '').trim().slice(0, 50);
+      s.data.destinationCity = (g('edw-destinationCity') || '').trim().slice(0, 50);
+      s.data.destinationDistrict = (g('edw-destinationDistrict') || '').trim().slice(0, 50);
     } else if (s.step === 3) {
       var userSel = document.getElementById('edw-responsibleUserId');
       s.data.responsibleUserId = userSel ? userSel.value : '';
@@ -1724,6 +1779,11 @@
     if (step === 2) {
       if (!d.estimatedDeliveryDate) return 'Tahmini teslim tarihi zorunlu';
       if (d.proformaDate && new Date(d.proformaDate) > new Date(d.estimatedDeliveryDate)) return 'Proforma tarihi teslim tarihinden sonra olamaz';
+      /* V184a2 / LOJ-ROTA-INFO-001: yeni kayıtta 4 rota alanı zorunlu (Q4) */
+      if (!d.originCity) return 'Çıkış Şehir zorunlu';
+      if (!d.originDistrict) return 'Çıkış Bölge zorunlu';
+      if (!d.destinationCity) return 'Varış Şehir zorunlu';
+      if (!d.destinationDistrict) return 'Varış Bölge zorunlu';
     }
     if (step === 3) {
       if (!d.responsibleUserId) return 'Sorumlu kullanıcı zorunlu';
@@ -2053,9 +2113,9 @@
       if (window._shipmentDocCardBadgeHtml) __ikonlar += window._shipmentDocCardBadgeHtml(ed);
       if (!__ikonlar) __ikonlar = '<span style="color:var(--t3);font-size:10px">—</span>';
       /* LOJISTIK-RENK-001: 11-kolon grid (8→11) + İhracat ID hücresi */
-      return '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 1fr 0.8fr 0.9fr 0.8fr 0.7fr 1fr 0.7fr 0.7fr auto;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
+      return '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 1fr 0.8fr 0.9fr 0.8fr 0.7fr 1fr 0.7fr 1.4fr 0.7fr auto;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
         + '<div>' + __yonBadge + '</div>'
-        + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ed.ihracatId ? esc(String(ed.ihracatId).slice(0,15)) : '<span style="color:var(--t3)">—</span>') + '</div>'
+        + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + ((cu && (cu.role === 'admin' || cu.rol === 'admin' || cu.role === 'manager' || cu.rol === 'manager')) ? (ed.ihracatId ? esc(String(ed.ihracatId).slice(0,15)) : '<span style="color:var(--t3)">—</span>') : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div><div style="font-weight:500;color:var(--t)">'+esc(ed.productName||'—')+'</div>'
         + '<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(tedAd)+'</div></div>'
         /* SHIPMENT-LIST-COLUMNS-002: Konteyner ayrı sütun (V133.1, mockup'a sadık — V133 chip kaldırıldı) */
@@ -2069,14 +2129,16 @@
         /* LOJISTIK-RENK-001: Sipariş Kodu + Renk hücreleri */
         + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ed.siparisKodu ? esc(String(ed.siparisKodu)) : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div style="text-align:center">' + _lojRenkBadge(ed.koliRenk, ed.koliEmoji) + '</div>'
+        /* V184a2 / LOJ-ROTA-INFO-001: Rota hücresi (2-line, eski kayıtta —) */
+        + '<div style="font-size:10px;line-height:1.3;color:var(--t2);overflow:hidden">' + ((ed.originCity || ed.originDistrict || ed.destinationCity || ed.destinationDistrict) ? ('<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(ed.originCity || '?') + ' / ' + esc(ed.originDistrict || '?') + '</div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t3)">→ ' + esc(ed.destinationCity || '?') + ' / ' + esc(ed.destinationDistrict || '?') + '</div>') : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div style="font-size:13px;text-align:center">' + __ikonlar + '</div>'
         + '<button onclick="event.stopPropagation();window._edAksiyonMenu && window._edAksiyonMenu(\''+esc(ed.id)+'\')" style="padding:4px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;color:var(--t3);font-size:14px;font-family:inherit;line-height:1">⋮</button>'
         + '</div>';
     }).join('');
 
     /* LOJISTIK-RENK-001: 8→11 kolon (Yön | İhracatID | Ürün/Ted | Durum | Miktar | Tahmini | Sorumlu | SipKod | Renk | İkon | Aksiyon) */
-    var hdrRow = '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 1fr 0.8fr 0.9fr 0.8fr 0.7fr 1fr 0.7fr 0.7fr auto;gap:10px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
-      + '<div>Yön</div><div>İhracat ID</div><div>Ürün / Tedarikçi</div><div style="background:#FFF8E1;border-radius:4px 4px 0 0;padding:4px 6px;margin:-4px -6px">Konteyner</div><div>Durum</div><div>Miktar</div><div style="background:#E8F5E9;border-radius:4px 4px 0 0;padding:4px 6px;margin:-4px -6px">KG / m³</div><div>Tahmini</div><div>Sorumlu</div><div>Sipariş Kodu</div><div>Renk</div><div>İkon</div><div></div></div>';
+    var hdrRow = '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 1fr 0.8fr 0.9fr 0.8fr 0.7fr 1fr 0.7fr 1.4fr 0.7fr auto;gap:10px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
+      + '<div>Yön</div><div>' + (cu && (cu.role === 'admin' || cu.rol === 'admin' || cu.role === 'manager' || cu.rol === 'manager') ? 'İhracat ID' : '') + '</div><div>Ürün / Tedarikçi</div><div style="background:#FFF8E1;border-radius:4px 4px 0 0;padding:4px 6px;margin:-4px -6px">Konteyner</div><div>Durum</div><div>Miktar</div><div style="background:#E8F5E9;border-radius:4px 4px 0 0;padding:4px 6px;margin:-4px -6px">KG / m³</div><div>Tahmini</div><div>Sorumlu</div><div>Sipariş Kodu</div><div>Renk</div><div>Rota</div><div>İkon</div><div></div></div>';
 
     return '<div id="ed-list-container" style="'+card+'">'
       + '<div style="'+hdr+'">'
