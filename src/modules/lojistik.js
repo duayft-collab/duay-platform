@@ -161,6 +161,42 @@ function renderLojistik() {
         const calc = (typeof window._edCalculateContainers === 'function')
           ? window._edCalculateContainers({ weightKg: totalKg, volumeM3: totalM3 })
           : null;
+
+        /* ─── V187f — 4 yeni kart hesapları (Standartizasyon paketi verisi + operasyonel) ─── */
+        const _t = (k, fb) => (typeof window.t === 'function') ? window.t(k) : fb;
+
+        /* Kart 5: Yükleme Önceliği (V187b verisi) */
+        const priReq = edActive.filter(d => d.loadingPriority === 'REQUIRED').length;
+        const priOpt = edActive.filter(d => d.loadingPriority === 'OPTIONAL').length;
+        const priEmpty = edActive.length - priReq - priOpt;
+
+        /* Kart 6: Taşıma Uyarıları (V187c verisi) — top 3 enum frequency */
+        const flagCount = {};
+        edActive.forEach(d => {
+          (Array.isArray(d.handlingFlags) ? d.handlingFlags : []).forEach(f => {
+            flagCount[f] = (flagCount[f] || 0) + 1;
+          });
+        });
+        const top3 = Object.keys(flagCount).map(k => [k, flagCount[k]]).sort((a, b) => b[1] - a[1]).slice(0, 3);
+        const emojiMap = window.HANDLING_FLAGS_EMOJI || {};
+        const flagsTotal = Object.values(flagCount).reduce((s, n) => s + n, 0);
+        const flagsDisplay = top3.length
+          ? top3.map(([f, c]) => `${emojiMap[f] || '?'} <strong>${c}</strong>`).join(' · ')
+          : `<span style="${t3}">—</span>`;
+
+        /* Kart 7: Geciken (eta < bugün AND status YOLDA/GUMRUKTE) — operasyonel */
+        const today0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const geciken = edActive.filter(d => {
+          if (d.status !== 'YOLDA' && d.status !== 'GUMRUKTE') return false;
+          if (!d.estimatedDeliveryDate) return false;
+          return new Date(d.estimatedDeliveryDate) < today0;
+        }).length;
+
+        /* Kart 8: Öncelikli Bekleyen (REQUIRED + henüz teslim alınmamış) — operasyonel */
+        const oncelikliBekleyen = edActive.filter(d =>
+          d.loadingPriority === 'REQUIRED' && d.status !== 'TESLIM_ALINDI'
+        ).length;
+
         return `<div style="${card};padding:14px">
           <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">Toplam KG</div>
           <div style="font-size:20px;font-weight:600;color:var(--t);line-height:1">${Math.round(totalKg).toLocaleString('tr-TR')} <span style="font-size:11px;${t3};font-weight:400">kg</span></div>
@@ -177,6 +213,27 @@ function renderLojistik() {
         <div style="${card};padding:14px">
           <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">Konteyner Doluluk</div>
           ${calc ? `<div style="font-size:11px;${t3};line-height:1.4">Toplam: ${totalM3.toFixed(1)} m³ / ${Math.round(totalKg).toLocaleString('tr-TR')} kg</div><div style="font-size:13px;font-weight:500;color:${calc.color};margin-top:4px">→ ${calc.count} × ${calc.type} yeter</div>` : `<div style="font-size:12px;${t3};text-align:center;padding:6px 0">Veri yok</div>`}
+        </div>
+        <!-- ─── V187f: 4 yeni kart (sıra 2: Standartizasyon + operasyonel) ─── -->
+        <div style="${card};padding:14px" title="${_t('loj.card.loadingPriority.sub','Zorunlu / Opsiyonel')}">
+          <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">⭐ ${_t('loj.card.loadingPriority','Yükleme Önceliği')}</div>
+          <div style="font-size:18px;font-weight:600;color:var(--t);line-height:1">${priReq} <span style="font-size:11px;${t3};font-weight:400">zorunlu</span></div>
+          <div style="font-size:10px;${t3};margin-top:4px">${priOpt} opsiyonel · ${priEmpty} boş</div>
+        </div>
+        <div style="${card};padding:14px" title="${_t('loj.card.handlingFlags.sub','En çok kullanılan')}">
+          <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">🔥 ${_t('loj.card.handlingFlags','Taşıma Uyarıları')}</div>
+          <div style="font-size:14px;color:var(--t);line-height:1.3;letter-spacing:1px">${flagsDisplay}</div>
+          <div style="font-size:10px;${t3};margin-top:4px">${flagsTotal > 0 ? flagsTotal + ' toplam işaret' : 'işaretsiz'}</div>
+        </div>
+        <div style="${card};padding:14px" title="${_t('loj.card.geciken.sub','Yolda + ETA geçti')}">
+          <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">⏰ ${_t('loj.card.geciken','Geciken')}</div>
+          <div style="font-size:20px;font-weight:600;color:${geciken > 0 ? '#A32D2D' : 'var(--t)'};line-height:1">${geciken} <span style="font-size:11px;${t3};font-weight:400">kayıt</span></div>
+          <div style="font-size:10px;${t3};margin-top:4px">yolda + ETA geçti</div>
+        </div>
+        <div style="${card};padding:14px" title="${_t('loj.card.oncelikliBekleyen.sub','Zorunlu, henüz yüklenmedi')}">
+          <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">⭐ ${_t('loj.card.oncelikliBekleyen','Öncelikli Bekleyen')}</div>
+          <div style="font-size:20px;font-weight:600;color:${oncelikliBekleyen > 0 ? '#854F0B' : 'var(--t)'};line-height:1">${oncelikliBekleyen} <span style="font-size:11px;${t3};font-weight:400">bekliyor</span></div>
+          <div style="font-size:10px;${t3};margin-top:4px">zorunlu öncelik</div>
         </div>`;
       })()}
     </div>`,

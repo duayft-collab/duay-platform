@@ -400,6 +400,16 @@ let TRANSLATIONS = {
 
     'ed.actionLabel.delete':          'silme',
     'ed.actionLabel.update':          'güncelleme',
+
+    // ── Lojistik Panel Kartları (V187f) ──────────────────────────
+    'loj.card.loadingPriority':           'Yükleme Önceliği',
+    'loj.card.loadingPriority.sub':       'Zorunlu / Opsiyonel',
+    'loj.card.handlingFlags':             'Taşıma Uyarıları',
+    'loj.card.handlingFlags.sub':         'En çok kullanılan',
+    'loj.card.geciken':                   'Geciken',
+    'loj.card.geciken.sub':               'Yolda + ETA geçti',
+    'loj.card.oncelikliBekleyen':         'Öncelikli Bekleyen',
+    'loj.card.oncelikliBekleyen.sub':     'Zorunlu, henüz yüklenmedi',
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -789,6 +799,16 @@ let TRANSLATIONS = {
 
     'ed.actionLabel.delete':          'delete',
     'ed.actionLabel.update':          'edit',
+
+    // ── Logistics Panel Cards (V187f) ────────────────────────────
+    'loj.card.loadingPriority':           'Loading Priority',
+    'loj.card.loadingPriority.sub':       'Required / Optional',
+    'loj.card.handlingFlags':             'Handling Warnings',
+    'loj.card.handlingFlags.sub':         'Most used',
+    'loj.card.geciken':                   'Overdue',
+    'loj.card.geciken.sub':               'In transit + ETA passed',
+    'loj.card.oncelikliBekleyen':         'Priority Pending',
+    'loj.card.oncelikliBekleyen.sub':     'Required, not yet loaded',
   },
 };
 
