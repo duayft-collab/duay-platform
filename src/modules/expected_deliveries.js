@@ -2416,6 +2416,7 @@
       + '<div style="'+hdr+'">'
       + '<span style="font-size:13px;font-weight:500">Beklenen Teslimatlar <span style="font-weight:400;color:var(--t3);font-size:11px;margin-left:6px">'+list.length+' kayıt</span></span>'
       /* V187g — Export Center: PDF butonu (+ Yeni öncesi, görünür) */
+      + (list.length > 0 ? '<button onclick="window._edExportXlsx && window._edExportXlsx()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px" title="' + (typeof window.t === 'function' ? window.t('ed.toolbar.xlsx') : '📊 Excel') + '">' + (typeof window.t === 'function' ? window.t('ed.toolbar.xlsx') : '📊 Excel') + '</button>' : '')
       + (list.length > 0 ? '<button onclick="window._edExportPdf && window._edExportPdf()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px" title="' + (typeof window.t === 'function' ? window.t('ed.toolbar.pdf') : '📄 PDF') + '">' + (typeof window.t === 'function' ? window.t('ed.toolbar.pdf') : '📄 PDF') + '</button>' : '')
       + '<button onclick="window._edWizardAc && window._edWizardAc()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit">+ Yeni</button>'
       + (window._edPendingBtnHTML ? window._edPendingBtnHTML() : '')
@@ -2457,6 +2458,114 @@
       html2canvas: { scale: 1.5, logging: false, useCORS: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }  // 14 kolon → landscape
     }).from(el).save();
+  };
+
+  /* ─── V187h — Export Center: Excel export (SheetJS XLSX) ─────────
+   * Veri tabanlı (DOM bağımsız) — 20 kolon, lookup'lı (Tedarikçi/Sorumlu adı çekilir).
+   * K06: soft-deleted kayıtlar dahil edilmez (sadece isDeleted!==true).
+   * V187a/b/c yeni alanları (proformaId, containerSequenceNo, loadingPriority, handlingFlags) kapsanır. */
+  window._edExportXlsx = function () {
+    var t = (typeof window.t === 'function') ? window.t : function (k) { return k; };
+    if (typeof XLSX === 'undefined') {
+      if (typeof window.toast === 'function') window.toast(t('ed.toast.xlsxMissing'), 'err');
+      return;
+    }
+    var list = (typeof window.loadExpectedDeliveries === 'function')
+      ? (window.loadExpectedDeliveries({ raw: true }) || [])
+      : [];
+    /* K06: soft-deleted hariç */
+    list = list.filter(function (d) { return d && !d.isDeleted; });
+    if (list.length === 0) {
+      if (typeof window.toast === 'function') window.toast(t('ed.toast.xlsxGenerating'), 'warn');
+      return;
+    }
+    if (typeof window.toast === 'function') window.toast(t('ed.toast.xlsxGenerating'), 'ok');
+
+    /* Lookup tabloları (Tedarikçi adı, Sorumlu adı, Status label) */
+    var cariList = (typeof window.loadCari === 'function') ? (window.loadCari() || []) : [];
+    var cariMap = {};
+    cariList.forEach(function (c) { if (c && c.id) cariMap[String(c.id)] = c; });
+    var userAdFn = (typeof window._edUserAd === 'function') ? window._edUserAd : function (uid) { return uid || ''; };
+    var statusLabels = window.STATUS_LABELS || {};
+    var emojiMap = window.HANDLING_FLAGS_EMOJI || {};
+
+    /* Header (TR i18n'den; 20 kolon — V187a/b/c yeni alanları işaretli) */
+    var header = [
+      t('ed.label.yon'), t('ed.label.ihracatId'), t('ed.label.siparisKodu'), t('ed.label.proformaId'),
+      t('ed.label.productName'), t('ed.label.supplier'), t('ed.label.quantity'), t('ed.label.unit'),
+      t('ed.label.weightKg'), t('ed.label.volumeM3'), t('ed.label.estimatedDeliveryDate'), t('ed.label.status'),
+      t('ed.label.containerSequenceNo'), t('ed.label.loadingPriority'), t('ed.label.handlingFlags'),
+      t('ed.label.konteynerNo'), t('ed.label.armator'), t('ed.label.responsibleUser'), t('ed.label.renk'),
+      'Rota'  // ed.label namespace'inde 'Rota' tek bir anahtar yok — composite (originCity → destinationCity)
+    ];
+
+    /* Satır: enum'lar TR label'a açılır (REQUIRED→Zorunlu, GIDEN→Giden vb) */
+    var loadingPriLabel = function (p) {
+      if (p === 'REQUIRED') return t('ed.loadingPri.required');
+      if (p === 'OPTIONAL') return t('ed.loadingPri.optional');
+      return '';
+    };
+    var handlingFlagsDisplay = function (flags) {
+      if (!Array.isArray(flags) || !flags.length) return '';
+      return flags.map(function (f) { return emojiMap[f] || f; }).join(' ');
+    };
+    var rotaCompose = function (d) {
+      var o = (d.originDistrict || '') + (d.originCity ? ' / ' + d.originCity : '');
+      var v = (d.destinationDistrict || '') + (d.destinationCity ? ' / ' + d.destinationCity : '');
+      if (!o && !v) return '';
+      return (o || '?') + ' → ' + (v || '?');
+    };
+
+    var rows = [header].concat(list.map(function (d) {
+      var sup = cariMap[String(d.supplierId)] || null;
+      var supName = sup ? (sup.firma || sup.unvan || sup.ad || '') : '';
+      return [
+        d.yon === 'GELEN' ? 'Gelen' : 'Giden',
+        d.ihracatId || '',
+        d.siparisKodu || '',
+        d.proformaId || '',
+        d.productName || '',
+        supName,
+        Number(d.quantityTotal || 0),       // numerik — Excel filter/sort için
+        d.unit || '',
+        d.weightKg != null ? Number(d.weightKg) : '',
+        d.volumeM3 != null ? Number(d.volumeM3) : '',
+        d.estimatedDeliveryDate || '',
+        statusLabels[d.status] || d.status || '',
+        d.containerSequenceNo != null ? Number(d.containerSequenceNo) : '',
+        loadingPriLabel(d.loadingPriority),
+        handlingFlagsDisplay(d.handlingFlags),
+        d.konteynerNo || '',
+        d.armator || '',
+        d.responsibleUserId ? userAdFn(d.responsibleUserId) : '',
+        d.renk || d.koliRenk || '',
+        rotaCompose(d)
+      ];
+    }));
+
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    /* Kolon genişlik tahmini (Excel auto-size yok; default genişlik biraz daha rahat) */
+    ws['!cols'] = header.map(function (h, i) {
+      var w = (i === 4 || i === 5 || i === 19) ? 28  // Ürün, Tedarikçi, Rota geniş
+            : (i === 14) ? 16                         // Taşıma Uyarıları emoji
+            : (i === 11 || i === 13) ? 16             // Durum, Yük. Önc.
+            : 12;
+      return { wch: w };
+    });
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, t('ed.export.xlsx.sheetName'));
+
+    var dateStr = new Date().toISOString().slice(0, 10);
+    var filename = t('ed.export.xlsx.filename') + '_' + dateStr + '.xlsx';
+
+    /* K05: Excel export audit log */
+    try {
+      if (typeof window.logActivity === 'function') {
+        window.logActivity('ed_xlsx_export', 'recordCount=' + list.length);
+      }
+    } catch (e) {}
+
+    XLSX.writeFile(wb, filename);
   };
 
   /* ─── V186f / K10 cleanup: STATUSES + STATUS_LABELS + STATUS_COLORS + _LOJ_KOLI_RENK ───

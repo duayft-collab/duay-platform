@@ -416,6 +416,13 @@ let TRANSLATIONS = {
     'ed.toast.pdfGenerating':             'PDF oluşturuluyor…',
     'ed.toast.pdfMissing':                'PDF kütüphanesi yüklenemedi',
     'ed.export.pdf.filename':             'Beklenen-Teslimatlar',
+
+    // ── Export Center — Excel (V187h) ────────────────────────────
+    'ed.toolbar.xlsx':                    '📊 Excel',
+    'ed.toast.xlsxGenerating':            'Excel oluşturuluyor…',
+    'ed.toast.xlsxMissing':               'Excel kütüphanesi yüklenemedi',
+    'ed.export.xlsx.filename':            'Beklenen-Teslimatlar',
+    'ed.export.xlsx.sheetName':           'Teslimatlar',
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -821,6 +828,13 @@ let TRANSLATIONS = {
     'ed.toast.pdfGenerating':             'Generating PDF…',
     'ed.toast.pdfMissing':                'PDF library not loaded',
     'ed.export.pdf.filename':             'Expected-Deliveries',
+
+    // ── Export Center — Excel (V187h) ────────────────────────────
+    'ed.toolbar.xlsx':                    '📊 Excel',
+    'ed.toast.xlsxGenerating':            'Generating Excel…',
+    'ed.toast.xlsxMissing':               'Excel library not loaded',
+    'ed.export.xlsx.filename':            'Expected-Deliveries',
+    'ed.export.xlsx.sheetName':           'Deliveries',
   },
 };
 
