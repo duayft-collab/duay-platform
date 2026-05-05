@@ -407,6 +407,11 @@
     list[idx].avansOdemeTarihi = document.getElementById('ede-avansOdemeTarihi')?.value || '';
     list[idx].satinAlmaSorumlusu = document.getElementById('ede-satinAlmaSorumlusu')?.value || '';
     list[idx].konteynerNo = document.getElementById('ede-konteynerNo')?.value || '';
+    /* V184a2 / LOJ-ROTA-INFO-001: rota alanları (direct save path - eksikti) */
+    list[idx].originCity = (document.getElementById('ede-originCity')?.value || '').trim().slice(0, 50);
+    list[idx].originDistrict = (document.getElementById('ede-originDistrict')?.value || '').trim().slice(0, 50);
+    list[idx].destinationCity = (document.getElementById('ede-destinationCity')?.value || '').trim().slice(0, 50);
+    list[idx].destinationDistrict = (document.getElementById('ede-destinationDistrict')?.value || '').trim().slice(0, 50);
     list[idx].weightKg = parseFloat(document.getElementById('ede-weightKg')?.value) || null;
     list[idx].volumeM3 = parseFloat(document.getElementById('ede-volumeM3')?.value) || null;
     list[idx].paketTuru = document.getElementById('ede-paketTuru')?.value || null;
