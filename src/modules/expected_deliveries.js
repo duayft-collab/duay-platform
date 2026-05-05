@@ -224,7 +224,7 @@
   window._edDeleteConfirm = function(edId) {
     if (!edId) return;
     if (typeof window.confirmModal !== 'function') {
-      window.toast?.('confirmModal bulunamadı', 'err');
+      window.toast?.(t('ed.toast.confirmModalMissing'), 'err');
       return;
     }
     /* LOJ-1B-H: 48h+ + non-admin → admin onayı talebi */
@@ -239,7 +239,7 @@
         onConfirm: function() {
           var __r = window._edRequestApproval('delete', edId, null);
           if (__r && __r.success === false) return; // dedup → toast _edRequestApproval içinde
-          window.toast?.('Silme talebi admin onayına gönderildi', 'ok');
+          window.toast?.(t('ed.toast.deleteRequestSent'), 'ok');
         }
       });
       return;
@@ -251,10 +251,10 @@
       cancelText: 'İptal',
       onConfirm: function() {
         if (window._edDelete(edId)) {
-          window.toast?.('Kayıt silindi', 'ok');
+          window.toast?.(t('ed.toast.deleted'), 'ok');
           window._edRefresh?.();
         } else {
-          window.toast?.('Silme başarısız', 'err');
+          window.toast?.(t('ed.toast.deleteFailed'), 'err');
         }
       }
     });
@@ -264,7 +264,7 @@
   window._edEditModal = function(edId) {
     var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
     var ed = list.find(function(e) { return e.id === edId; });
-    if (!ed) { window.toast?.('Kayıt bulunamadı', 'err'); return; }
+    if (!ed) { window.toast?.(t('ed.toast.notFound'), 'err'); return; }
     var ex = document.getElementById('ed-edit-modal'); if (ex) ex.remove();
     var mo = document.createElement('div');
     mo.id = 'ed-edit-modal';
@@ -359,13 +359,13 @@
     var productName = (document.getElementById('ede-productName')?.value || '').trim();
     var supplierId = document.getElementById('ede-supplierId')?.value || '';
     var quantityTotal = parseFloat(document.getElementById('ede-quantityTotal')?.value) || 0;
-    if (!productName) { window.toast?.('Ürün adı zorunlu', 'err'); return; }
-    if (!supplierId) { window.toast?.('Tedarikçi zorunlu', 'err'); return; }
-    if (quantityTotal <= 0) { window.toast?.('Miktar > 0 olmalı', 'err'); return; }
+    if (!productName) { window.toast?.(t('ed.toast.productRequired'), 'err'); return; }
+    if (!supplierId) { window.toast?.(t('ed.toast.supplierRequired'), 'err'); return; }
+    if (quantityTotal <= 0) { window.toast?.(t('ed.toast.qtyPositive'), 'err'); return; }
     var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
     var idx = -1;
     for (var i = 0; i < list.length; i++) { if (list[i].id === edId) { idx = i; break; } }
-    if (idx === -1) { window.toast?.('Kayıt bulunamadı', 'err'); return; }
+    if (idx === -1) { window.toast?.(t('ed.toast.notFound'), 'err'); return; }
     /* LOJ-1B-H: 48h+ + non-admin → admin onayı talebi (tüm form payload) */
     if (!window._edIsAdmin() && window._edIsOlderThan24h(list[idx])) {
       var __payload = {
@@ -404,7 +404,7 @@
       var __r = window._edRequestApproval('update', edId, __payload);
       if (__r && __r.success === false) return; // dedup → toast _edRequestApproval içinde
       document.getElementById('ed-edit-modal')?.remove();
-      window.toast?.('Düzenleme talebi admin onayına gönderildi', 'ok');
+      window.toast?.(t('ed.toast.editRequestSent'), 'ok');
       return;
     }
     list[idx].productName = productName;
@@ -443,7 +443,7 @@
     list[idx].updatedAt = new Date().toISOString();
     if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(list);
     document.getElementById('ed-edit-modal')?.remove();
-    window.toast?.('Kayıt güncellendi', 'ok');
+    window.toast?.(t('ed.toast.updated'), 'ok');
     window._edRefresh?.();
   };
 
@@ -453,7 +453,7 @@
     var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
     var idx = -1;
     for (var i = 0; i < list.length; i++) { if (list[i].id === edId) { idx = i; break; } }
-    if (idx === -1) { window.toast?.('Kayıt bulunamadı', 'err'); return; }
+    if (idx === -1) { window.toast?.(t('ed.toast.notFound'), 'err'); return; }
     var ed = list[idx];
     if (ed.status === newStatus) return;
     /* V184b / LOJ-STATUS-EXPAND-001: non-admin geri-dönüş engeli (GECIKTI sıra dışı, her yerden gidebilir) */
@@ -461,7 +461,7 @@
       var oldOrder = STATUS_ORDER[ed.status] || 0;
       var newOrder = STATUS_ORDER[newStatus] || 0;
       if (oldOrder > 0 && newOrder > 0 && newOrder < oldOrder) {
-        window.toast?.('Geriye dönüş için admin yetkisi gerekli', 'warn');
+        window.toast?.(t('ed.toast.statusBackwardBlocked'), 'warn');
         /* V185 / B5: status backward block audit log (güvenlik olayı) */
         try { if (typeof window.logActivity === 'function') window.logActivity('ed_status_backward_blocked', 'edId=' + edId + ' from=' + ed.status + ' to=' + newStatus); } catch(e) {}
         if (typeof window._edRefresh === 'function') window._edRefresh();
@@ -481,7 +481,7 @@
     list[idx] = ed;
     if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(list);
     var label = STATUS_LABELS[newStatus] || newStatus;
-    window.toast?.('Durum güncellendi: ' + label, 'ok');
+    window.toast?.(t('ed.toast.statusUpdated', null, { label: label }), 'ok');
     /* V185 / B5: status değişim audit log */
     try { if (typeof window.logActivity === 'function') window.logActivity('ed_status_changed', 'edId=' + edId + ' from=' + (ed.statusHistory[ed.statusHistory.length - 1]?.from || '') + ' to=' + newStatus); } catch(e) {}
     window._edRefresh?.();
@@ -513,7 +513,7 @@
   /* LOJ-1B-C3: Tracking URL'i yeni sekmede aç (🔗 Aç butonu handler) */
   window._edOpenTrackingUrl = function() {
     var u = (document.getElementById('ede-trackingUrl')?.value || '').trim();
-    if (!u) { window.toast?.('URL boş', 'err'); return; }
+    if (!u) { window.toast?.(t('ed.toast.urlEmpty'), 'err'); return; }
     window.open(u, '_blank', 'noopener,noreferrer');
   };
 
@@ -521,9 +521,9 @@
   window._edUploadBelge = async function(fileInput) {
     if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
     var file = fileInput.files[0];
-    if (file['size'] > 20 * 1024 * 1024) { window.toast?.('Dosya 20MB limitini aşıyor', 'err'); return; }
+    if (file['size'] > 20 * 1024 * 1024) { window.toast?.(t('ed.toast.fileTooLarge'), 'err'); return; }
     if (typeof window._uploadBase64ToStorage !== 'function') {
-      window.toast?.('Storage helper bulunamadı', 'err'); return;
+      window.toast?.(t('ed.toast.storageMissing'), 'err'); return;
     }
     var statusEl = document.getElementById('ede-belge-status');
     var urlEl = document.getElementById('ede-belgeUrl');
@@ -539,9 +539,9 @@
       if (urlEl) urlEl.value = url;
       var fnameEsc = (window._uiEsc || window._esc || function(x){return x;})(file['name']);
       if (statusEl) statusEl.innerHTML = '✓ Yüklendi: ' + fnameEsc + ' · <a href="' + url + '" target="_blank" rel="noopener" style="color:var(--ac)">Görüntüle</a> · <button type="button" onclick="window._edBelgeKaldir && window._edBelgeKaldir()" style="background:none;border:none;cursor:pointer;color:#E0574F;font-size:11px;font-family:inherit;padding:0">🗑️ Kaldır</button>';
-      window.toast?.('Belge yüklendi', 'ok');
+      window.toast?.(t('ed.toast.fileUploaded'), 'ok');
     } catch (err) {
-      window.toast?.('Yükleme başarısız: ' + (err && err.message || String(err)), 'err');
+      window.toast?.(t('ed.toast.uploadFailed', null, { err: (err && err.message) || String(err) }), 'err');
       if (statusEl) statusEl.textContent = 'Belge yok';
     }
   };
@@ -568,7 +568,7 @@
     var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
     var ed = list.find(function(e){ return e.id === edId; });
     if (!ed || !ed.belgeUrl) {
-      window.toast?.('Bu kayda ek dosya yok', 'err');
+      window.toast?.(t('ed.toast.noFiles'), 'err');
       return;
     }
     window.open(ed.belgeUrl, '_blank', 'noopener,noreferrer');
@@ -620,8 +620,8 @@
       }
     }
     if (existing) {
-      var actionLabel = action === 'delete' ? 'silme' : (action === 'update' ? 'güncelleme' : action);
-      window.toast?.('Bu kayıt için zaten bekleyen ' + actionLabel + ' talebi var', 'warn');
+      var actionLabel = action === 'delete' ? t('ed.actionLabel.delete') : (action === 'update' ? t('ed.actionLabel.update') : action);
+      window.toast?.(t('ed.toast.dedupBlocked', null, { action: actionLabel }), 'warn');
       try { if (typeof window.logActivity === 'function') window.logActivity('ed_pending_dedup_blocked', 'edId=' + edId + ' action=' + action + ' existingId=' + existing.id); } catch(e) {}
       return { success: false, error: 'duplicate_pending', existingId: existing.id };
     }
@@ -646,18 +646,18 @@
   /* LOJ-1B-I: Admin onay UI — pending listeyi modal'da göster, onayla/reddet */
   window._edApprovePending = function(actionId) {
     if (!actionId) return;
-    if (!window._edIsAdmin()) { window.toast?.('Sadece admin onaylayabilir', 'err'); return; }
+    if (!window._edIsAdmin()) { window.toast?.(t('ed.toast.adminApproveOnly'), 'err'); return; }
     var actions = window._edPendingActionsLoad();
     var ai = -1;
     for (var i = 0; i < actions.length; i++) { if (actions[i].id === actionId) { ai = i; break; } }
-    if (ai === -1) { window.toast?.('Talep bulunamadı', 'err'); return; }
+    if (ai === -1) { window.toast?.(t('ed.toast.requestNotFound'), 'err'); return; }
     var action = actions[ai];
-    if (action.status !== 'pending') { window.toast?.('Talep zaten incelenmiş', 'warn'); return; }
+    if (action.status !== 'pending') { window.toast?.(t('ed.toast.requestAlreadyReviewed'), 'warn'); return; }
     /* V185 / B1: Self-onay engeli — talep eden kendi talebini onaylayamaz (4-göz ilkesi) */
     var __cuB1 = (typeof window.CU === 'function' ? window.CU() : null) || {};
     var __cuB1Id = __cuB1.id || __cuB1.uid || null;
     if (action.requestedBy && __cuB1Id && String(action.requestedBy) === String(__cuB1Id)) {
-      window.toast?.('Kendi gönderdiğiniz talebi onaylayamazsınız', 'err');
+      window.toast?.(t('ed.toast.selfApproveBlocked'), 'err');
       /* V185 / B5: self-approve block audit log (güvenlik olayı) */
       try { if (typeof window.logActivity === 'function') window.logActivity('ed_pending_self_approve_blocked', 'actionId=' + actionId + ' edId=' + action.edId); } catch(e) {}
       return;
@@ -701,14 +701,14 @@
         ok = true;
       }
     }
-    if (!ok) { window.toast?.('Uygulanamadı', 'err'); return; }
+    if (!ok) { window.toast?.(t('ed.toast.applyFailed'), 'err'); return; }
     var cu = (typeof window.CU === 'function' ? window.CU() : null) || {};
     actions[ai].status = 'approved';
     actions[ai].reviewedBy = cu.id || cu.uid || null;
     actions[ai].reviewedByName = cu.name || cu.displayName || '—';
     actions[ai].reviewedAt = new Date().toISOString();
     window._edPendingActionsStore(actions);
-    window.toast?.('Talep onaylandı', 'ok');
+    window.toast?.(t('ed.toast.requestApproved'), 'ok');
     /* V185 / B5: tahkim onay audit log */
     try { if (typeof window.logActivity === 'function') window.logActivity('ed_pending_approved', 'actionId=' + actionId + ' edId=' + actions[ai].edId + ' action=' + actions[ai].action); } catch(e) {}
     document.getElementById('ed-pending-modal')?.remove();
@@ -717,12 +717,12 @@
 
   window._edRejectPending = function(actionId) {
     if (!actionId) return;
-    if (!window._edIsAdmin()) { window.toast?.('Sadece admin reddedebilir', 'err'); return; }
+    if (!window._edIsAdmin()) { window.toast?.(t('ed.toast.adminRejectOnly'), 'err'); return; }
     var actions = window._edPendingActionsLoad();
     var ai = -1;
     for (var i = 0; i < actions.length; i++) { if (actions[i].id === actionId) { ai = i; break; } }
-    if (ai === -1) { window.toast?.('Talep bulunamadı', 'err'); return; }
-    if (actions[ai].status !== 'pending') { window.toast?.('Talep zaten incelenmiş', 'warn'); return; }
+    if (ai === -1) { window.toast?.(t('ed.toast.requestNotFound'), 'err'); return; }
+    if (actions[ai].status !== 'pending') { window.toast?.(t('ed.toast.requestAlreadyReviewed'), 'warn'); return; }
     var cu = (typeof window.CU === 'function' ? window.CU() : null) || {};
     /* LOJ-1B-F: Rejected action audit log — ed bulunduysa statusHistory'ye yaz */
     var __action = actions[ai];
@@ -744,7 +744,7 @@
     actions[ai].reviewedByName = cu.name || cu.displayName || '—';
     actions[ai].reviewedAt = new Date().toISOString();
     window._edPendingActionsStore(actions);
-    window.toast?.('Talep reddedildi', 'ok');
+    window.toast?.(t('ed.toast.requestRejected'), 'ok');
     /* V185 / B5: tahkim red audit log */
     try { if (typeof window.logActivity === 'function') window.logActivity('ed_pending_rejected', 'actionId=' + actionId + ' edId=' + __action.edId + ' action=' + __action.action); } catch(e) {}
     document.getElementById('ed-pending-modal')?.remove();
@@ -829,7 +829,7 @@
   };
 
   window._edPendingModalOpen = function() {
-    if (!window._edIsAdmin()) { window.toast?.('Yalnızca admin', 'err'); return; }
+    if (!window._edIsAdmin()) { window.toast?.(t('ed.toast.adminOnly'), 'err'); return; }
     var ex = document.getElementById('ed-pending-modal'); if (ex) ex.remove();
     var actions = (window._edPendingActionsLoad() || []).filter(function(a){ return a.status === 'pending'; });
     /* V185 / B3: en eski üstte — acil olanlar (uzun bekleyen) önce işlenir */
@@ -2098,10 +2098,10 @@
 
   /* LOJISTIK-RENK-001: yön/admin mevcut kayda 3 alan atar/değiştirir */
   window._edAtaModal = function(edId) {
-    if (!_edAdminFields()) { window.toast?.('Bu işlem için yetkiniz yok', 'warn'); return; }
+    if (!_edAdminFields()) { window.toast?.(t('ed.toast.permissionDenied'), 'warn'); return; }
     var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
     var ed = list.find(function(x){return String(x.id)===String(edId);});
-    if (!ed) { window.toast?.('Kayıt bulunamadı', 'err'); return; }
+    if (!ed) { window.toast?.(t('ed.toast.notFound'), 'err'); return; }
     var old = document.getElementById('mo-ed-ata'); if (old) old.remove();
     var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-ed-ata';
     mo.innerHTML = '<div class="moc" style="max-width:520px;padding:0;border-radius:14px;overflow:hidden">'
@@ -2118,7 +2118,7 @@
   };
 
   window._edAtaKaydet = function(edId) {
-    if (!_edAdminFields()) { window.toast?.('Bu işlem için yetkiniz yok', 'warn'); return; }
+    if (!_edAdminFields()) { window.toast?.(t('ed.toast.permissionDenied'), 'warn'); return; }
     var g = function(eid) { return document.getElementById(eid); };
     var patch = {
       ihracatId: _lojIhrValue('ed-at-ihracat').slice(0, 15),
@@ -2128,7 +2128,7 @@
     };
     var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
     var idx = list.findIndex(function(x){return String(x.id)===String(edId);});
-    if (idx < 0) { window.toast?.('Kayıt bulunamadı', 'err'); return; }
+    if (idx < 0) { window.toast?.(t('ed.toast.notFound'), 'err'); return; }
     var prev = { ihracatId: list[idx].ihracatId || '', siparisKodu: list[idx].siparisKodu || '', koliRenk: list[idx].koliRenk || '', koliEmoji: list[idx].koliEmoji || '' };
     list[idx].ihracatId = patch.ihracatId;
     list[idx].siparisKodu = patch.siparisKodu;
@@ -2144,7 +2144,7 @@
       if (changes.length) window.logActivity('expected_delivery', 'ata', edId, changes.join(','));
     }
     document.getElementById('mo-ed-ata')?.remove();
-    window.toast?.('Atama kaydedildi', 'ok');
+    window.toast?.(t('ed.toast.assignSaved'), 'ok');
     if (typeof window._edRefresh === 'function') window._edRefresh();
     else if (typeof window.renderEdList === 'function') window.renderEdList();
   };

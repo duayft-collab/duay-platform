@@ -405,7 +405,7 @@
     var canEdit = canEditDetay();
     var canView = canEdit || canViewAnyInGroup(groupEd);
     if (!canView) {
-      window.toast && window.toast('Bu işlem için yetkiniz yok', 'warn');
+      window.toast && window.toast(t('ed.toast.permissionDenied'), 'warn');
       return;
     }
 
@@ -483,7 +483,7 @@
 
   window._lojIhracatDetayKaydet = function(ihracatId) {
     if (!canEditDetay()) {
-      window.toast && window.toast('Bu işlem için yetkiniz yok', 'warn');
+      window.toast && window.toast(t('ed.toast.permissionDenied'), 'warn');
       return;
     }
     var g = function(id) { var el = document.getElementById(id); return el ? (el.value || '').trim() : ''; };
@@ -507,13 +507,13 @@
     };
     var ok = saveDetay(ihracatId, data);
     if (ok) {
-      window.toast && window.toast('İhracat detayı kaydedildi', 'ok');
+      window.toast && window.toast(t('ed.toast.detaySaved'), 'ok');
       /* V185 / B5: ihracat detay save audit log */
       try { if (typeof window.logActivity === 'function') window.logActivity('ihracat_detay_saved', 'ihracatId=' + ihracatId + ' fields=' + Object.keys(data).filter(function(k){return data[k];}).join(',')); } catch(e) {}
       document.getElementById('mo-loj-ihracat-detay')?.remove();
       if (typeof window._edRefresh === 'function') window._edRefresh();
     } else {
-      window.toast && window.toast('Kayıt başarısız', 'err');
+      window.toast && window.toast(t('ed.toast.deleteFailed'), 'err');
     }
   };
 
