@@ -423,6 +423,11 @@ let TRANSLATIONS = {
     'ed.toast.xlsxMissing':               'Excel kütüphanesi yüklenemedi',
     'ed.export.xlsx.filename':            'Beklenen-Teslimatlar',
     'ed.export.xlsx.sheetName':           'Teslimatlar',
+
+    // ── Export Center — JSON (V187i) ─────────────────────────────
+    'ed.toolbar.json':                    '📋 JSON',
+    'ed.toast.jsonGenerating':            'JSON indiriliyor…',
+    'ed.export.json.filename':            'Beklenen-Teslimatlar',
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -835,6 +840,11 @@ let TRANSLATIONS = {
     'ed.toast.xlsxMissing':               'Excel library not loaded',
     'ed.export.xlsx.filename':            'Expected-Deliveries',
     'ed.export.xlsx.sheetName':           'Deliveries',
+
+    // ── Export Center — JSON (V187i) ─────────────────────────────
+    'ed.toolbar.json':                    '📋 JSON',
+    'ed.toast.jsonGenerating':            'Downloading JSON…',
+    'ed.export.json.filename':            'Expected-Deliveries',
   },
 };
 

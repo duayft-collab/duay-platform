@@ -2416,6 +2416,7 @@
       + '<div style="'+hdr+'">'
       + '<span style="font-size:13px;font-weight:500">Beklenen Teslimatlar <span style="font-weight:400;color:var(--t3);font-size:11px;margin-left:6px">'+list.length+' kayıt</span></span>'
       /* V187g — Export Center: PDF butonu (+ Yeni öncesi, görünür) */
+      + (list.length > 0 ? '<button onclick="window._edExportJson && window._edExportJson()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px" title="' + (typeof window.t === 'function' ? window.t('ed.toolbar.json') : '📋 JSON') + '">' + (typeof window.t === 'function' ? window.t('ed.toolbar.json') : '📋 JSON') + '</button>' : '')
       + (list.length > 0 ? '<button onclick="window._edExportXlsx && window._edExportXlsx()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px" title="' + (typeof window.t === 'function' ? window.t('ed.toolbar.xlsx') : '📊 Excel') + '">' + (typeof window.t === 'function' ? window.t('ed.toolbar.xlsx') : '📊 Excel') + '</button>' : '')
       + (list.length > 0 ? '<button onclick="window._edExportPdf && window._edExportPdf()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px" title="' + (typeof window.t === 'function' ? window.t('ed.toolbar.pdf') : '📄 PDF') + '">' + (typeof window.t === 'function' ? window.t('ed.toolbar.pdf') : '📄 PDF') + '</button>' : '')
       + '<button onclick="window._edWizardAc && window._edWizardAc()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit">+ Yeni</button>'
@@ -2566,6 +2567,51 @@
     } catch (e) {}
 
     XLSX.writeFile(wb, filename);
+  };
+
+  /* ─── V187i — Export Center: JSON export (Blob + auto-download) ──
+   * Vanilla — external lib yok. K06: soft-delete kayıtlar dahil edilmez.
+   * Tüm raw alanlar export edilir (geliştirici/destek/yedek senaryosu).
+   * K05: audit log (recordCount). */
+  window._edExportJson = function () {
+    var t = (typeof window.t === 'function') ? window.t : function (k) { return k; };
+    var list = (typeof window.loadExpectedDeliveries === 'function')
+      ? (window.loadExpectedDeliveries({ raw: true }) || [])
+      : [];
+    /* K06: soft-deleted hariç */
+    list = list.filter(function (d) { return d && !d.isDeleted; });
+    if (list.length === 0) return;
+
+    if (typeof window.toast === 'function') window.toast(t('ed.toast.jsonGenerating'), 'ok');
+
+    var dateStr = new Date().toISOString().slice(0, 10);
+    var filename = t('ed.export.json.filename') + '_' + dateStr + '.json';
+    var payload = {
+      exportedAt: new Date().toISOString(),
+      version: 'V187i',
+      recordCount: list.length,
+      records: list
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    /* Cleanup — DOM ve URL ref'ini bırakma (memory leak önleme) */
+    setTimeout(function () {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+
+    /* K05: JSON export audit log */
+    try {
+      if (typeof window.logActivity === 'function') {
+        window.logActivity('ed_json_export', 'recordCount=' + list.length);
+      }
+    } catch (e) {}
   };
 
   /* ─── V186f / K10 cleanup: STATUSES + STATUS_LABELS + STATUS_COLORS + _LOJ_KOLI_RENK ───
