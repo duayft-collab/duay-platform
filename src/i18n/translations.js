@@ -376,6 +376,10 @@ let TRANSLATIONS = {
     'ed.detay.section.tasiyici':      'Taşıyıcı / Hat',
     'ed.detay.section.liman':         'Liman / Rota',
     'ed.wrap.ihracatBilgi':           'İhracat Bilgileri',
+    'ed.modal.edit':                  'Kayıt Düzenle',
+    'ed.modal.onayLabel':             'Onay & Satınalma',
+    'ed.modal.sorumluDegistir':       'Sorumlu Değiştir',
+    'ed.modal.ata':                   'İhracat / Sipariş / Renk Ata',
 
     'ed.actionLabel.delete':          'silme',
     'ed.actionLabel.update':          'güncelleme',
@@ -744,6 +748,10 @@ let TRANSLATIONS = {
     'ed.detay.section.tasiyici':      'Carrier / Line',
     'ed.detay.section.liman':         'Port / Route',
     'ed.wrap.ihracatBilgi':           'Export Info',
+    'ed.modal.edit':                  'Edit Record',
+    'ed.modal.onayLabel':             'Approval & Procurement',
+    'ed.modal.sorumluDegistir':       'Change Responsible',
+    'ed.modal.ata':                   'Assign Export / Order / Color',
 
     'ed.actionLabel.delete':          'delete',
     'ed.actionLabel.update':          'edit',
