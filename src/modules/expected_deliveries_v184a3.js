@@ -118,7 +118,6 @@
   if (typeof origRenderEdList === 'function') {
     window.renderEdList = function() {
       var html = origRenderEdList.apply(this, arguments);
-      if (!isAdminOrManager()) return html; // user/staff/lead düz liste
       try {
         return groupRowsByIhracatId(html);
       } catch (e) {

@@ -2193,7 +2193,7 @@
       /* LOJISTIK-RENK-001: 11-kolon grid (8→11) + İhracat ID hücresi */
       return '<div data-ed-id="' + esc(String(ed.id || '')) + '" data-ihracat-id="' + esc(String(ed.ihracatId || '')) + '" style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 1fr 0.8fr 0.9fr 0.8fr 0.7fr 1fr 0.7fr 1.4fr 0.7fr auto;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
         + '<div>' + __yonBadge + '</div>'
-        + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + ((cu && (cu.role === 'admin' || cu.rol === 'admin' || cu.role === 'manager' || cu.rol === 'manager')) ? (ed.ihracatId ? esc(String(ed.ihracatId).slice(0,15)) : '<span style="color:var(--t3)">—</span>') : '<span style="color:var(--t3)">—</span>') + '</div>'
+        + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ed.ihracatId ? esc(String(ed.ihracatId).slice(0,15)) : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div><div style="font-weight:500;color:var(--t)">'+esc(ed.productName||'—')+'</div>'
         + '<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(tedAd)+'</div></div>'
         /* SHIPMENT-LIST-COLUMNS-002: Konteyner ayrı sütun (V133.1, mockup'a sadık — V133 chip kaldırıldı) */
@@ -2216,7 +2216,7 @@
 
     /* LOJISTIK-RENK-001: 8→11 kolon (Yön | İhracatID | Ürün/Ted | Durum | Miktar | Tahmini | Sorumlu | SipKod | Renk | İkon | Aksiyon) */
     var hdrRow = '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 1fr 0.8fr 0.9fr 0.8fr 0.7fr 1fr 0.7fr 1.4fr 0.7fr auto;gap:10px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
-      + '<div>Yön</div><div>' + (cu && (cu.role === 'admin' || cu.rol === 'admin' || cu.role === 'manager' || cu.rol === 'manager') ? 'İhracat ID' : '') + '</div><div>Ürün / Tedarikçi</div><div style="background:#FFF8E1;border-radius:4px 4px 0 0;padding:4px 6px;margin:-4px -6px">Konteyner</div><div>Durum</div><div>Miktar</div><div style="background:#E8F5E9;border-radius:4px 4px 0 0;padding:4px 6px;margin:-4px -6px">KG / m³</div><div>Tahmini</div><div>Sorumlu</div><div>Sipariş Kodu</div><div>Renk</div><div>Rota</div><div>İkon</div><div></div></div>';
+      + '<div>Yön</div><div>İhracat ID</div><div>Ürün / Tedarikçi</div><div style="background:#FFF8E1;border-radius:4px 4px 0 0;padding:4px 6px;margin:-4px -6px">Konteyner</div><div>Durum</div><div>Miktar</div><div style="background:#E8F5E9;border-radius:4px 4px 0 0;padding:4px 6px;margin:-4px -6px">KG / m³</div><div>Tahmini</div><div>Sorumlu</div><div>Sipariş Kodu</div><div>Renk</div><div>Rota</div><div>İkon</div><div></div></div>';
 
     return '<div id="ed-list-container" style="'+card+'">'
       + '<div style="'+hdr+'">'
