@@ -204,7 +204,7 @@
         '</div>' +
         /* FOOTER */
         '<div style="padding:14px 20px;border-top:1px solid #eee;display:flex;gap:10px;justify-content:flex-end">' +
-          (window._edIsAdmin && window._edIsAdmin() ? '<button type="button" onclick="window._shipmentDocProbe(\'' + _esc(edId) + '\')" style="padding:8px 14px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:12px" title="Ayrıntıları DevTools console\'a yazar">🧪 Console</button>' : '') +
+          /* V187e: '🧪 Console' butonu UI'dan kaldırıldı — admin için window._shipmentDocProbe('edId') console'dan çalışır */
           '<button type="button" onclick="document.getElementById(\'sd-ui-history\').style.display=document.getElementById(\'sd-ui-history\').style.display===\'none\'?\'block\':\'none\'" style="padding:8px 14px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:12px">📜 Geçmişi göster/gizle</button>' +
           '<button type="button" onclick="window._shipmentDocUiClose()" style="padding:8px 14px;border:none;background:#222;color:#fff;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500">Kapat</button>' +
         '</div>' +
