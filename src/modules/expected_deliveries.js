@@ -237,7 +237,8 @@
         confirmText: 'Talep Gönder',
         cancelText: 'İptal',
         onConfirm: function() {
-          window._edRequestApproval('delete', edId, null);
+          var __r = window._edRequestApproval('delete', edId, null);
+          if (__r && __r.success === false) return; // dedup → toast _edRequestApproval içinde
           window.toast?.('Silme talebi admin onayına gönderildi', 'ok');
         }
       });
@@ -400,7 +401,8 @@
         priority: document.getElementById('ede-priority')?.value || 'NORMAL',
         status: document.getElementById('ede-status')?.value || list[idx].status
       };
-      window._edRequestApproval('update', edId, __payload);
+      var __r = window._edRequestApproval('update', edId, __payload);
+      if (__r && __r.success === false) return; // dedup → toast _edRequestApproval içinde
       document.getElementById('ed-edit-modal')?.remove();
       window.toast?.('Düzenleme talebi admin onayına gönderildi', 'ok');
       return;
@@ -609,6 +611,20 @@
   window._edRequestApproval = function(action, edId, payload) {
     var cu = (typeof window.CU === 'function' ? window.CU() : null) || {};
     var list = window._edPendingActionsLoad();
+    /* V185 / B2: dedup — aynı edId + action için zaten pending varsa engelle */
+    var existing = null;
+    for (var __dx = 0; __dx < list.length; __dx++) {
+      var __pa = list[__dx];
+      if (__pa.status === 'pending' && String(__pa.edId) === String(edId) && __pa.action === action) {
+        existing = __pa; break;
+      }
+    }
+    if (existing) {
+      var actionLabel = action === 'delete' ? 'silme' : (action === 'update' ? 'güncelleme' : action);
+      window.toast?.('Bu kayıt için zaten bekleyen ' + actionLabel + ' talebi var', 'warn');
+      try { if (typeof window.logActivity === 'function') window.logActivity('ed_pending_dedup_blocked', 'edId=' + edId + ' action=' + action + ' existingId=' + existing.id); } catch(e) {}
+      return { success: false, error: 'duplicate_pending', existingId: existing.id };
+    }
     list.push({
       id: 'pa_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
       edId: edId,
@@ -624,6 +640,7 @@
     window._edPendingActionsStore(list);
     /* V185 / B5: tahkim talep audit log */
     try { if (typeof window.logActivity === 'function') window.logActivity('ed_pending_request', 'action=' + action + ' edId=' + edId); } catch(e) {}
+    return { success: true };
   };
 
   /* LOJ-1B-I: Admin onay UI — pending listeyi modal'da göster, onayla/reddet */
