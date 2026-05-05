@@ -752,51 +752,119 @@
     window._edRefresh?.();
   };
 
+  /* V185 / B3: Yaş göstergesi — "X saat/gün önce" */
+  function _edPendingTimeAgo(iso) {
+    if (!iso) return '—';
+    try {
+      var t = new Date(iso).getTime();
+      if (isNaN(t)) return '—';
+      var diff = Date.now() - t;
+      var min = Math.floor(diff / 60000);
+      if (min < 1) return 'şimdi';
+      if (min < 60) return min + ' dk önce';
+      var hr = Math.floor(min / 60);
+      if (hr < 24) return hr + ' saat önce';
+      var day = Math.floor(hr / 24);
+      return day + ' gün önce';
+    } catch(e) { return '—'; }
+  }
+
+  /* V185 / B3: Tek talep kartı — sol renkli kenarlık + yaş + vurgulu talep eden */
+  function _edPendingCardHtml(a, edMap, esc) {
+    var ed = edMap[a.edId] || { productName: '(silinmiş)' };
+    var dateStr = a.requestedAt ? new Date(a.requestedAt).toLocaleString('tr-TR') : '—';
+    var ageStr = _edPendingTimeAgo(a.requestedAt);
+    var isDelete = a.action === 'delete';
+    var actionLabel = isDelete ? '🗑️ Silme' : '✏️ Güncelleme';
+    var sideColor = isDelete ? '#DC2626' : '#185FA5';
+    var bgTint = isDelete ? 'rgba(220,38,38,.04)' : 'rgba(24,95,165,.04)';
+    /* 24h+ bekleyen talep — yaş badge kırmızı */
+    var ageOld = false;
+    try { ageOld = (Date.now() - new Date(a.requestedAt).getTime()) > 86400000; } catch(e) {}
+    var ageBadgeBg = ageOld ? '#DC2626' : '#6B7280';
+    var detailBtn = a.action === 'update' && a.payload
+      ? '<button onclick="event.stopPropagation();var d=document.getElementById(\'pa-detail-' + esc(a.id) + '\');if(d)d.style.display=d.style.display===\'none\'?\'block\':\'none\';" style="font-size:10px;padding:3px 8px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit;margin-right:4px">Detay</button>'
+      : '';
+    var detailDiv = a.action === 'update' && a.payload
+      ? '<div id="pa-detail-' + esc(a.id) + '" style="display:none;margin-top:8px;padding:8px;background:var(--s2);border-radius:6px;font-size:10px;font-family:monospace;color:var(--t3);max-height:150px;overflow-y:auto">' + esc(JSON.stringify(a.payload, null, 2)) + '</div>'
+      : '';
+    return '<div data-pa-action="' + esc(a.action) + '" style="border:0.5px solid var(--b);border-left:4px solid ' + sideColor + ';border-radius:8px;padding:12px 14px;margin-bottom:8px;background:' + bgTint + '">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
+        + '<div style="flex:1;min-width:0">'
+          + '<div style="font-size:13px;font-weight:500;color:var(--t)">' + esc(ed.productName || '—') + '</div>'
+          + '<div style="font-size:11px;color:var(--t3);margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+            + '<span style="color:' + sideColor + ';font-weight:600">' + actionLabel + '</span>'
+            + '<span style="background:var(--s2);padding:2px 7px;border-radius:10px;font-weight:500;color:var(--t2)">👤 ' + esc(a.requestedByName || '—') + '</span>'
+            + '<span style="background:' + ageBadgeBg + ';color:#fff;padding:2px 7px;border-radius:10px;font-weight:500;font-size:10px" title="' + esc(dateStr) + '">⏱ ' + ageStr + '</span>'
+          + '</div>'
+        + '</div>'
+        + '<div style="display:flex;gap:6px;flex-shrink:0">'
+          + detailBtn
+          + '<button onclick="window._edApprovePending && window._edApprovePending(\'' + esc(a.id) + '\')" style="font-size:11px;padding:5px 12px;border:none;border-radius:6px;background:#16A34A;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">✅ Onayla</button>'
+          + '<button onclick="window._edRejectPending && window._edRejectPending(\'' + esc(a.id) + '\')" style="font-size:11px;padding:5px 12px;border:none;border-radius:6px;background:#DC2626;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">❌ Reddet</button>'
+        + '</div>'
+      + '</div>'
+      + detailDiv
+    + '</div>';
+  }
+
+  /* V185 / B3: filtre değişimi — JS yerine CSS display ile */
+  window._edPendingFilter = function(kind) {
+    var modal = document.getElementById('ed-pending-modal');
+    if (!modal) return;
+    var cards = modal.querySelectorAll('[data-pa-action]');
+    cards.forEach(function(c) {
+      var a = c.getAttribute('data-pa-action');
+      c.style.display = (kind === 'all' || a === kind) ? '' : 'none';
+    });
+    /* Aktif rozet stilini güncelle */
+    modal.querySelectorAll('[data-pa-filter]').forEach(function(b) {
+      var k = b.getAttribute('data-pa-filter');
+      if (k === kind) {
+        b.style.background = 'var(--t)'; b.style.color = 'var(--sf)';
+      } else {
+        b.style.background = 'transparent'; b.style.color = 'var(--t2)';
+      }
+    });
+  };
+
   window._edPendingModalOpen = function() {
     if (!window._edIsAdmin()) { window.toast?.('Yalnızca admin', 'err'); return; }
     var ex = document.getElementById('ed-pending-modal'); if (ex) ex.remove();
     var actions = (window._edPendingActionsLoad() || []).filter(function(a){ return a.status === 'pending'; });
+    /* V185 / B3: en eski üstte — acil olanlar (uzun bekleyen) önce işlenir */
+    actions.sort(function(a, b) {
+      var ta = new Date(a.requestedAt || 0).getTime() || 0;
+      var tb = new Date(b.requestedAt || 0).getTime() || 0;
+      return ta - tb;
+    });
     var edList = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
     var edMap = {};
     edList.forEach(function(e){ edMap[e.id] = e; });
     var esc = window._uiEsc || function(s){return String(s||'');};
+    /* V185 / B3: filtre sayıları */
+    var nDel = 0, nUpd = 0;
+    actions.forEach(function(a) { if (a.action === 'delete') nDel++; else if (a.action === 'update') nUpd++; });
     var mo = document.createElement('div');
     mo.id = 'ed-pending-modal';
     mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10000;display:flex;align-items:center;justify-content:center';
     mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
     var rows = actions.length === 0
       ? '<div style="padding:40px;text-align:center;color:var(--t3);font-size:13px">🎉 Bekleyen talep yok</div>'
-      : actions.map(function(a){
-          var ed = edMap[a.edId] || { productName: '(silinmiş)' };
-          var dateStr = a.requestedAt ? new Date(a.requestedAt).toLocaleString('tr-TR') : '—';
-          var actionLabel = a.action === 'delete' ? '🗑️ Sil' : '✏️ Düzenle';
-          var actionColor = a.action === 'delete' ? '#DC2626' : '#185FA5';
-          var detailBtn = a.action === 'update' && a.payload
-            ? '<button onclick="event.stopPropagation();var d=document.getElementById(\'pa-detail-' + esc(a.id) + '\');if(d)d.style.display=d.style.display===\'none\'?\'block\':\'none\';" style="font-size:10px;padding:3px 8px;border:0.5px solid var(--b);border-radius:5px;background:transparent;cursor:pointer;color:var(--t2);font-family:inherit;margin-right:4px">Detay</button>'
-            : '';
-          var detailDiv = a.action === 'update' && a.payload
-            ? '<div id="pa-detail-' + esc(a.id) + '" style="display:none;margin-top:8px;padding:8px;background:var(--s2);border-radius:6px;font-size:10px;font-family:monospace;color:var(--t3);max-height:150px;overflow-y:auto">' + esc(JSON.stringify(a.payload, null, 2)) + '</div>'
-            : '';
-          return '<div style="border:0.5px solid var(--b);border-radius:8px;padding:12px 14px;margin-bottom:8px;background:var(--sf)">'
-            + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
-              + '<div style="flex:1;min-width:0">'
-                + '<div style="font-size:13px;font-weight:500;color:var(--t)">' + esc(ed.productName || '—') + '</div>'
-                + '<div style="font-size:11px;color:var(--t3);margin-top:2px"><span style="color:' + actionColor + ';font-weight:500">' + actionLabel + '</span> · ' + esc(a.requestedByName || '—') + ' · ' + dateStr + '</div>'
-              + '</div>'
-              + '<div style="display:flex;gap:6px;flex-shrink:0">'
-                + detailBtn
-                + '<button onclick="window._edApprovePending && window._edApprovePending(\'' + esc(a.id) + '\')" style="font-size:11px;padding:5px 12px;border:none;border-radius:6px;background:#16A34A;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">✅ Onayla</button>'
-                + '<button onclick="window._edRejectPending && window._edRejectPending(\'' + esc(a.id) + '\')" style="font-size:11px;padding:5px 12px;border:none;border-radius:6px;background:#DC2626;color:#fff;cursor:pointer;font-family:inherit;font-weight:500">❌ Reddet</button>'
-              + '</div>'
-            + '</div>'
-            + detailDiv
-          + '</div>';
-        }).join('');
+      : actions.map(function(a){ return _edPendingCardHtml(a, edMap, esc); }).join('');
+    /* V185 / B3: filtre rozetleri (sadece talep varsa göster) */
+    var filterBar = actions.length === 0 ? '' :
+      '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">'
+      + '<button data-pa-filter="all" onclick="window._edPendingFilter(\'all\')" style="font-size:11px;padding:5px 11px;border:0.5px solid var(--b);border-radius:14px;background:var(--t);color:var(--sf);cursor:pointer;font-family:inherit;font-weight:500">Hepsi (' + actions.length + ')</button>'
+      + (nDel > 0 ? '<button data-pa-filter="delete" onclick="window._edPendingFilter(\'delete\')" style="font-size:11px;padding:5px 11px;border:0.5px solid #DC262633;border-radius:14px;background:transparent;color:var(--t2);cursor:pointer;font-family:inherit;font-weight:500">🗑️ Silme (' + nDel + ')</button>' : '')
+      + (nUpd > 0 ? '<button data-pa-filter="update" onclick="window._edPendingFilter(\'update\')" style="font-size:11px;padding:5px 11px;border:0.5px solid #185FA533;border-radius:14px;background:transparent;color:var(--t2);cursor:pointer;font-family:inherit;font-weight:500">✏️ Güncelleme (' + nUpd + ')</button>' : '')
+      + '</div>';
     mo.innerHTML = '<div style="background:var(--sf,#fff);color:var(--t);width:680px;max-width:92vw;max-height:90vh;overflow-y:auto;border-radius:12px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.15);font-family:inherit" onclick="event.stopPropagation()">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
         + '<div style="font-size:15px;font-weight:600;color:var(--t)">🔔 Onay Bekleyen Talepler (' + actions.length + ')</div>'
         + '<button onclick="document.getElementById(\'ed-pending-modal\').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>'
       + '</div>'
+      + filterBar
       + rows
     + '</div>';
     document.body.appendChild(mo);
