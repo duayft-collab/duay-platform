@@ -48,6 +48,62 @@
   if (!window.HANDLING_FLAGS_EMOJI)     window.HANDLING_FLAGS_EMOJI     = HANDLING_FLAGS_EMOJI;
   if (!window.HANDLING_FLAGS_LABEL_KEY) window.HANDLING_FLAGS_LABEL_KEY = HANDLING_FLAGS_LABEL_KEY;
 
+  /* ────────────────────────────────────────────────────────────────
+   * V188b — TESLİMAT YAPAN (Delivered By) sabitleri
+   * Yeni 4 enum: MUSTERI / TEDARIKCI / NAKLIYECI / DEPO
+   * Eski 2 enum (SATICI_TESLIM / FIRMA_ALIR) MAPPING ile UI'da
+   * yeni karşılıklarına dönüştürülür (data migration yok).
+   * KX10 — tek kaynak; expected_deliveries.js bu sabitlerden okur.
+   * ──────────────────────────────────────────────────────────────── */
+  var TESLIMAT_YAPAN_ENUM = ['MUSTERI', 'TEDARIKCI', 'NAKLIYECI', 'DEPO'];
+  var TESLIMAT_YAPAN_LABEL_KEY = {
+    MUSTERI:    'ed.teslim.musteri',
+    TEDARIKCI:  'ed.teslim.tedarikci',
+    NAKLIYECI:  'ed.teslim.nakliyeci',
+    DEPO:       'ed.teslim.depo'
+  };
+  var TESLIMAT_YAPAN_SHORT_KEY = {
+    MUSTERI:    'ed.teslim.short.musteri',
+    TEDARIKCI:  'ed.teslim.short.tedarikci',
+    NAKLIYECI:  'ed.teslim.short.nakliyeci',
+    DEPO:       'ed.teslim.short.depo'
+  };
+  /* Eski 2 değer için mapping (UI gösterimi yeni karşılıklarına dönüşür):
+   *   SATICI_TESLIM → 'TEDARIKCI' label gösterimi (satıcı teslim eder = tedarikçi getiriyor)
+   *   FIRMA_ALIR    → 'DEPO'      label gösterimi (firma alır       = depomuza gelir)
+   * Veride değer aynı kalır; sadece label render'ı sırasında map kullanılır. */
+  var TESLIMAT_YAPAN_LEGACY_MAP = {
+    SATICI_TESLIM: 'TEDARIKCI',
+    FIRMA_ALIR:    'DEPO'
+  };
+  if (!window.TESLIMAT_YAPAN_ENUM)        window.TESLIMAT_YAPAN_ENUM        = TESLIMAT_YAPAN_ENUM;
+  if (!window.TESLIMAT_YAPAN_LABEL_KEY)   window.TESLIMAT_YAPAN_LABEL_KEY   = TESLIMAT_YAPAN_LABEL_KEY;
+  if (!window.TESLIMAT_YAPAN_SHORT_KEY)   window.TESLIMAT_YAPAN_SHORT_KEY   = TESLIMAT_YAPAN_SHORT_KEY;
+  if (!window.TESLIMAT_YAPAN_LEGACY_MAP)  window.TESLIMAT_YAPAN_LEGACY_MAP  = TESLIMAT_YAPAN_LEGACY_MAP;
+
+  /* Helper: değer (eski/yeni) → resolved enum (yeni 4'ten biri ya da '') */
+  function _resolveTeslimat(value) {
+    if (!value) return '';
+    if (TESLIMAT_YAPAN_ENUM.indexOf(value) >= 0) return value;
+    if (TESLIMAT_YAPAN_LEGACY_MAP[value])        return TESLIMAT_YAPAN_LEGACY_MAP[value];
+    return '';
+  }
+  /* Helper: değer (eski/yeni) → uzun label ('— Belirtilmedi —' / '🏢 Tedarikçi' …) */
+  function _teslimatYapanLabel(value) {
+    var resolved = _resolveTeslimat(value);
+    if (!resolved) return _t('ed.teslim.empty');
+    return _t(TESLIMAT_YAPAN_LABEL_KEY[resolved] || 'ed.teslim.empty');
+  }
+  /* Helper: değer (eski/yeni) → kısa label ('🏢 Tedarikçi' / '🏭 Depo') — listede sub-line için */
+  function _teslimatYapanShort(value) {
+    var resolved = _resolveTeslimat(value);
+    if (!resolved) return '';
+    return _t(TESLIMAT_YAPAN_SHORT_KEY[resolved] || 'ed.teslim.empty');
+  }
+  if (!window._teslimatYapanLabel)  window._teslimatYapanLabel  = _teslimatYapanLabel;
+  if (!window._teslimatYapanShort)  window._teslimatYapanShort  = _teslimatYapanShort;
+  if (!window._resolveTeslimat)     window._resolveTeslimat     = _resolveTeslimat;
+
   /* ─── i18n + toast yardımcıları (yukarıda tanımlı, her yerde kullanılabilir) ─── */
   function _toast(msg, kind) { if (typeof window.toast === 'function') window.toast(msg, kind || 'ok'); }
   function _t(key, vars) { return (typeof window.t === 'function') ? window.t(key, null, vars || null) : key; }
@@ -235,7 +291,13 @@
   function renderStep2() {
     var d = state.formData;
     var yonOpts = [['GIDEN', _t('ed.yon.giden')], ['GELEN', _t('ed.yon.gelen')]];
-    var teslimOpts = [['', _t('ed.teslim.empty')], ['SATICI_TESLIM', _t('ed.teslim.satici')], ['FIRMA_ALIR', _t('ed.teslim.firma')]];
+    var teslimOpts = [
+      ['',           _t('ed.teslim.empty')],
+      ['MUSTERI',    _t('ed.teslim.musteri')],
+      ['TEDARIKCI',  _t('ed.teslim.tedarikci')],
+      ['NAKLIYECI',  _t('ed.teslim.nakliyeci')],
+      ['DEPO',       _t('ed.teslim.depo')]
+    ];
     var paketOpts = [
       ['',          _t('ed.pkg.empty')],
       ['palet',     _t('ed.pkg.palet')],
@@ -273,7 +335,7 @@
       + '</div>'
       + '<div style="grid-column:span 2">' + lbl(_t('ed.label.teslimTipi'))
         + '<select onchange="window._v186SetField(\'teslimTipi\', this.value)" style="' + INPUT_CSS + '">'
-        + teslimOpts.map(function (t) { return '<option value="' + t[0] + '"' + ((d.teslimTipi || '') === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('')
+        + teslimOpts.map(function (t) { return '<option value="' + t[0] + '"' + (_resolveTeslimat(d.teslimTipi || '') === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('')
         + '</select>'
       + '</div>'
       + sect('📦', _t('ed.sect.paket'))
@@ -439,7 +501,7 @@
         + row('Yön', (d.yon === 'GELEN' ? '📥 Gelen' : '📤 Giden'))
         + row('Çıkış → Varış', rotaCikis + ' → ' + rotaVaris)
         + row('Yükleme Firma', d.yuklemeFirmaAd)
-        + row('Teslim Tipi', (d.teslimTipi === 'SATICI_TESLIM' ? '📦 Satıcı teslim' : (d.teslimTipi === 'FIRMA_ALIR' ? '🏭 Firma alır' : '')))
+        + row(_t('ed.label.teslimTipi'), _teslimatYapanLabel(d.teslimTipi))
         + row(_t('ed.label.containerSequenceNo'), (d.containerSequenceNo != null ? '#' + d.containerSequenceNo : ''))
         + row(_t('ed.label.loadingPriority'),
               d.loadingPriority === 'REQUIRED' ? _t('ed.loadingPri.required')
