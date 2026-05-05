@@ -431,6 +431,13 @@ let TRANSLATIONS = {
 
     // ── Toolbar Sayım (V187j) ────────────────────────────────────
     'ed.toolbar.records.filtered':        '{total} kayıt ({filtered} görünür)',
+
+    // ── Sevkiyat Wizard (V188a — V186 Step 2 ayrımı) ─────────────
+    'ed.sevkiyat.wizard.title':           '🚛 Sevkiyat Bilgisi',
+    'ed.actionMenu.sevkiyat':             '🚛 Sevkiyat Bilgisi',
+    'ed.toast.sevkiyatSaved':             'Sevkiyat bilgisi kaydedildi',
+    'ed.toast.sevkiyatNotFound':          'Kayıt bulunamadı',
+    'ed.sect.yuklemeDetay':               'Yükleme Detayı',
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -851,6 +858,13 @@ let TRANSLATIONS = {
 
     // ── Toolbar Records Count (V187j) ────────────────────────────
     'ed.toolbar.records.filtered':        '{total} records ({filtered} visible)',
+
+    // ── Shipment Wizard (V188a — V186 Step 2 separation) ─────────
+    'ed.sevkiyat.wizard.title':           '🚛 Shipment Info',
+    'ed.actionMenu.sevkiyat':             '🚛 Shipment Info',
+    'ed.toast.sevkiyatSaved':             'Shipment info saved',
+    'ed.toast.sevkiyatNotFound':          'Record not found',
+    'ed.sect.yuklemeDetay':               'Loading Details',
   },
 };
 

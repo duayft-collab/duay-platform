@@ -177,18 +177,9 @@
     }
   };
 
-  /* V187d: Carrier tracking auto-fill — armatör + container değişiminde tracking URL üret */
-  window._v186AutoTrackingUrl = function () {
-    var armator = document.getElementById('v186-armator')?.value || state.formData.armator || '';
-    var containerNo = document.getElementById('v186-konteynerNo')?.value || state.formData.konteynerNo || '';
-    var input = document.getElementById('v186-trackingUrl');
-    if (!input || !armator) return;
-    var url = (typeof window.__buildTrackingUrl === 'function') ? window.__buildTrackingUrl(armator, containerNo) : '';
-    if (url) {
-      input.value = url;
-      state.formData.trackingUrl = url;
-    }
-  };
+  /* V187d → V188a: _v186AutoTrackingUrl kaldırıldı.
+   * Konteyner/Armatör/Tracking alanları V188 Sevkiyat Wizard'a taşındı,
+   * auto-tracking artık `_v188AutoTrackingUrl` (yeni dosya) tarafından sağlanır. */
 
   /* ─── Bölüm başlığı ─── */
   function sect(icon, title, hint) {
@@ -297,10 +288,7 @@
       + '<div style="grid-column:span 2">' + lbl(_t('ed.label.paketEbatlari'))
         + '<input type="text" oninput="window._v186SetField(\'paketEbatlari\', this.value)" value="' + _val(d.paketEbatlari) + '" placeholder="örn: 120×80×100 cm" style="' + INPUT_CSS + '">'
       + '</div>'
-      + sect('🚢', _t('ed.sect.sevkiyat'))
-      + '<div>' + lbl(_t('ed.label.konteynerNo'))
-        + '<input type="text" id="v186-konteynerNo" oninput="window._v186SetField(\'konteynerNo\', this.value); window._v186AutoTrackingUrl && window._v186AutoTrackingUrl()" value="' + _val(d.konteynerNo) + '" style="' + INPUT_CSS + '">'
-      + '</div>'
+      + sect('📦', _t('ed.sect.yuklemeDetay'))
       + '<div>' + lbl(_t('ed.label.containerSequenceNo'))
         + '<input type="number" min="1" step="1" oninput="window._v186SetField(\'containerSequenceNo\', this.value ? Number(this.value) : null)" value="' + (d.containerSequenceNo != null ? esc(String(d.containerSequenceNo)) : '') + '" placeholder="örn: 5" style="' + INPUT_CSS + '">'
       + '</div>'
@@ -337,17 +325,6 @@
             + '</div>'
             + '</div>';
         })()
-      + '<div>' + lbl(_t('ed.label.armator'))
-        + '<select id="v186-armator" onchange="window._v186SetField(\'armator\', this.value); window._v186AutoTrackingUrl && window._v186AutoTrackingUrl()" style="' + INPUT_CSS + '">'
-        + armatorList.map(function (c) { return '<option value="' + c + '"' + ((d.armator || '') === c ? ' selected' : '') + '>' + (c || _t('ed.armator.empty')) + '</option>'; }).join('')
-        + '</select>'
-      + '</div>'
-      + '<div style="grid-column:span 2">' + lbl(_t('ed.label.trackingUrl'))
-        + '<input type="url" id="v186-trackingUrl" oninput="window._v186SetField(\'trackingUrl\', this.value)" value="' + _val(d.trackingUrl) + '" placeholder="https://..." style="' + INPUT_CSS + '">'
-      + '</div>'
-      + '<div style="grid-column:span 2">' + lbl(_t('ed.label.varisZamani'))
-        + '<input type="datetime-local" oninput="window._v186SetField(\'varisZamani\', this.value)" value="' + _val(d.varisZamani) + '" style="' + INPUT_CSS + '">'
-      + '</div>'
       + '</div>';
   }
   function renderStep3() {
@@ -463,7 +440,6 @@
         + row('Çıkış → Varış', rotaCikis + ' → ' + rotaVaris)
         + row('Yükleme Firma', d.yuklemeFirmaAd)
         + row('Teslim Tipi', (d.teslimTipi === 'SATICI_TESLIM' ? '📦 Satıcı teslim' : (d.teslimTipi === 'FIRMA_ALIR' ? '🏭 Firma alır' : '')))
-        + row('Konteyner', d.konteynerNo)
         + row(_t('ed.label.containerSequenceNo'), (d.containerSequenceNo != null ? '#' + d.containerSequenceNo : ''))
         + row(_t('ed.label.loadingPriority'),
               d.loadingPriority === 'REQUIRED' ? _t('ed.loadingPri.required')
@@ -474,7 +450,6 @@
               (Array.isArray(d.handlingFlags) && d.handlingFlags.length
                 ? d.handlingFlags.map(function (f) { return HANDLING_FLAGS_EMOJI[f] || ''; }).filter(Boolean).join(' ')
                 : ''))
-        + row('Armatör', d.armator)
         + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin:14px 0 10px;text-transform:uppercase;letter-spacing:.05em">🌐 ' + _t('ed.sect.ihracatSorumluluk') + '</div>'
         + row('İhracat ID', d.ihracatId)
         + row('Sipariş Kodu', d.siparisKodu)

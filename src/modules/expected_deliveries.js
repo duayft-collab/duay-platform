@@ -301,8 +301,7 @@
         + '<div>' + _edWizardLabel('Teklif Onay Tarihi') + '<input id="ede-teklifOnayTarihi" type="datetime-local" style="' + _edWizardInput + '" value="' + (ed.teklifOnayTarihi || '') + '"></div>'
         + '<div>' + _edWizardLabel('Avans Ödeme Tarihi') + '<input id="ede-avansOdemeTarihi" type="datetime-local" style="' + _edWizardInput + '" value="' + (ed.avansOdemeTarihi || '') + '"></div>'
         + '<div>' + _edWizardLabel('Satınalma Sorumlusu') + '<select id="ede-satinAlmaSorumlusu" style="' + _edWizardInput + '">' + _edUserOpts(ed.satinAlmaSorumlusu || '') + '</select></div>'
-        + '<div style="grid-column:span 2;font-size:11px;font-weight:600;color:var(--t2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--b)">' + (typeof window.t === 'function' ? window.t('ed.sect.sevkiyat') : 'Sevkiyat & Takip') + '</div>'
-        + '<div>' + _edWizardLabel('Konteyner No') + '<input id="ede-konteynerNo" oninput="window._edAutoFillTrackingUrl && window._edAutoFillTrackingUrl()" style="' + _edWizardInput + '" value="' + _uiEsc(ed.konteynerNo || '') + '"></div>'
+        + '<div style="grid-column:span 2;font-size:11px;font-weight:600;color:var(--t2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--b)">' + (typeof window.t === 'function' ? window.t('ed.sect.yuklemeDetay') : 'Yükleme Detayı') + '</div>'
         + '<div>' + _edWizardLabel('Sıra No (yükleme)') + '<input id="ede-containerSequenceNo" type="number" min="1" step="1" placeholder="örn: 5" style="' + _edWizardInput + '" value="' + (ed.containerSequenceNo != null ? _uiEsc(String(ed.containerSequenceNo)) : '') + '"></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Yükleme Önceliği') + '<select id="ede-loadingPriority" style="' + _edWizardInput + '">' + ['','REQUIRED','OPTIONAL'].map(function(__p){var __l = __p === 'REQUIRED' ? '⭐ Zorunlu' : (__p === 'OPTIONAL' ? '○ Opsiyonel' : '— Belirtilmedi —'); return '<option value="' + __p + '"' + ((ed.loadingPriority || '') === __p ? ' selected' : '') + '>' + __l + '</option>';}).join('') + '</select></div>'
         /* V187c — handlingFlags ENUM ARRAY (multi-button toggle grid, full row) */
@@ -335,10 +334,7 @@
         + '<div>' + _edWizardLabel('Paket Türü') + '<select id="ede-paketTuru" style="' + _edWizardInput + '"><option value="">— Seç —</option>' + ['palet','koli','big-bag','kafes','cuval','dokme','diger'].map(function(__o){var __l = {palet:'Palet',koli:'Koli','big-bag':'Big Bag',kafes:'Kafes/Kasa',cuval:'Çuval',dokme:'Dökme',diger:'Diğer'}[__o];return '<option value="' + __o + '"' + (ed.paketTuru === __o ? ' selected' : '') + '>' + __l + '</option>';}).join('') + '</select></div>'
         + '<div>' + _edWizardLabel('Paket Adedi') + '<input id="ede-paketAdedi" type="number" min="0" placeholder="örn: 24" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.paketAdedi || '') + '"></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Paket Ebatları') + '<input id="ede-paketEbatlari" placeholder="örn: 120×80×100 cm" style="' + _edWizardInput + '" value="' + _uiEsc(ed.paketEbatlari || '') + '"></div>'
-        + '<div>' + _edWizardLabel('Armatör') + '<select id="ede-armator" onchange="window._edAutoFillTrackingUrl && window._edAutoFillTrackingUrl()" style="' + _edWizardInput + '">' + ['','MSC','Maersk','CMA CGM','COSCO','Hapag-Lloyd','ONE','Evergreen','Yang Ming','HMM','ZIM','PIL','OOCL','Diger'].map(function(__c){return '<option value="' + __c + '"' + (ed.armator === __c ? ' selected' : '') + '>' + (__c || '— Seçin —') + '</option>';}).join('') + '</select></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Yükleme Firma') + '<input id="ede-yuklemeFirmaAd" style="' + _edWizardInput + '" value="' + _uiEsc(ed.yuklemeFirmaAd || '') + '"></div>'
-        + '<div style="grid-column:span 2">' + _edWizardLabel('Tracking URL') + '<div style="display:flex;gap:6px;align-items:stretch">' + '<input id="ede-trackingUrl" type="url" style="' + _edWizardInput + ';flex:1" value="' + _uiEsc(ed.trackingUrl || '') + '" placeholder="https://...">' + '<button type="button" onclick="window._edOpenTrackingUrl && window._edOpenTrackingUrl()" style="padding:8px 14px;border:0.5px solid var(--b);background:var(--s2);color:var(--t2);border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap" title="Yeni sekmede aç">🔗 Aç</button>' + '</div></div>'
-        + '<div style="grid-column:span 2">' + _edWizardLabel('Varış Zamanı') + '<input id="ede-varisZamani" type="datetime-local" style="' + _edWizardInput + '" value="' + (ed.varisZamani || '') + '"></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Belge / Sözleşme PDF') + '<div style="display:flex;flex-direction:column;gap:6px">' + '<input type="file" accept=".pdf,application/pdf" onchange="window._edUploadBelge && window._edUploadBelge(this)" style="font-size:11px;padding:6px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t);font-family:inherit">' + '<input type="hidden" id="ede-belgeUrl" value="' + _uiEsc(ed.belgeUrl || '') + '">' + '<div id="ede-belge-status" style="font-size:11px;color:var(--t3);padding:4px 0">' + (ed.belgeUrl ? '✓ Mevcut belge · <a href="' + _uiEsc(ed.belgeUrl) + '" target="_blank" rel="noopener" style="color:var(--ac)">Görüntüle</a> · <button type="button" onclick="window._edBelgeKaldir && window._edBelgeKaldir()" style="background:none;border:none;cursor:pointer;color:#E0574F;font-size:11px;font-family:inherit;padding:0">🗑️ Kaldır</button>' : 'Belge yok') + '</div>' + '</div></div>'
         + '<div>' + _edWizardLabel('Öncelik') + '<select id="ede-priority" style="' + _edWizardInput + '">' + priOpts.map(function(p) { return '<option value="' + p[0] + '"' + (ed.priority === p[0] ? ' selected' : '') + '>' + p[1] + '</option>'; }).join('') + '</select></div>'
         + '<div>' + _edWizardLabel('Durum') + '<select id="ede-status" style="' + _edWizardInput + '">' + statusOpts.map(function(st) { return '<option value="' + st[0] + '"' + (ed.status === st[0] ? ' selected' : '') + '>' + st[1] + '</option>'; }).join('') + '</select></div>'
@@ -442,7 +438,7 @@
         teklifOnayTarihi: document.getElementById('ede-teklifOnayTarihi')?.value || '',
         avansOdemeTarihi: document.getElementById('ede-avansOdemeTarihi')?.value || '',
         satinAlmaSorumlusu: document.getElementById('ede-satinAlmaSorumlusu')?.value || '',
-        konteynerNo: document.getElementById('ede-konteynerNo')?.value || '',
+        /* V188a: konteynerNo / armator / trackingUrl / varisZamani Sevkiyat Wizard'a taşındı */
         containerSequenceNo: (function(){var v = document.getElementById('ede-containerSequenceNo')?.value; return v ? Number(v) : null;})(),
         loadingPriority: document.getElementById('ede-loadingPriority')?.value || '',
         /* V187c — handlingFlags ENUM ARRAY (approval payload) */
@@ -457,10 +453,7 @@
         paketTuru: document.getElementById('ede-paketTuru')?.value || null,
         paketAdedi: parseInt(document.getElementById('ede-paketAdedi')?.value, 10) || null,
         paketEbatlari: (document.getElementById('ede-paketEbatlari')?.value || '').trim() || null,
-        armator: document.getElementById('ede-armator')?.value || '',
         yuklemeFirmaAd: document.getElementById('ede-yuklemeFirmaAd')?.value || '',
-        trackingUrl: document.getElementById('ede-trackingUrl')?.value || '',
-        varisZamani: document.getElementById('ede-varisZamani')?.value || '',
         belgeUrl: document.getElementById('ede-belgeUrl')?.value || '',
         priority: document.getElementById('ede-priority')?.value || 'NORMAL',
         status: document.getElementById('ede-status')?.value || list[idx].status
@@ -487,7 +480,7 @@
     list[idx].teklifOnayTarihi = document.getElementById('ede-teklifOnayTarihi')?.value || '';
     list[idx].avansOdemeTarihi = document.getElementById('ede-avansOdemeTarihi')?.value || '';
     list[idx].satinAlmaSorumlusu = document.getElementById('ede-satinAlmaSorumlusu')?.value || '';
-    list[idx].konteynerNo = document.getElementById('ede-konteynerNo')?.value || '';
+    /* V188a: konteynerNo Sevkiyat Wizard'a taşındı */
     var __seqVal = document.getElementById('ede-containerSequenceNo')?.value;
     list[idx].containerSequenceNo = __seqVal ? Number(__seqVal) : null;
     list[idx].loadingPriority = document.getElementById('ede-loadingPriority')?.value || '';
@@ -503,10 +496,8 @@
     list[idx].paketTuru = document.getElementById('ede-paketTuru')?.value || null;
     list[idx].paketAdedi = parseInt(document.getElementById('ede-paketAdedi')?.value, 10) || null;
     list[idx].paketEbatlari = (document.getElementById('ede-paketEbatlari')?.value || '').trim() || null;
-    list[idx].armator = document.getElementById('ede-armator')?.value || '';
+    /* V188a: armator / trackingUrl / varisZamani Sevkiyat Wizard'a taşındı */
     list[idx].yuklemeFirmaAd = document.getElementById('ede-yuklemeFirmaAd')?.value || '';
-    list[idx].trackingUrl = document.getElementById('ede-trackingUrl')?.value || '';
-    list[idx].varisZamani = document.getElementById('ede-varisZamani')?.value || '';
     list[idx].belgeUrl = document.getElementById('ede-belgeUrl')?.value || '';
     list[idx].priority = document.getElementById('ede-priority')?.value || 'NORMAL';
     list[idx].status = document.getElementById('ede-status')?.value || list[idx].status;
@@ -2262,6 +2253,8 @@
       /* LOJISTIK-RENK-001: yön/admin koşullu Ata buton (Düzenle ÖNCESİ) */
       + (_edAdminFields() ? '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edAtaModal && window._edAtaModal(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">🏷️ ' + (typeof window.t === 'function' ? window.t('ed.modal.ata') : 'İhracat / Sipariş / Renk Ata') + '</button>' : '')
       + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edEditModal && window._edEditModal(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">✏️ Düzenle</button>'
+      /* V188a — Sevkiyat Wizard: konteynerNo/armator/trackingUrl/varisZamani için ayrı modal */
+      + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edSevkiyatWizardAc && window._edSevkiyatWizardAc(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">' + (typeof window.t === 'function' ? window.t('ed.actionMenu.sevkiyat') : '🚛 Sevkiyat Bilgisi') + '</button>'
       + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edDeleteConfirm && window._edDeleteConfirm(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px;color:#E0574F" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">🗑️ Sil</button>'
     + '</div>';
     document.body.appendChild(mo);
