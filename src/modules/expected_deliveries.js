@@ -2177,7 +2177,7 @@
       if (window._shipmentDocCardBadgeHtml) __ikonlar += window._shipmentDocCardBadgeHtml(ed);
       if (!__ikonlar) __ikonlar = '<span style="color:var(--t3);font-size:10px">—</span>';
       /* LOJISTIK-RENK-001: 11-kolon grid (8→11) + İhracat ID hücresi */
-      return '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 1fr 0.8fr 0.9fr 0.8fr 0.7fr 1fr 0.7fr 1.4fr 0.7fr auto;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
+      return '<div data-ed-id="' + esc(String(ed.id || '')) + '" data-ihracat-id="' + esc(String(ed.ihracatId || '')) + '" style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 1fr 0.8fr 0.9fr 0.8fr 0.7fr 1fr 0.7fr 1.4fr 0.7fr auto;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
         + '<div>' + __yonBadge + '</div>'
         + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + ((cu && (cu.role === 'admin' || cu.rol === 'admin' || cu.role === 'manager' || cu.rol === 'manager')) ? (ed.ihracatId ? esc(String(ed.ihracatId).slice(0,15)) : '<span style="color:var(--t3)">—</span>') : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div><div style="font-weight:500;color:var(--t)">'+esc(ed.productName||'—')+'</div>'
