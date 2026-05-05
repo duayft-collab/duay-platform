@@ -104,7 +104,7 @@
 
   /* ─── VALIDATION ──────────────────────────────────────────── */
   var PRIORITIES = ['LOW', 'NORMAL', 'CRITICAL'];
-  var STATUSES = ['TEDARIK_ASAMASINDA','URETIMDE','YUKLEME_BEKLIYOR','YOLDA','GUMRUKTE','DEPODA','TESLIM_ALINDI','GECIKTI'];
+  var STATUSES = ['TEDARIK_ASAMASINDA','URETIMDE','SATICIDA_HAZIR','YUKLEME_NOKTASINDA','YUKLEME_PLANLANDI','YUKLEME_BEKLIYOR','SEVK_EDILDI','YOLDA','GUMRUKTE','DEPODA','TESLIM_ALINDI','KONTEYNIRA_YUKLENDI','MUSTERI_TESLIM_ALDI','GECIKTI'];
   var DELAY_OWNERS = ['supplier', 'logistics', 'internal'];
 
   window._edValidate = function(ed) {
@@ -440,6 +440,16 @@
     if (idx === -1) { window.toast?.('Kayıt bulunamadı', 'err'); return; }
     var ed = list[idx];
     if (ed.status === newStatus) return;
+    /* V184b / LOJ-STATUS-EXPAND-001: non-admin geri-dönüş engeli (GECIKTI sıra dışı, her yerden gidebilir) */
+    if (typeof window._edIsAdmin === 'function' && !window._edIsAdmin()) {
+      var oldOrder = STATUS_ORDER[ed.status] || 0;
+      var newOrder = STATUS_ORDER[newStatus] || 0;
+      if (oldOrder > 0 && newOrder > 0 && newOrder < oldOrder) {
+        window.toast?.('Geriye dönüş için admin yetkisi gerekli', 'warn');
+        if (typeof window._edRefresh === 'function') window._edRefresh();
+        return;
+      }
+    }
     if (!Array.isArray(ed.statusHistory)) ed.statusHistory = [];
     ed.statusHistory.push({
       from: ed.status || '',
@@ -1311,21 +1321,50 @@
   var STATUS_LABELS = {
     TEDARIK_ASAMASINDA: 'Tedarik',
     URETIMDE: 'Üretimde',
-    YUKLEME_BEKLIYOR: 'Yükleme',
+    SATICIDA_HAZIR: 'Satıcıda Hazır',
+    YUKLEME_NOKTASINDA: 'Yükleme Noktasında',
+    YUKLEME_PLANLANDI: 'Yükleme Planlandı',
+    YUKLEME_BEKLIYOR: 'Yükleme Bekliyor',
+    SEVK_EDILDI: 'Sevk Edildi',
     YOLDA: 'Yolda',
     GUMRUKTE: 'Gümrükte',
     DEPODA: 'Depoda',
-    TESLIM_ALINDI: 'Teslim',
+    TESLIM_ALINDI: 'Teslim Edildi',
+    KONTEYNIRA_YUKLENDI: 'Konteynıra Yüklendi',
+    MUSTERI_TESLIM_ALDI: 'Müşteri Teslim Aldı',
     GECIKTI: 'Gecikti'
+  };
+  /* V184b / LOJ-STATUS-EXPAND-001: akış sırası — non-admin geri dönemez (GECIKTI sıra dışı) */
+  var STATUS_ORDER = {
+    TEDARIK_ASAMASINDA: 1,
+    URETIMDE: 2,
+    SATICIDA_HAZIR: 3,
+    YUKLEME_NOKTASINDA: 4,
+    YUKLEME_PLANLANDI: 5,
+    YUKLEME_BEKLIYOR: 6,
+    SEVK_EDILDI: 7,
+    YOLDA: 8,
+    GUMRUKTE: 9,
+    DEPODA: 10,
+    TESLIM_ALINDI: 11,
+    KONTEYNIRA_YUKLENDI: 12,
+    MUSTERI_TESLIM_ALDI: 13,
+    GECIKTI: -1
   };
   var STATUS_COLORS = {
     TEDARIK_ASAMASINDA: '#888780',
     URETIMDE: '#D97706',
+    SATICIDA_HAZIR: '#0EA5E9',
+    YUKLEME_NOKTASINDA: '#EAB308',
+    YUKLEME_PLANLANDI: '#F59E0B',
     YUKLEME_BEKLIYOR: '#854F0B',
+    SEVK_EDILDI: '#0891B2',
     YOLDA: '#185FA5',
     GUMRUKTE: '#7C3AED',
     DEPODA: '#7C3AED',
     TESLIM_ALINDI: '#16A34A',
+    KONTEYNIRA_YUKLENDI: '#2563EB',
+    MUSTERI_TESLIM_ALDI: '#15803D',
     GECIKTI: '#E0574F'
   };
   var PRI_LABELS = { LOW: 'Düşük', NORMAL: 'Normal', CRITICAL: 'Kritik' };
@@ -2043,11 +2082,17 @@
     var STATUS = {
       'TEDARIK_ASAMASINDA':{t:'Tedarik',c:'#6B7280',bg:'#F3F4F6'},
       'URETIMDE':{t:'Üretimde',c:'#2563EB',bg:'#EFF6FF'},
-      'YUKLEME_BEKLIYOR':{t:'Yükleme',c:'#CA8A04',bg:'#FEF9C3'},
+      'SATICIDA_HAZIR':{t:'Satıcıda Hazır',c:'#0EA5E9',bg:'#E0F2FE'},
+      'YUKLEME_NOKTASINDA':{t:'Yükleme Noktasında',c:'#A16207',bg:'#FEF3C7'},
+      'YUKLEME_PLANLANDI':{t:'Yükleme Planlandı',c:'#B45309',bg:'#FEF3C7'},
+      'YUKLEME_BEKLIYOR':{t:'Yükleme Bekliyor',c:'#CA8A04',bg:'#FEF9C3'},
+      'SEVK_EDILDI':{t:'Sevk Edildi',c:'#0891B2',bg:'#CFFAFE'},
       'YOLDA':{t:'Yolda',c:'#EA580C',bg:'#FFEDD5'},
       'GUMRUKTE':{t:'Gümrükte',c:'#7C3AED',bg:'#F3E8FF'},
       'DEPODA':{t:'Depoda',c:'#7C3AED',bg:'#EDE9FE'},
-      'TESLIM_ALINDI':{t:'Teslim',c:'#0F6E56',bg:'#D1FAE5'},
+      'TESLIM_ALINDI':{t:'Teslim Edildi',c:'#0F6E56',bg:'#D1FAE5'},
+      'KONTEYNIRA_YUKLENDI':{t:'Konteynıra Yüklendi',c:'#1D4ED8',bg:'#DBEAFE'},
+      'MUSTERI_TESLIM_ALDI':{t:'Müşteri Teslim Aldı',c:'#15803D',bg:'#DCFCE7'},
       'GECIKTI':{t:'Gecikmiş',c:'#DC2626',bg:'#FEE2E2'}
     };
     var card = 'background:var(--sf);border-radius:12px;border:0.5px solid var(--b);overflow:hidden;margin-top:12px';
