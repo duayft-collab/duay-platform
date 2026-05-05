@@ -620,6 +620,13 @@
     if (ai === -1) { window.toast?.('Talep bulunamadı', 'err'); return; }
     var action = actions[ai];
     if (action.status !== 'pending') { window.toast?.('Talep zaten incelenmiş', 'warn'); return; }
+    /* V185 / B1: Self-onay engeli — talep eden kendi talebini onaylayamaz (4-göz ilkesi) */
+    var __cuB1 = (typeof window.CU === 'function' ? window.CU() : null) || {};
+    var __cuB1Id = __cuB1.id || __cuB1.uid || null;
+    if (action.requestedBy && __cuB1Id && String(action.requestedBy) === String(__cuB1Id)) {
+      window.toast?.('Kendi gönderdiğiniz talebi onaylayamazsınız', 'err');
+      return;
+    }
     var ok = false;
     if (action.action === 'delete') {
       /* LOJ-1B-K: Approved delete audit log — soft delete sayesinde statusHistory korunur */
