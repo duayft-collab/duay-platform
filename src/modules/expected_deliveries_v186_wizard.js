@@ -79,38 +79,22 @@
   function canEditRestricted() { return isAdminOrManager(); }
   function canEditGeneral() { return isPrivileged(); }
 
-  /* V186c: STATUS + RENK kopya listeleri (K10 ihlali, V186e'de
-   * window.STATUSES_LIST / LOJ_RENK_LIST global expose ile düzeltilecek) */
-  var V186_STATUSES = [
-    ['SIPARIS_ASAMASINDA',     'Sipariş Aşamasında',    '#6B7280'],
-    ['TEDARIK',                'Tedarik',                '#9333EA'],
-    ['URETIM',                 'Üretimde',               '#EA580C'],
-    ['SATICIDA_HAZIR',         'Satıcıda Hazır',         '#0EA5E9'],
-    ['YUKLEME_NOKTASINDA',     'Yükleme Noktasında',     '#0891B2'],
-    ['YUKLEME_PLANLANDI',      'Yükleme Planlandı',      '#0284C7'],
-    ['YUKLEME_BEKLIYOR',       'Yükleme Bekliyor',       '#1D4ED8'],
-    ['SEVK_EDILDI',            'Sevk Edildi',            '#2563EB'],
-    ['YOLDA',                  'Yolda',                  '#3B82F6'],
-    ['GUMRUKTE',               'Gümrükte',               '#F59E0B'],
-    ['DEPODA',                 'Depoda',                 '#10B981'],
-    ['TESLIM_ALINDI',          'Teslim Alındı',          '#16A34A'],
-    ['KONTEYNIRA_YUKLENDI',    'Konteynıra Yüklendi',    '#059669'],
-    ['MUSTERI_TESLIM_ALDI',    'Müşteri Teslim Aldı',    '#15803D'],
-    ['GECIKTI',                'Gecikti',                '#DC2626'],
-  ];
-  var V186_RENK = [
-    { k: 'kirmizi',    h: '#FF3B30', a: 'Kırmızı' },
-    { k: 'turuncu',    h: '#FF9500', a: 'Turuncu' },
-    { k: 'sari',       h: '#FFCC00', a: 'Sarı' },
-    { k: 'yesil',      h: '#34C759', a: 'Yeşil' },
-    { k: 'mint',       h: '#00C7BE', a: 'Mint' },
-    { k: 'cyan',       h: '#32ADE6', a: 'Cyan' },
-    { k: 'mavi',       h: '#007AFF', a: 'Mavi' },
-    { k: 'mor',        h: '#AF52DE', a: 'Mor' },
-    { k: 'pembe',      h: '#FF2D55', a: 'Pembe' },
-    { k: 'kahve',      h: '#A2845E', a: 'Kahve' },
-    { k: 'siyah',      h: '#1C1C1E', a: 'Siyah' },
-  ];
+  /* V186f / K10 cleanup: STATUSES + RENK ortak veri TEK KAYNAK (expected_deliveries.js).
+   * V186_STATUSES/V186_RENK kopyaları silindi → window.STATUSES_LIST + window.LOJ_RENK_LIST.
+   * Bu sayede 'TEDARIK_ASAMASINDA' vs 'TEDARIK' uyumsuzluk bug'ı da kapandı. */
+  function _statuses() {
+    var list = window.STATUSES_LIST || [];
+    var labels = window.STATUS_LABELS || {};
+    return list.map(function (k) { return [k, labels[k] || k]; });
+  }
+  function _renkList() { return window.LOJ_RENK_LIST || []; }
+  function _statusLabel(key) { return (window.STATUS_LABELS && window.STATUS_LABELS[key]) || key; }
+  function _renkAd(key) {
+    var r = (_renkList()).find(function (x) { return x.k === key; });
+    return r ? r.a : key;
+  }
+
+  /* V186_PRIORITY — başka modülde kullanılmıyor, V186 dosyasında kalır */
   var V186_PRIORITY = [['LOW', 'Düşük', '#6B7280'], ['NORMAL', 'Normal', '#185FA5'], ['CRITICAL', 'Kritik', '#DC2626']];
 
   /* ─── Form alanı style + label helper'ları ─── */
@@ -263,7 +247,7 @@
       + '</div>'
       + '<div style="grid-column:span 2">' + lbl('Renk' + (canRestricted ? '' : ' 🔒'))
         + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
-        + V186_RENK.map(function (r) {
+        + _renkList().map(function (r) {
             var sel = d.renk === r.k;
             var border = sel ? '3px solid var(--t)' : '0.5px solid var(--b)';
             var click = canRestricted ? 'window._v186SetField(\'renk\',\'' + r.k + '\');document.querySelectorAll(\'[data-v186-renk]\').forEach(function(b){b.style.border=\'0.5px solid var(--b)\';});this.style.border=\'3px solid var(--t)\';' : '';
@@ -296,7 +280,7 @@
       + '</div>'
       + '<div>' + lbl('Durum')
         + '<select onchange="window._v186SetField(\'status\', this.value)"' + dis(canGeneral) + ' style="' + INPUT_CSS + '">'
-        + V186_STATUSES.map(function (s) { return '<option value="' + s[0] + '"' + ((d.status || 'SIPARIS_ASAMASINDA') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('')
+        + _statuses().map(function (s) { return '<option value="' + s[0] + '"' + ((d.status || 'SIPARIS_ASAMASINDA') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('')
         + '</select>'
       + '</div>'
       + '</div>';
@@ -309,8 +293,8 @@
     /* ÖZET — tüm alanların görüntülenmesi */
     var sup = (typeof window.loadSuppliers === 'function') ? (window.loadSuppliers() || []).find(function (s) { return String(s.id) === String(d.supplierId); }) : null;
     var supName = sup ? (sup.name || sup.unvan || '—') : (d.supplierId ? '#' + d.supplierId : '—');
-    var statusLabel = (V186_STATUSES.find(function (s) { return s[0] === d.status; }) || [d.status, d.status || '—'])[1];
-    var renkLabel = d.renk ? ((V186_RENK.find(function (r) { return r.k === d.renk; }) || { a: d.renk }).a) : '—';
+    var statusLabel = (_statuses().find(function (s) { return s[0] === d.status; }) || [d.status, d.status || '—'])[1];
+    var renkLabel = d.renk ? ((_renkList().find(function (r) { return r.k === d.renk; }) || { a: d.renk }).a) : '—';
     var priLabel  = (V186_PRIORITY.find(function (p) { return p[0] === d.priority; }) || ['', d.priority || 'Normal'])[1];
     function row(k, v) {
       return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px dashed var(--b)"><span style="color:var(--t3);font-size:11px">' + k + '</span><span style="color:var(--t);font-size:12px;font-weight:500;text-align:right;max-width:60%">' + (v == null || v === '' ? '<span style="color:var(--t3);font-style:italic">—</span>' : esc(v)) + '</span></div>';

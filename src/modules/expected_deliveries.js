@@ -2325,4 +2325,11 @@
       + (list.length > 20 ? '<div style="padding:8px 16px;text-align:center;font-size:10px;color:var(--t3)">+'+(list.length-20)+' kayıt daha</div>' : '')
       + '</div>';
   };
+
+  /* ─── V186f / K10 cleanup: STATUSES + STATUS_LABELS + STATUS_COLORS + _LOJ_KOLI_RENK ───
+   * V186 wizard ortak veri tek kaynaktan okur. V186_STATUSES/V186_RENK kopyaları silindi. */
+  window.STATUSES_LIST    = STATUSES;
+  window.STATUS_LABELS    = STATUS_LABELS;
+  window.STATUS_COLORS    = STATUS_COLORS;
+  window.LOJ_RENK_LIST    = _LOJ_KOLI_RENK;
 })();
