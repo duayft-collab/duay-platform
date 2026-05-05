@@ -371,12 +371,19 @@
   function footerHtml() {
     var isFirst = state.currentStep === 1;
     var isLast  = state.currentStep === 4;
+    var canGeneral = canEditGeneral();
     var prevBtn = isFirst
       ? '<button onclick="window._v186WizardClose()" style="padding:8px 16px;border:0.5px solid var(--b);border-radius:8px;background:transparent;cursor:pointer;font-size:13px;color:var(--t2);font-family:inherit">İptal</button>'
       : '<button onclick="window._v186WizardPrev()" style="padding:8px 16px;border:0.5px solid var(--b);border-radius:8px;background:transparent;cursor:pointer;font-size:13px;color:var(--t);font-family:inherit">◀ Önceki</button>';
-    var nextBtn = isLast
-      ? '<button onclick="window._v186WizardSave()" style="padding:8px 22px;border:none;border-radius:8px;background:#16A34A;color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit">✓ Kaydet</button>'
-      : '<button onclick="window._v186WizardNext()" style="padding:8px 22px;border:none;border-radius:8px;background:#185FA5;color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit">Sonraki ▶</button>';
+    var nextBtn;
+    if (isLast) {
+      /* V186d: salt-okunur kullanıcı için Save yok, sadece Kapat */
+      nextBtn = canGeneral
+        ? '<button onclick="window._v186WizardSave()" style="padding:8px 22px;border:none;border-radius:8px;background:#16A34A;color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit">✓ Kaydet</button>'
+        : '<button onclick="window._v186WizardClose()" style="padding:8px 22px;border:0.5px solid var(--b);border-radius:8px;background:var(--s2);color:var(--t);cursor:pointer;font-size:13px;font-weight:500;font-family:inherit">Kapat</button>';
+    } else {
+      nextBtn = '<button onclick="window._v186WizardNext()" style="padding:8px 22px;border:none;border-radius:8px;background:#185FA5;color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit">Sonraki ▶</button>';
+    }
     return '<div style="padding:14px 24px;border-top:0.5px solid var(--b);background:var(--s2,#F5F5F7);display:flex;align-items:center;justify-content:space-between">'
       + '<div style="font-size:11px;color:var(--t3)">Step ' + state.currentStep + ' / 4</div>'
       + '<div style="display:flex;gap:8px">' + prevBtn + nextBtn + '</div>'
@@ -418,6 +425,14 @@
     state.currentStep = 1;
     state.formData = {};
 
+    /* V186d: CREATE RBAC — sadece admin/manager yeni kayıt oluşturabilir
+     * (asistan create yapamaz çünkü Sorumlu zorunlu, asistan Sorumlu seçemez) */
+    if (state.mode === 'create' && !isAdminOrManager()) {
+      _toast(_t('ed.toast.permissionDenied'), 'err');
+      state.mode = null;
+      return;
+    }
+
     /* Edit mode — kayıt yükle */
     if (state.mode === 'edit' && edId) {
       var list = (typeof window.loadExpectedDeliveries === 'function')
@@ -435,11 +450,101 @@
   }
   function next()  { if (state.currentStep < 4) { state.currentStep++; render(); } }
   function prev()  { if (state.currentStep > 1) { state.currentStep--; render(); } }
+  /* ─── V186d: VALIDATION ─── */
+  function validateForm() {
+    var d = state.formData;
+    var errors = [];
+    if (!d.productName || !String(d.productName).trim()) errors.push({ step: 1, field: 'Ürün Adı' });
+    if (!d.supplierId) errors.push({ step: 1, field: 'Tedarikçi' });
+    if (!d.quantityTotal || parseFloat(d.quantityTotal) <= 0) errors.push({ step: 1, field: 'Miktar (>0)' });
+    if (!d.estimatedDeliveryDate) errors.push({ step: 1, field: 'Tahmini Teslim' });
+    if (!d.originCity || !String(d.originCity).trim()) errors.push({ step: 2, field: 'Çıkış Şehir' });
+    if (!d.originDistrict || !String(d.originDistrict).trim()) errors.push({ step: 2, field: 'Çıkış Bölge' });
+    if (!d.destinationCity || !String(d.destinationCity).trim()) errors.push({ step: 2, field: 'Varış Şehir' });
+    if (!d.destinationDistrict || !String(d.destinationDistrict).trim()) errors.push({ step: 2, field: 'Varış Bölge' });
+    if (state.mode === 'create' && !d.responsibleUserId) errors.push({ step: 3, field: 'Sorumlu' });
+    return errors;
+  }
+
+  function _toast(msg, kind) { if (typeof window.toast === 'function') window.toast(msg, kind || 'ok'); }
+  function _t(key, vars) { return (typeof window.t === 'function') ? window.t(key, null, vars || null) : key; }
+
   function close() { document.getElementById('v186-wizard-modal')?.remove(); state.mode = null; state.edId = null; state.currentStep = 1; state.formData = {}; }
-  function save()  {
-    /* V186d cycle'ında doldurulacak */
-    if (typeof window.toast === 'function') window.toast('Kaydet — V186d cycle\'ında uygulanacak', 'warn');
-    console.log(LOG_PREFIX, 'save() çağrıldı, formData:', state.formData);
+
+  function save() {
+    /* 1) Validation */
+    var errors = validateForm();
+    if (errors.length) {
+      var fieldList = errors.map(function (e) { return e.field; }).join(', ');
+      _toast(_t('ed.toast.missingFields', { fields: fieldList }), 'err');
+      /* En düşük step numarasına dön (eksiğin en başı) */
+      var minStep = errors.reduce(function (m, e) { return Math.min(m, e.step); }, 4);
+      if (state.currentStep !== minStep) { state.currentStep = minStep; render(); }
+      return;
+    }
+
+    /* 2) Storage ulaşılabilirlik */
+    if (typeof window.loadExpectedDeliveries !== 'function' || typeof window.storeExpectedDeliveries !== 'function') {
+      _toast(_t('ed.toast.storageMissing'), 'err');
+      return;
+    }
+
+    var list = window.loadExpectedDeliveries({ raw: true }) || [];
+    var d = Object.assign({}, state.formData);
+    var cu = _cu() || {};
+    var nowIso = new Date().toISOString();
+
+    if (state.mode === 'create') {
+      /* CREATE — RBAC: asistan create yapamaz (open'da kontrol edildi) */
+      var newRec = Object.assign({}, d, {
+        id: 'ed_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        createdAt: nowIso,
+        createdBy: cu.id || cu.uid || null,
+        createdByName: cu.name || cu.displayName || '—',
+        status: d.status || 'SIPARIS_ASAMASINDA',
+        priority: d.priority || 'NORMAL',
+        statusHistory: [{ type: 'created', by: cu.id || cu.uid || null, at: nowIso, status: d.status || 'SIPARIS_ASAMASINDA' }],
+        deliveries: [],
+      });
+      list.push(newRec);
+      window.storeExpectedDeliveries(list);
+
+      try { if (typeof window.logActivity === 'function') window.logActivity('ed_v186_created', 'edId=' + newRec.id + ' productName=' + (newRec.productName || '')); } catch (e) {}
+      _toast(_t('ed.toast.deliveryCreated'), 'ok');
+
+    } else if (state.mode === 'edit') {
+      /* EDIT — RBAC: asistan 4 kısıtlı alanı değiştirememeli (UI disabled +
+       *              server-side de güvence: eski değer korunur) */
+      var idx = -1;
+      for (var i = 0; i < list.length; i++) { if (String(list[i].id) === String(state.edId)) { idx = i; break; } }
+      if (idx === -1) { _toast(_t('ed.toast.notFound'), 'err'); return; }
+      var existing = list[idx];
+
+      if (!canEditRestricted()) {
+        d.ihracatId         = existing.ihracatId;
+        d.siparisKodu       = existing.siparisKodu;
+        d.renk              = existing.renk;
+        d.responsibleUserId = existing.responsibleUserId;
+      }
+
+      list[idx] = Object.assign({}, existing, d, {
+        updatedAt: nowIso,
+        updatedBy: cu.id || cu.uid || null,
+        updatedByName: cu.name || cu.displayName || '—',
+      });
+      window.storeExpectedDeliveries(list);
+
+      try { if (typeof window.logActivity === 'function') window.logActivity('ed_v186_updated', 'edId=' + state.edId + ' fields=' + Object.keys(d).filter(function (k) { return d[k]; }).join(',').slice(0, 200)); } catch (e) {}
+      _toast(_t('ed.toast.updated'), 'ok');
+    }
+
+    /* 3) UI refresh + close */
+    if (typeof window._edRefresh === 'function') {
+      try { window._edRefresh(); } catch (e) {}
+    } else if (typeof window.renderEdList === 'function') {
+      try { window.renderEdList(); } catch (e) {}
+    }
+    close();
   }
 
   /* Global export */
