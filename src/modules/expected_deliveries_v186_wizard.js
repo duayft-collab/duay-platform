@@ -416,6 +416,10 @@
   function open(mode, edId) {
     if (!window.USE_V186_WIZARD) {
       console.log(LOG_PREFIX, 'feature flag kapalı, eski wizard\'a yönlendiriliyor');
+      /* V186e: _Original referansları kullan (override sonrası sonsuz döngü engeli) */
+      if (mode === 'create' && typeof window._edWizardAcOriginal === 'function') return window._edWizardAcOriginal();
+      if (mode === 'edit'   && typeof window._edEditModalOriginal === 'function') return window._edEditModalOriginal(edId);
+      /* Override henüz yapılmamışsa (defensive) */
       if (mode === 'create' && typeof window._edWizardAc === 'function') return window._edWizardAc();
       if (mode === 'edit'   && typeof window._edEditModal === 'function') return window._edEditModal(edId);
       return;
@@ -554,9 +558,41 @@
   window._v186WizardClose = close;
   window._v186WizardSave  = save;
 
+  /* ─── V186e: AKTİVASYON ─── */
+
+  /* Feature flag — default AÇIK. localStorage 'use_v186_wizard'='false' → eski sistem.
+   * Acil rollback: localStorage.setItem('use_v186_wizard','false') + sayfa yenile */
+  if (typeof window.USE_V186_WIZARD === 'undefined') {
+    try {
+      var __saved = localStorage.getItem('use_v186_wizard');
+      window.USE_V186_WIZARD = (__saved !== 'false'); // null/missing/true → true
+    } catch (_) { window.USE_V186_WIZARD = true; }
+  }
+
+  /* Eski 3 wizard çağrısı → V186'a köprü.
+   * Eski versiyonlar _xxxOriginal olarak korunur (rollback için → flag false). */
+  function _v186Hijack() {
+    if (typeof window._edWizardAc === 'function' && !window._edWizardAcOriginal) {
+      window._edWizardAcOriginal = window._edWizardAc;
+      window._edWizardAc = function () { return open('create'); };
+      console.log(LOG_PREFIX, '_edWizardAc → V186 (eski: _edWizardAcOriginal)');
+    }
+    if (typeof window._edEditModal === 'function' && !window._edEditModalOriginal) {
+      window._edEditModalOriginal = window._edEditModal;
+      window._edEditModal = function (edId) { return open('edit', edId); };
+      console.log(LOG_PREFIX, '_edEditModal → V186 (eski: _edEditModalOriginal)');
+    }
+  }
+
+  /* expected_deliveries.js zaten yüklü olmalı ama defensive: hem hemen hem
+   * DOMContentLoaded'da dene */
+  _v186Hijack();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _v186Hijack);
+  }
+
   /* Konsol bilgisi */
-  console.log(LOG_PREFIX, 'V186a iskeleti yüklendi. Test:');
-  console.log(LOG_PREFIX, '  window.USE_V186_WIZARD = true');
-  console.log(LOG_PREFIX, '  window._v186WizardOpen("create")');
+  console.log(LOG_PREFIX, 'V186e — AKTİF (default).');
+  console.log(LOG_PREFIX, 'Geri dönüş için: window.USE_V186_WIZARD = false; sayfa yenile');
 
 })();
