@@ -1,0 +1,419 @@
+/* ============================================================================
+ * V184a5 / LOJ-IHRACAT-DETAY-001
+ * ----------------------------------------------------------------------------
+ * 1) İhracat detay storage (loj_ihracat_detay_v1)
+ *    - Manuel alanlar: konteynerNo, muhurNo, cutOffTarihi, ardiyesizGirisTarihi,
+ *      hatLine, trackingUrl, gemiAdi, seferNo, limanTerminal, cikisLimani,
+ *      varisLimani, tahminiVarisSuresi, notlar
+ *
+ * 2) Grup başlığını ZENGİNLEŞTİR (V184a3'ün renderGroupHeader'ını override eder):
+ *    - Otomatik: KG/m³/firma sayısı/ETA range/konteyner önerisi
+ *    - Manuel: detay strip (kayıt varsa)
+ *    - "✏ Detay" butonu (admin/manager-only) → modal aç
+ *    - ▼/▶ collapse butonu — alt satırlar gizlenir
+ *
+ * 3) Collapse state: localStorage 'v184a5_collapse_state'
+ *
+ * Co-Authored-By: Claude
+ * ========================================================================== */
+(function() {
+  'use strict';
+
+  var LOG_PREFIX = '[V184a5]';
+  var DETAY_KEY = 'loj_ihracat_detay_v1';
+  var COLLAPSE_KEY = 'v184a5_collapse_state';
+
+  /* ─────────────── Yardımcılar ─────────────── */
+
+  function isAdminOrManager() {
+    var cu = (typeof window.CU === 'function') ? window.CU() : null;
+    if (!cu) return false;
+    var role = cu.role || cu.rol;
+    return role === 'admin' || role === 'manager' || role === 'super_admin';
+  }
+
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function fmtTr(d) {
+    if (!d) return '';
+    try { return new Date(d).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }); } catch(e) { return String(d); }
+  }
+
+  /* ─────────────── İhracat Detay Storage ─────────────── */
+
+  window.loadIhracatDetay = function() {
+    try { return JSON.parse(localStorage.getItem(DETAY_KEY) || '{}') || {}; } catch(e) { return {}; }
+  };
+
+  window.storeIhracatDetay = function(map) {
+    try { localStorage.setItem(DETAY_KEY, JSON.stringify(map || {})); return true; } catch(e) { return false; }
+  };
+
+  function getDetay(ihracatId) {
+    if (!ihracatId) return null;
+    var map = window.loadIhracatDetay();
+    return map[ihracatId] || null;
+  }
+
+  function saveDetay(ihracatId, data) {
+    if (!ihracatId) return false;
+    var map = window.loadIhracatDetay();
+    map[ihracatId] = Object.assign({}, map[ihracatId] || {}, data, { updatedAt: new Date().toISOString() });
+    return window.storeIhracatDetay(map);
+  }
+
+  /* ─────────────── Collapse State ─────────────── */
+
+  function loadCollapseState() {
+    try { return JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}') || {}; } catch(e) { return {}; }
+  }
+
+  function setCollapse(ihracatId, collapsed) {
+    var s = loadCollapseState();
+    if (collapsed) s[ihracatId] = true;
+    else delete s[ihracatId];
+    try { localStorage.setItem(COLLAPSE_KEY, JSON.stringify(s)); } catch(e) {}
+  }
+
+  function isCollapsed(ihracatId) {
+    var s = loadCollapseState();
+    return !!s[ihracatId];
+  }
+
+  /* ─────────────── Toplu hesaplar ─────────────── */
+
+  function computeAggregates(edList) {
+    var totalKg = 0, totalM3 = 0;
+    var firmaSet = {}, etaList = [], geciktiCount = 0, yakinCount = 0;
+    var today = new Date(); today.setHours(0,0,0,0);
+    edList.forEach(function(ed) {
+      totalKg += parseFloat(ed.weightKg) || 0;
+      totalM3 += parseFloat(ed.volumeM3) || 0;
+      if (ed.supplierId) firmaSet[ed.supplierId] = true;
+      if (ed.estimatedDeliveryDate) {
+        var t = new Date(ed.estimatedDeliveryDate).getTime();
+        if (!isNaN(t)) {
+          etaList.push(t);
+          var diff = Math.floor((t - today.getTime()) / 86400000);
+          if (diff < 0) geciktiCount++;
+          else if (diff < 7) yakinCount++;
+        }
+      }
+    });
+    var firmaCount = Object.keys(firmaSet).length;
+    var minEta = etaList.length ? Math.min.apply(null, etaList) : null;
+    var maxEta = etaList.length ? Math.max.apply(null, etaList) : null;
+    var calc = (typeof window._edCalculateContainers === 'function')
+      ? window._edCalculateContainers({ weightKg: totalKg, volumeM3: totalM3 })
+      : null;
+    return {
+      count: edList.length, totalKg: totalKg, totalM3: totalM3, firmaCount: firmaCount,
+      minEta: minEta, maxEta: maxEta, geciktiCount: geciktiCount, yakinCount: yakinCount, calc: calc
+    };
+  }
+
+  /* ─────────────── Grup Başlığı Render (zengin) ─────────────── */
+
+  function renderRichGroupHeader(ihracatId, edList) {
+    var isAtanmamis = !ihracatId;
+    var agg = computeAggregates(edList);
+    var bg, color, title;
+    if (isAtanmamis) {
+      bg = 'rgba(224,87,79,0.06)'; color = '#A32D2D';
+      title = '⚠️ İhracat ID Atanmamış';
+    } else {
+      bg = 'rgba(24,95,165,0.06)'; color = '#185FA5';
+      title = '📦 ' + escHtml(ihracatId);
+    }
+
+    var collapsed = ihracatId ? isCollapsed(ihracatId) : false;
+    var arrow = collapsed ? '▶' : '▼';
+    var detay = ihracatId ? getDetay(ihracatId) : null;
+
+    /* Otomatik özet satırı */
+    var ozet = agg.count + ' kalem';
+    if (agg.firmaCount > 0) ozet += ' · ' + agg.firmaCount + ' firma';
+    if (agg.totalKg > 0) ozet += ' · ' + Math.round(agg.totalKg).toLocaleString('tr-TR') + ' kg';
+    if (agg.totalM3 > 0) ozet += ' · ' + agg.totalM3.toFixed(1) + ' m³';
+
+    var etaStr = '';
+    if (agg.minEta && agg.maxEta) {
+      etaStr = 'ETA: ' + fmtTr(agg.minEta) + ' → ' + fmtTr(agg.maxEta);
+      if (agg.geciktiCount > 0) etaStr += ' <span style="color:#DC2626;font-weight:500">(' + agg.geciktiCount + ' gecikmiş)</span>';
+      else if (agg.yakinCount > 0) etaStr += ' <span style="color:#CA8A04;font-weight:500">(' + agg.yakinCount + ' yakın)</span>';
+    }
+
+    var calcStr = agg.calc ? '<span style="color:' + agg.calc.color + ';font-weight:500">→ ' + agg.calc.count + ' × ' + agg.calc.type + ' yeter</span>' : '';
+
+    /* Manuel detay strip — kayıt varsa */
+    var detayStrip = '';
+    if (detay && !isAtanmamis) {
+      var parts = [];
+      if (detay.konteynerNo) parts.push('🚛 ' + escHtml(detay.konteynerNo));
+      if (detay.muhurNo) parts.push('🔒 ' + escHtml(detay.muhurNo));
+      if (detay.cutOffTarihi) parts.push('⏱ Cut-off: ' + fmtTr(detay.cutOffTarihi));
+      if (detay.ardiyesizGirisTarihi) parts.push('📦 Ardiye: ' + fmtTr(detay.ardiyesizGirisTarihi));
+      if (detay.hatLine) parts.push('🚢 ' + escHtml(detay.hatLine));
+      if (detay.trackingUrl) parts.push('<a href="' + escHtml(detay.trackingUrl) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#185FA5;text-decoration:none">🔗 Tracking</a>');
+      if (detay.cikisLimani || detay.varisLimani) parts.push('🏭 ' + escHtml(detay.cikisLimani || '?') + ' → ' + escHtml(detay.varisLimani || '?'));
+      if (detay.gemiAdi) parts.push('Gemi: ' + escHtml(detay.gemiAdi) + (detay.seferNo ? ' (' + escHtml(detay.seferNo) + ')' : ''));
+      if (parts.length) {
+        detayStrip = '<div style="font-size:11px;color:var(--t2);padding:6px 0 0 0;line-height:1.7">' + parts.join(' · ') + '</div>';
+      }
+    }
+
+    var detayBtn = '';
+    if (!isAtanmamis && isAdminOrManager()) {
+      detayBtn = '<button onclick="event.stopPropagation();window._lojIhracatDetayModal(\'' + escHtml(ihracatId) + '\')" style="padding:4px 10px;border:0.5px solid ' + color + '33;border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:' + color + ';font-family:inherit">✏ Detay</button>';
+    }
+
+    var collapseBtn = ihracatId ? '<button onclick="event.stopPropagation();window._lojGrupToggle(\'' + escHtml(ihracatId) + '\')" style="padding:4px 8px;border:0.5px solid ' + color + '33;border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:' + color + ';font-family:inherit;margin-left:6px" title="Aç/Kapat">' + arrow + '</button>' : '';
+
+    return '<div data-v184a3-group="1" data-grup-id="' + escHtml(ihracatId || '__atanmamis__') + '" style="padding:12px 16px;background:' + bg + ';border-bottom:0.5px solid var(--b);border-top:2px solid ' + color + '">'
+      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:13px;font-weight:600;color:' + color + ';font-family:DM Mono,monospace">' + title + '</div>'
+      + '<div style="font-size:11px;color:var(--t2);margin-top:3px">' + ozet + '</div>'
+      + (etaStr ? '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + etaStr + '</div>' : '')
+      + (calcStr ? '<div style="font-size:11px;margin-top:2px">' + calcStr + '</div>' : '')
+      + detayStrip
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">' + detayBtn + collapseBtn + '</div>'
+      + '</div>'
+      + '</div>';
+  }
+
+  /* ─────────────── renderEdList override (V184a3 yerine geçer) ─────────────── */
+
+  var origRenderEdList = window.renderEdList;
+  if (typeof origRenderEdList === 'function') {
+    window.renderEdList = function() {
+      try {
+        var html = origRenderEdList.apply(this, arguments);
+        return regroupWithRichHeaders(html);
+      } catch (e) {
+        console.warn(LOG_PREFIX, 'override hatası, orijinal döndürülüyor:', e);
+        return origRenderEdList.apply(this, arguments);
+      }
+    };
+  }
+
+  /* Brace counting — V184a3'ten miras */
+  function findRowEnd(html, startIdx) {
+    var openTagEnd = html.indexOf('>', startIdx);
+    if (openTagEnd === -1) return -1;
+    var i = openTagEnd + 1;
+    var depth = 1;
+    var openRe = /<div\b/g;
+    var closeRe = /<\/div>/g;
+    while (depth > 0 && i < html.length) {
+      openRe.lastIndex = i;
+      closeRe.lastIndex = i;
+      var openMatch = openRe.exec(html);
+      var closeMatch = closeRe.exec(html);
+      if (!closeMatch) return -1;
+      if (openMatch && openMatch.index < closeMatch.index) {
+        depth++;
+        i = openMatch.index + 4;
+      } else {
+        depth--;
+        i = closeMatch.index + 6;
+        if (depth === 0) return i;
+      }
+    }
+    return -1;
+  }
+
+  function regroupWithRichHeaders(html) {
+    if (!html || typeof html !== 'string') return html;
+
+    /* Idempotent: V184a5 marker varsa skip */
+    if (html.indexOf('data-v184a5-rich="1"') !== -1) return html;
+
+    /* Row başlangıçlarını bul */
+    var marker = /<div data-ed-id="([^"]*)" data-ihracat-id="([^"]*)"/g;
+    var matches = [];
+    var m;
+    while ((m = marker.exec(html)) !== null) {
+      matches.push({ index: m.index, edId: m[1], ihracatId: m[2] });
+    }
+    if (matches.length === 0) return html;
+
+    /* Atomic boundaries */
+    var rows = [];
+    for (var i = 0; i < matches.length; i++) {
+      var start = matches[i].index;
+      var end = findRowEnd(html, start);
+      if (end === -1) return html;
+      rows.push({ ihracatId: matches[i].ihracatId, edId: matches[i].edId, html: html.substring(start, end) });
+    }
+
+    var preface = html.substring(0, matches[0].index);
+    var lastRowEnd = findRowEnd(html, matches[matches.length - 1].index);
+    var postface = html.substring(lastRowEnd);
+
+    /* ed verisini al — agregat hesabı için */
+    var edAll = (typeof window.loadExpectedDeliveries === 'function')
+      ? (window.loadExpectedDeliveries({ raw: true }) || []) : [];
+    var edById = {};
+    edAll.forEach(function(ed) { edById[String(ed.id)] = ed; });
+
+    /* Gruplara böl */
+    var groups = {};
+    var groupOrder = [];
+    rows.forEach(function(row) {
+      var id = row.ihracatId || '__atanmamış__';
+      if (!(id in groups)) {
+        groups[id] = { rows: [], edList: [] };
+        groupOrder.push(id);
+      }
+      groups[id].rows.push(row.html);
+      var ed = edById[String(row.edId)];
+      if (ed) groups[id].edList.push(ed);
+    });
+
+    /* Render: önce ATANMAMIŞ */
+    var output = preface;
+    var rich = ' data-v184a5-rich="1"'; // marker — header'a inject
+
+    function renderGroup(id, isAtanmamis) {
+      var grp = groups[id];
+      var actualId = isAtanmamis ? null : id;
+      var headerHtml = renderRichGroupHeader(actualId, grp.edList).replace('data-v184a3-group="1"', 'data-v184a3-group="1"' + rich);
+      var collapsed = actualId ? isCollapsed(actualId) : false;
+      var rowsWrap = '<div data-grup-icerik="' + escHtml(actualId || '__atanmamis__') + '"' + (collapsed ? ' style="display:none"' : '') + '>'
+        + grp.rows.join('')
+        + '</div>';
+      return headerHtml + rowsWrap;
+    }
+
+    if (groups['__atanmamış__']) {
+      output += renderGroup('__atanmamış__', true);
+      delete groups['__atanmamış__'];
+    }
+    Object.keys(groups).sort().forEach(function(id) {
+      output += renderGroup(id, false);
+    });
+
+    return output + postface;
+  }
+
+  /* ─────────────── Toggle helper (collapse) ─────────────── */
+
+  window._lojGrupToggle = function(ihracatId) {
+    if (!ihracatId) return;
+    var current = isCollapsed(ihracatId);
+    setCollapse(ihracatId, !current);
+    /* Sadece o grubu DOM'da toggle et — full re-render gerekmez */
+    var icerik = document.querySelector('[data-grup-icerik="' + ihracatId.replace(/"/g, '&quot;') + '"]');
+    if (icerik) icerik.style.display = current ? '' : 'none';
+    /* Header arrow güncelle */
+    var btn = document.querySelector('[data-grup-id="' + ihracatId.replace(/"/g, '&quot;') + '"] button[onclick*="_lojGrupToggle"]');
+    if (btn) btn.textContent = current ? '▼' : '▶';
+  };
+
+  /* ─────────────── İhracat Detay Modal ─────────────── */
+
+  window._lojIhracatDetayModal = function(ihracatId) {
+    if (!isAdminOrManager()) {
+      window.toast && window.toast('Bu işlem için yetkiniz yok', 'warn');
+      return;
+    }
+    if (!ihracatId) return;
+
+    var detay = getDetay(ihracatId) || {};
+    var old = document.getElementById('mo-loj-ihracat-detay');
+    if (old) old.remove();
+
+    var mo = document.createElement('div');
+    mo.className = 'mo'; mo.id = 'mo-loj-ihracat-detay';
+
+    var labelStyle = 'font-size:10px;color:var(--t3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.03em';
+    var inputStyle = 'width:100%;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;font-size:12px;font-family:inherit';
+
+    function fld(label, id, value, type) {
+      type = type || 'text';
+      return '<div style="margin-bottom:10px"><div style="' + labelStyle + '">' + label + '</div>'
+        + '<input id="' + id + '" type="' + type + '" value="' + escHtml(value || '') + '" style="' + inputStyle + '"></div>';
+    }
+    function textarea(label, id, value) {
+      return '<div style="margin-bottom:10px;grid-column:span 2"><div style="' + labelStyle + '">' + label + '</div>'
+        + '<textarea id="' + id + '" rows="2" style="' + inputStyle + ';resize:vertical;font-family:inherit">' + escHtml(value || '') + '</textarea></div>';
+    }
+
+    mo.innerHTML = '<div class="moc" style="max-width:680px;padding:0;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
+      + '<div style="padding:14px 20px;border-bottom:0.5px solid var(--b);font-size:14px;font-weight:600">📦 İhracat Detayı — ' + escHtml(ihracatId) + '</div>'
+      + '<div style="padding:18px 20px;overflow-y:auto;flex:1">'
+      + '<div style="font-size:10px;font-weight:600;color:#185FA5;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">📦 Konteyner Bilgisi</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + fld('Konteyner No', 'lid-konteynerNo', detay.konteynerNo)
+      + fld('Mühür No', 'lid-muhurNo', detay.muhurNo)
+      + fld('Ardiyesiz Giriş Tarihi', 'lid-ardiyesizGirisTarihi', detay.ardiyesizGirisTarihi, 'date')
+      + fld('Cut-off Tarihi', 'lid-cutOffTarihi', detay.cutOffTarihi, 'date')
+      + '</div>'
+      + '<div style="font-size:10px;font-weight:600;color:#185FA5;margin:12px 0 10px;text-transform:uppercase;letter-spacing:.05em">🚢 Taşıyıcı / Hat</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + fld('Hat / Line (MSC, CMA, MAERSK)', 'lid-hatLine', detay.hatLine)
+      + fld('Tracking URL', 'lid-trackingUrl', detay.trackingUrl, 'url')
+      + fld('Gemi Adı', 'lid-gemiAdi', detay.gemiAdi)
+      + fld('Sefer No', 'lid-seferNo', detay.seferNo)
+      + '</div>'
+      + '<div style="font-size:10px;font-weight:600;color:#185FA5;margin:12px 0 10px;text-transform:uppercase;letter-spacing:.05em">🏭 Liman / Rota</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + fld('Liman / Terminal', 'lid-limanTerminal', detay.limanTerminal)
+      + fld('Yükleme Noktası', 'lid-yuklemeNoktasi', detay.yuklemeNoktasi)
+      + fld('Çıkış Limanı', 'lid-cikisLimani', detay.cikisLimani)
+      + fld('Varış Limanı', 'lid-varisLimani', detay.varisLimani)
+      + fld('Tahmini Varış Süresi (gün)', 'lid-tahminiVarisSuresi', detay.tahminiVarisSuresi, 'number')
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr;gap:10px;margin-top:8px">'
+      + textarea('Notlar', 'lid-notlar', detay.notlar)
+      + '</div>'
+      + '</div>'
+      + '<div style="padding:12px 20px;border-top:0.5px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
+      + '<button class="btn btns" onclick="document.getElementById(\'mo-loj-ihracat-detay\')?.remove()">İptal</button>'
+      + '<button class="btn btnp" onclick="window._lojIhracatDetayKaydet(\'' + escHtml(ihracatId) + '\')">Kaydet</button>'
+      + '</div>'
+      + '</div>';
+    document.body.appendChild(mo);
+    setTimeout(function() { mo.classList.add('open'); }, 10);
+  };
+
+  window._lojIhracatDetayKaydet = function(ihracatId) {
+    if (!isAdminOrManager()) {
+      window.toast && window.toast('Bu işlem için yetkiniz yok', 'warn');
+      return;
+    }
+    var g = function(id) { var el = document.getElementById(id); return el ? (el.value || '').trim() : ''; };
+    var data = {
+      konteynerNo: g('lid-konteynerNo').slice(0, 30),
+      muhurNo: g('lid-muhurNo').slice(0, 30),
+      ardiyesizGirisTarihi: g('lid-ardiyesizGirisTarihi'),
+      cutOffTarihi: g('lid-cutOffTarihi'),
+      hatLine: g('lid-hatLine').slice(0, 30),
+      trackingUrl: g('lid-trackingUrl').slice(0, 500),
+      gemiAdi: g('lid-gemiAdi').slice(0, 50),
+      seferNo: g('lid-seferNo').slice(0, 30),
+      limanTerminal: g('lid-limanTerminal').slice(0, 80),
+      yuklemeNoktasi: g('lid-yuklemeNoktasi').slice(0, 80),
+      cikisLimani: g('lid-cikisLimani').slice(0, 50),
+      varisLimani: g('lid-varisLimani').slice(0, 50),
+      tahminiVarisSuresi: g('lid-tahminiVarisSuresi'),
+      notlar: g('lid-notlar').slice(0, 500)
+    };
+    var ok = saveDetay(ihracatId, data);
+    if (ok) {
+      window.toast && window.toast('İhracat detayı kaydedildi', 'ok');
+      document.getElementById('mo-loj-ihracat-detay')?.remove();
+      if (typeof window._edRefresh === 'function') window._edRefresh();
+    } else {
+      window.toast && window.toast('Kayıt başarısız', 'err');
+    }
+  };
+
+  console.log(LOG_PREFIX, 'V184a5 yüklendi: İhracat detay modal + zengin grup başlığı + collapse');
+})();
