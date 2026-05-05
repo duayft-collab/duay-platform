@@ -217,11 +217,11 @@
       window.toast?.('confirmModal bulunamadı', 'err');
       return;
     }
-    /* LOJ-1B-H: 24h+ + non-admin → admin onayı talebi */
+    /* LOJ-1B-H: 48h+ + non-admin → admin onayı talebi */
     var __all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
     var __ed = __all.find(function(e){ return e.id === edId; });
     if (__ed && !window._edIsAdmin() && window._edIsOlderThan24h(__ed)) {
-      window.confirmModal('Bu kayıt 24 saatten eski. Silme talebiniz admin onayına gönderilecek.', {
+      window.confirmModal('Bu kayıt 48 saatten eski. Silme talebiniz admin onayına gönderilecek.', {
         title: 'Onay Gerekli',
         danger: false,
         confirmText: 'Talep Gönder',
@@ -355,7 +355,7 @@
     var idx = -1;
     for (var i = 0; i < list.length; i++) { if (list[i].id === edId) { idx = i; break; } }
     if (idx === -1) { window.toast?.('Kayıt bulunamadı', 'err'); return; }
-    /* LOJ-1B-H: 24h+ + non-admin → admin onayı talebi (tüm form payload) */
+    /* LOJ-1B-H: 48h+ + non-admin → admin onayı talebi (tüm form payload) */
     if (!window._edIsAdmin() && window._edIsOlderThan24h(list[idx])) {
       var __payload = {
         productName: productName, supplierId: supplierId, quantityTotal: quantityTotal,
@@ -567,7 +567,7 @@
     }
   };
 
-  /* LOJ-1B-H: Pending actions (admin onay sistemi) — 24h+ non-admin sil/düzenle talepleri */
+  /* LOJ-1B-H: Pending actions (admin onay sistemi) — 48h+ non-admin sil/düzenle talepleri */
   var PENDING_KEY = 'ak_ed_pending_v1';
   window._edPendingActionsLoad = function() {
     try { return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]') || []; } catch(e) { return []; }
@@ -590,7 +590,7 @@
       if (m) ts = parseInt(m[1], 10);
     }
     if (!ts || isNaN(ts)) return false;
-    return (Date.now() - ts) > 86400000;
+    return (Date.now() - ts) > 172800000;
   };
   window._edRequestApproval = function(action, edId, payload) {
     var cu = (typeof window.CU === 'function' ? window.CU() : null) || {};
