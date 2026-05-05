@@ -305,6 +305,30 @@
         + '<div>' + _edWizardLabel('Konteyner No') + '<input id="ede-konteynerNo" oninput="window._edAutoFillTrackingUrl && window._edAutoFillTrackingUrl()" style="' + _edWizardInput + '" value="' + _uiEsc(ed.konteynerNo || '') + '"></div>'
         + '<div>' + _edWizardLabel('Sıra No (yükleme)') + '<input id="ede-containerSequenceNo" type="number" min="1" step="1" placeholder="örn: 5" style="' + _edWizardInput + '" value="' + (ed.containerSequenceNo != null ? _uiEsc(String(ed.containerSequenceNo)) : '') + '"></div>'
         + '<div style="grid-column:span 2">' + _edWizardLabel('Yükleme Önceliği') + '<select id="ede-loadingPriority" style="' + _edWizardInput + '">' + ['','REQUIRED','OPTIONAL'].map(function(__p){var __l = __p === 'REQUIRED' ? '⭐ Zorunlu' : (__p === 'OPTIONAL' ? '○ Opsiyonel' : '— Belirtilmedi —'); return '<option value="' + __p + '"' + ((ed.loadingPriority || '') === __p ? ' selected' : '') + '>' + __l + '</option>';}).join('') + '</select></div>'
+        /* V187c — handlingFlags ENUM ARRAY (multi-button toggle grid, full row) */
+        + (function(){
+            var __enums = window.HANDLING_FLAGS_ENUM || ['DANGEROUS','FRAGILE','KEEP_UPRIGHT','LIQUID_LEAK_RISK','ODOR','PERISHABLE','REFRIGERATED'];
+            var __labelMap = window.HANDLING_FLAGS_LABEL_KEY || {};
+            var __current = Array.isArray(ed.handlingFlags) ? ed.handlingFlags : [];
+            var __t = (typeof window.t === 'function') ? window.t : function(k){return k;};
+            var __btns = __enums.map(function(__flag){
+              var __act = __current.indexOf(__flag) >= 0;
+              var __lbl = __labelMap[__flag] ? __t(__labelMap[__flag]) : __flag;
+              return '<button type="button" data-flag="' + __flag + '" data-active="' + (__act ? '1' : '0') + '"'
+                + ' onclick="window._edToggleHandling && window._edToggleHandling(\'' + __flag + '\', this)"'
+                + ' title="' + _uiEsc(__lbl) + '"'
+                + ' style="padding:6px 10px;border:1px solid ' + (__act ? '#2563EB' : 'var(--b)') + ';border-radius:6px;'
+                + 'background:' + (__act ? '#DBEAFE' : 'transparent') + ';cursor:pointer;font-size:12px;font-family:inherit;'
+                + 'color:var(--t);font-weight:' + (__act ? '600' : '400') + ';transition:border-color 150ms,background 150ms">'
+                + _uiEsc(__lbl)
+                + '</button>';
+            }).join('');
+            return '<div style="grid-column:span 2">' + _edWizardLabel(__t('ed.label.handlingFlags'))
+              + '<div id="ede-handlingFlags-grid" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2)">'
+              + __btns
+              + '</div>'
+              + '</div>';
+          })()
         + '<div>' + _edWizardLabel('Ağırlık (kg)') + '<input id="ede-weightKg" type="number" min="0" step="0.1" placeholder="örn: 2450" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.weightKg || '') + '"></div>'
         + '<div>' + _edWizardLabel('Hacim (m³)') + '<input id="ede-volumeM3" type="number" min="0" step="0.1" placeholder="örn: 12.5" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.volumeM3 || '') + '"></div>'
         + '<div style="grid-column:span 2;font-size:11px;font-weight:600;color:var(--t2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--b)">' + (typeof window.t === 'function' ? window.t('ed.sect.paket') : 'Paket Bilgisi') + '</div>'
@@ -331,6 +355,38 @@
         window.toast(t('ed.toast.oldRecordRoute'), 'warn');
       }
     }
+  };
+
+  /* V187c — handlingFlags ENUM ARRAY toggle/getter (eski _edEditModal için).
+   * STRICT: enum array (string yok, virgül yok, küçük yazım farkı yok).
+   * Veri DOM'da tutulur (button data-active="0|1"), save zamanında okur. */
+  window._edToggleHandling = function (flag, btnEl) {
+    if (!btnEl) return;
+    var isActive = btnEl.dataset.active === '1';
+    if (isActive) {
+      btnEl.dataset.active = '0';
+      btnEl.style.borderColor = 'var(--b)';
+      btnEl.style.background = 'transparent';
+      btnEl.style.fontWeight = '400';
+    } else {
+      btnEl.dataset.active = '1';
+      btnEl.style.borderColor = '#2563EB';
+      btnEl.style.background = '#DBEAFE';
+      btnEl.style.fontWeight = '600';
+    }
+  };
+  /* DOM'dan aktif handlingFlags'i array olarak oku (save flow için) */
+  window._edGetHandlingFlags = function () {
+    var grid = document.getElementById('ede-handlingFlags-grid');
+    if (!grid) return [];
+    var btns = grid.querySelectorAll('button[data-flag][data-active="1"]');
+    var enums = window.HANDLING_FLAGS_ENUM || ['DANGEROUS','FRAGILE','KEEP_UPRIGHT','LIQUID_LEAK_RISK','ODOR','PERISHABLE','REFRIGERATED'];
+    var out = [];
+    for (var i = 0; i < btns.length; i++) {
+      var f = btns[i].dataset.flag;
+      if (enums.indexOf(f) >= 0) out.push(f); // enum whitelist (defansif)
+    }
+    return out;
   };
 
   /* V184a2 / LOJ-ROTA-INFO-001: Tedarikçi seçilince cari.city → originCity prefill.
@@ -389,6 +445,8 @@
         konteynerNo: document.getElementById('ede-konteynerNo')?.value || '',
         containerSequenceNo: (function(){var v = document.getElementById('ede-containerSequenceNo')?.value; return v ? Number(v) : null;})(),
         loadingPriority: document.getElementById('ede-loadingPriority')?.value || '',
+        /* V187c — handlingFlags ENUM ARRAY (approval payload) */
+        handlingFlags: (typeof window._edGetHandlingFlags === 'function') ? window._edGetHandlingFlags() : (Array.isArray(list[idx].handlingFlags) ? list[idx].handlingFlags : []),
         /* V184a2 / LOJ-ROTA-INFO-001: Çıkış-Varış lokasyonu (Q4: düzenleme'de validation yok) */
         originCity: (document.getElementById('ede-originCity')?.value || '').trim().slice(0, 50),
         originDistrict: (document.getElementById('ede-originDistrict')?.value || '').trim().slice(0, 50),
@@ -433,6 +491,8 @@
     var __seqVal = document.getElementById('ede-containerSequenceNo')?.value;
     list[idx].containerSequenceNo = __seqVal ? Number(__seqVal) : null;
     list[idx].loadingPriority = document.getElementById('ede-loadingPriority')?.value || '';
+    /* V187c — handlingFlags ENUM ARRAY (direct save) */
+    list[idx].handlingFlags = (typeof window._edGetHandlingFlags === 'function') ? window._edGetHandlingFlags() : (Array.isArray(list[idx].handlingFlags) ? list[idx].handlingFlags : []);
     /* V184a2 / LOJ-ROTA-INFO-001: rota alanları (direct save path - eksikti) */
     list[idx].originCity = (document.getElementById('ede-originCity')?.value || '').trim().slice(0, 50);
     list[idx].originDistrict = (document.getElementById('ede-originDistrict')?.value || '').trim().slice(0, 50);
@@ -2293,8 +2353,8 @@
       /* SHIPMENT-DOC-LIST-PROGRESS-001: belge progress badge (V125.1, ed.shipmentDoc varsa) */
       if (window._shipmentDocCardBadgeHtml) __ikonlar += window._shipmentDocCardBadgeHtml(ed);
       if (!__ikonlar) __ikonlar = '<span style="color:var(--t3);font-size:10px">—</span>';
-      /* LOJISTIK-RENK-001: 11-kolon grid (8→11) + İhracat ID hücresi */
-      return '<div data-ed-id="' + esc(String(ed.id || '')) + '" data-ihracat-id="' + esc(String(ed.ihracatId || '')) + '" style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 0.8fr 0.9fr 0.8fr 0.7fr 1fr 0.7fr 1.4fr 0.7fr auto;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
+      /* V187c — 14-kolon grid (Sevkiyat hücresi KG/m³ sonrası) */
+      return '<div data-ed-id="' + esc(String(ed.id || '')) + '" data-ihracat-id="' + esc(String(ed.ihracatId || '')) + '" style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 0.8fr 0.9fr 1.1fr 0.8fr 0.7fr 1fr 0.7fr 1.4fr 0.7fr auto;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
         + '<div>' + __yonBadge + '</div>'
         + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ed.ihracatId ? esc(String(ed.ihracatId).slice(0,15)) : '<span style="color:var(--t3)">—</span>') + '</div>'
         + '<div><div style="font-weight:500;color:var(--t)">'+esc(ed.productName||'—')+'</div>'
@@ -2304,6 +2364,38 @@
         + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+qd+'/'+qt+' <span style="color:var(--t3);font-size:10px">(%'+pct+')</span></div>'
         /* SHIPMENT-LIST-COLUMNS-002: KG/m³ + konteyner uyarı (V133.1) */
         + '<div style="font-size:10px;line-height:1.3">' + ((ed.weightKg || ed.volumeM3) ? '<div style="font-family:ui-monospace,monospace;color:var(--t2);font-weight:500">' + (ed.weightKg ? Math.round(ed.weightKg).toLocaleString('tr-TR') + ' kg' : '—') + (ed.volumeM3 ? ' / ' + ed.volumeM3.toLocaleString('tr-TR') + ' m³' : '') + '</div>' : '<span style="color:var(--t3)">—</span>') + '</div>'
+        /* V187c — Sevkiyat kompakt hücresi (Line 1: #SıraNo + Önc badge / Line 2: handlingFlags emoji) + multi-line tooltip */
+        + (function(){
+            var __seqDisp = ed.containerSequenceNo != null ? '#' + ed.containerSequenceNo : '';
+            var __priBadge = '';
+            if (ed.loadingPriority === 'REQUIRED') {
+              __priBadge = '<span style="background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px;margin-left:4px;font-size:9px;font-weight:500">⭐</span>';
+            } else if (ed.loadingPriority === 'OPTIONAL') {
+              __priBadge = '<span style="background:var(--s2);color:var(--t3);padding:1px 5px;border-radius:3px;margin-left:4px;font-size:9px">○</span>';
+            }
+            var __flags = Array.isArray(ed.handlingFlags) ? ed.handlingFlags : [];
+            var __emojiMap = window.HANDLING_FLAGS_EMOJI || {};
+            var __labelKeyMap = window.HANDLING_FLAGS_LABEL_KEY || {};
+            var __tFn = (typeof window.t === 'function') ? window.t : function(k){return k;};
+            var __emojiBar = __flags.map(function(f){return __emojiMap[f] || '';}).filter(Boolean).join(' ');
+            /* Multi-line tooltip — her alan kendi label'ı ile */
+            var __tip = [];
+            if (__seqDisp) __tip.push('Yükleme Sırası: ' + __seqDisp);
+            if (ed.loadingPriority === 'REQUIRED') __tip.push('Öncelik: ⭐ Zorunlu');
+            else if (ed.loadingPriority === 'OPTIONAL') __tip.push('Öncelik: ○ Opsiyonel');
+            if (__flags.length) {
+              __tip.push('Taşıma: ' + __flags.map(function(f){return __labelKeyMap[f] ? __tFn(__labelKeyMap[f]) : f;}).join(', '));
+            }
+            var __title = __tip.length ? esc(__tip.join('\n')) : '';
+            var __empty = !__seqDisp && !__priBadge && !__emojiBar;
+            return '<div title="' + __title + '" style="font-size:10px;line-height:1.3;overflow:hidden">'
+              + (__empty ? '<span style="color:var(--t3)">—</span>'
+                  : ('<div style="font-family:ui-monospace,monospace;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+                     + (__seqDisp ? '<span style="font-weight:500">' + __seqDisp + '</span>' : '')
+                     + __priBadge + '</div>'
+                     + (__emojiBar ? '<div style="margin-top:2px;font-size:12px;letter-spacing:1px">' + __emojiBar + '</div>' : '')))
+              + '</div>';
+          })()
         + '<div style="font-variant-numeric:tabular-nums;font-weight:' + (rd !== null && rd < 7 ? '600' : '400') + ';color:' + (rd !== null && rd < 0 ? '#DC2626' : (rd !== null && rd === 0 ? '#EA580C' : (rd !== null && rd < 7 ? '#CA8A04' : 'var(--t2)'))) + '">' + esc(eta) + (rd !== null && rd < 0 ? ' <span style="font-size:9px;font-weight:500">(' + Math.abs(rd) + ' gün geç)</span>' : (rd !== null && rd >= 0 && rd < 7 ? ' <span style="font-size:9px;font-weight:500">(' + (rd === 0 ? 'bugün' : rd + ' gün') + ')</span>' : '')) + '</div>'
         + '<div style="text-align:center"><div style="font-size:11px;font-weight:600;color:var(--t2)" title="' + esc(__sorumluAd || 'Atanmamış') + '">' + esc(__sorumluInitials) + '</div>' + (ed.teslimTipi === 'SATICI_TESLIM' ? '<div style="font-size:9px;color:var(--t3);margin-top:1px;white-space:nowrap" title="Satıcı teslim eder">' + (typeof window.t === 'function' ? window.t('ed.teslim.short.satici') : '📦 Satıcı') + '</div>' : (ed.teslimTipi === 'FIRMA_ALIR' ? '<div style="font-size:9px;color:var(--t3);margin-top:1px;white-space:nowrap" title="Firma alır">' + (typeof window.t === 'function' ? window.t('ed.teslim.short.firma') : '🏭 Firma') + '</div>' : '')) + '</div>'
         /* LOJISTIK-RENK-001: Sipariş Kodu + Renk hücreleri */
@@ -2316,9 +2408,9 @@
         + '</div>';
     }).join('');
 
-    /* LOJISTIK-RENK-001: 8→11 kolon (Yön | İhracatID | Ürün/Ted | Durum | Miktar | Tahmini | Sorumlu | SipKod | Renk | İkon | Aksiyon) */
-    var hdrRow = '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 0.8fr 0.9fr 0.8fr 0.7fr 1fr 0.7fr 1.4fr 0.7fr auto;gap:10px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
-      + '<div>Yön</div><div>İhracat ID</div><div>Ürün / Tedarikçi</div><div>Durum</div><div>Miktar</div><div style="background:#E8F5E9;border-radius:4px 4px 0 0;padding:4px 6px;margin:-4px -6px">KG / m³</div><div>Tahmini</div><div>Sorumlu</div><div>Sipariş Kodu</div><div>Renk</div><div>Rota</div><div>İkon</div><div></div></div>';
+    /* V187c — 14-kolon header (Yön | İhrID | Ürün/Ted | Durum | Miktar | KG/m³ | Sevkiyat | Tahmini | Sorumlu | SipKod | Renk | Rota | İkon | Aksiyon) */
+    var hdrRow = '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 0.8fr 0.9fr 1.1fr 0.8fr 0.7fr 1fr 0.7fr 1.4fr 0.7fr auto;gap:10px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
+      + '<div>Yön</div><div>İhracat ID</div><div>Ürün / Tedarikçi</div><div>Durum</div><div>Miktar</div><div style="background:#E8F5E9;border-radius:4px 4px 0 0;padding:4px 6px;margin:-4px -6px">KG / m³</div><div title="Sıra No · Yükleme Önc · Taşıma Uyarıları">Sevkiyat</div><div>Tahmini</div><div>Sorumlu</div><div>Sipariş Kodu</div><div>Renk</div><div>Rota</div><div>İkon</div><div></div></div>';
 
     return '<div id="ed-list-container" style="'+card+'">'
       + '<div style="'+hdr+'">'

@@ -19,6 +19,35 @@
 
   var LOG_PREFIX = '[V186-WIZARD]';
 
+  /* ────────────────────────────────────────────────────────────────
+   * V187c — handlingFlags ENUM sabitleri (KX10 tek kaynak)
+   * STRICT: enum array (string yok, virgül yok, küçük yazım farkı yok).
+   * Tüm modüller bu sabitleri window üstünden okur.
+   * ──────────────────────────────────────────────────────────────── */
+  var HANDLING_FLAGS_ENUM = ['DANGEROUS', 'FRAGILE', 'KEEP_UPRIGHT', 'LIQUID_LEAK_RISK', 'ODOR', 'PERISHABLE', 'REFRIGERATED'];
+  var HANDLING_FLAGS_EMOJI = {
+    DANGEROUS: '🔥',
+    FRAGILE: '⚠',
+    KEEP_UPRIGHT: '⬆',
+    LIQUID_LEAK_RISK: '💧',
+    ODOR: '👃',
+    PERISHABLE: '🥗',
+    REFRIGERATED: '🧊'
+  };
+  var HANDLING_FLAGS_LABEL_KEY = {
+    DANGEROUS: 'ed.handling.dangerous',
+    FRAGILE: 'ed.handling.fragile',
+    KEEP_UPRIGHT: 'ed.handling.keepUpright',
+    LIQUID_LEAK_RISK: 'ed.handling.liquidLeakRisk',
+    ODOR: 'ed.handling.odor',
+    PERISHABLE: 'ed.handling.perishable',
+    REFRIGERATED: 'ed.handling.refrigerated'
+  };
+  /* Window expose — diğer modüller (expected_deliveries.js _edEditModal, renderEdList) buradan okur */
+  if (!window.HANDLING_FLAGS_ENUM)      window.HANDLING_FLAGS_ENUM      = HANDLING_FLAGS_ENUM;
+  if (!window.HANDLING_FLAGS_EMOJI)     window.HANDLING_FLAGS_EMOJI     = HANDLING_FLAGS_EMOJI;
+  if (!window.HANDLING_FLAGS_LABEL_KEY) window.HANDLING_FLAGS_LABEL_KEY = HANDLING_FLAGS_LABEL_KEY;
+
   /* ─── i18n + toast yardımcıları (yukarıda tanımlı, her yerde kullanılabilir) ─── */
   function _toast(msg, kind) { if (typeof window.toast === 'function') window.toast(msg, kind || 'ok'); }
   function _t(key, vars) { return (typeof window.t === 'function') ? window.t(key, null, vars || null) : key; }
@@ -121,6 +150,32 @@
 
   /* ─── State setter (form alanı binding'i) ─── */
   window._v186SetField = function (key, value) { state.formData[key] = value; };
+
+  /* V187c — handlingFlags ENUM ARRAY toggle helper.
+   * STRICT: enum array (string yok, virgül yok, küçük yazım farkı yok).
+   * Tıklamada: array'e ekle/çıkar + buton görsel state güncelle (style inline). */
+  window._v186ToggleHandlingFlag = function (flag, btnEl) {
+    if (!Array.isArray(state.formData.handlingFlags)) state.formData.handlingFlags = [];
+    var arr = state.formData.handlingFlags;
+    var i = arr.indexOf(flag);
+    if (i >= 0) {
+      arr.splice(i, 1);
+      if (btnEl) {
+        btnEl.dataset.active = '0';
+        btnEl.style.borderColor = 'var(--b)';
+        btnEl.style.background = 'transparent';
+        btnEl.style.fontWeight = '400';
+      }
+    } else {
+      arr.push(flag);
+      if (btnEl) {
+        btnEl.dataset.active = '1';
+        btnEl.style.borderColor = '#2563EB';
+        btnEl.style.background = '#DBEAFE';
+        btnEl.style.fontWeight = '600';
+      }
+    }
+  };
 
   /* V187d: Carrier tracking auto-fill — armatör + container değişiminde tracking URL üret */
   window._v186AutoTrackingUrl = function () {
@@ -259,6 +314,29 @@
           }).join('')
         + '</select>'
       + '</div>'
+      /* V187c — handlingFlags ENUM ARRAY (multi-button toggle grid, full row) */
+      + (function () {
+          var enums = HANDLING_FLAGS_ENUM;
+          var labelMap = HANDLING_FLAGS_LABEL_KEY;
+          var current = Array.isArray(d.handlingFlags) ? d.handlingFlags : [];
+          var btns = enums.map(function (flag) {
+            var isActive = current.indexOf(flag) >= 0;
+            var lblText = _t(labelMap[flag]);
+            return '<button type="button" data-flag="' + flag + '" data-active="' + (isActive ? '1' : '0') + '"'
+              + ' onclick="window._v186ToggleHandlingFlag(\'' + flag + '\', this)"'
+              + ' title="' + esc(lblText) + '"'
+              + ' style="padding:6px 10px;border:1px solid ' + (isActive ? '#2563EB' : 'var(--b)') + ';border-radius:6px;'
+              + 'background:' + (isActive ? '#DBEAFE' : 'transparent') + ';cursor:pointer;font-size:12px;font-family:inherit;'
+              + 'color:var(--t);font-weight:' + (isActive ? '600' : '400') + ';transition:border-color 150ms,background 150ms">'
+              + esc(lblText)
+              + '</button>';
+          }).join('');
+          return '<div style="grid-column:span 2">' + lbl(_t('ed.label.handlingFlags'))
+            + '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2)">'
+            + btns
+            + '</div>'
+            + '</div>';
+        })()
       + '<div>' + lbl(_t('ed.label.armator'))
         + '<select id="v186-armator" onchange="window._v186SetField(\'armator\', this.value); window._v186AutoTrackingUrl && window._v186AutoTrackingUrl()" style="' + INPUT_CSS + '">'
         + armatorList.map(function (c) { return '<option value="' + c + '"' + ((d.armator || '') === c ? ' selected' : '') + '>' + (c || _t('ed.armator.empty')) + '</option>'; }).join('')
@@ -391,6 +469,11 @@
               d.loadingPriority === 'REQUIRED' ? _t('ed.loadingPri.required')
             : d.loadingPriority === 'OPTIONAL' ? _t('ed.loadingPri.optional')
             : '')
+        /* V187c — handlingFlags emoji konkatenasyon (boşsa empty row) */
+        + row(_t('ed.label.handlingFlags'),
+              (Array.isArray(d.handlingFlags) && d.handlingFlags.length
+                ? d.handlingFlags.map(function (f) { return HANDLING_FLAGS_EMOJI[f] || ''; }).filter(Boolean).join(' ')
+                : ''))
         + row('Armatör', d.armator)
         + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin:14px 0 10px;text-transform:uppercase;letter-spacing:.05em">🌐 ' + _t('ed.sect.ihracatSorumluluk') + '</div>'
         + row('İhracat ID', d.ihracatId)
