@@ -460,6 +460,8 @@
       var newOrder = STATUS_ORDER[newStatus] || 0;
       if (oldOrder > 0 && newOrder > 0 && newOrder < oldOrder) {
         window.toast?.('Geriye dönüş için admin yetkisi gerekli', 'warn');
+        /* V185 / B5: status backward block audit log (güvenlik olayı) */
+        try { if (typeof window.logActivity === 'function') window.logActivity('ed_status_backward_blocked', 'edId=' + edId + ' from=' + ed.status + ' to=' + newStatus); } catch(e) {}
         if (typeof window._edRefresh === 'function') window._edRefresh();
         return;
       }
@@ -478,6 +480,8 @@
     if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(list);
     var label = STATUS_LABELS[newStatus] || newStatus;
     window.toast?.('Durum güncellendi: ' + label, 'ok');
+    /* V185 / B5: status değişim audit log */
+    try { if (typeof window.logActivity === 'function') window.logActivity('ed_status_changed', 'edId=' + edId + ' from=' + (ed.statusHistory[ed.statusHistory.length - 1]?.from || '') + ' to=' + newStatus); } catch(e) {}
     window._edRefresh?.();
   };
 
@@ -618,6 +622,8 @@
       reviewedAt: null
     });
     window._edPendingActionsStore(list);
+    /* V185 / B5: tahkim talep audit log */
+    try { if (typeof window.logActivity === 'function') window.logActivity('ed_pending_request', 'action=' + action + ' edId=' + edId); } catch(e) {}
   };
 
   /* LOJ-1B-I: Admin onay UI — pending listeyi modal'da göster, onayla/reddet */
@@ -635,6 +641,8 @@
     var __cuB1Id = __cuB1.id || __cuB1.uid || null;
     if (action.requestedBy && __cuB1Id && String(action.requestedBy) === String(__cuB1Id)) {
       window.toast?.('Kendi gönderdiğiniz talebi onaylayamazsınız', 'err');
+      /* V185 / B5: self-approve block audit log (güvenlik olayı) */
+      try { if (typeof window.logActivity === 'function') window.logActivity('ed_pending_self_approve_blocked', 'actionId=' + actionId + ' edId=' + action.edId); } catch(e) {}
       return;
     }
     var ok = false;
@@ -684,6 +692,8 @@
     actions[ai].reviewedAt = new Date().toISOString();
     window._edPendingActionsStore(actions);
     window.toast?.('Talep onaylandı', 'ok');
+    /* V185 / B5: tahkim onay audit log */
+    try { if (typeof window.logActivity === 'function') window.logActivity('ed_pending_approved', 'actionId=' + actionId + ' edId=' + actions[ai].edId + ' action=' + actions[ai].action); } catch(e) {}
     document.getElementById('ed-pending-modal')?.remove();
     window._edRefresh?.();
   };
@@ -718,6 +728,8 @@
     actions[ai].reviewedAt = new Date().toISOString();
     window._edPendingActionsStore(actions);
     window.toast?.('Talep reddedildi', 'ok');
+    /* V185 / B5: tahkim red audit log */
+    try { if (typeof window.logActivity === 'function') window.logActivity('ed_pending_rejected', 'actionId=' + actionId + ' edId=' + __action.edId + ' action=' + __action.action); } catch(e) {}
     document.getElementById('ed-pending-modal')?.remove();
     if (typeof window._edPendingModalOpen === 'function') window._edPendingModalOpen();
     window._edRefresh?.();

@@ -462,6 +462,8 @@
     var ok = saveDetay(ihracatId, data);
     if (ok) {
       window.toast && window.toast('İhracat detayı kaydedildi', 'ok');
+      /* V185 / B5: ihracat detay save audit log */
+      try { if (typeof window.logActivity === 'function') window.logActivity('ihracat_detay_saved', 'ihracatId=' + ihracatId + ' fields=' + Object.keys(data).filter(function(k){return data[k];}).join(',')); } catch(e) {}
       document.getElementById('mo-loj-ihracat-detay')?.remove();
       if (typeof window._edRefresh === 'function') window._edRefresh();
     } else {
