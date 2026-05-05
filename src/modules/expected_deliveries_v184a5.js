@@ -42,6 +42,30 @@
     return role === 'admin' || role === 'manager' || role === 'super_admin' || role === 'asistan';
   }
 
+  /* V185b3+: İhracat Detay GÖRÜNTÜLEME — admin/manager/asistan VEYA kayda atanmış user.
+   * Atanan kullanıcı detayı görür ama düzenleyemez (input'lar disabled, save yok). */
+  function canViewDetay(ed) {
+    if (canEditDetay()) return true;
+    var cu = (typeof window.CU === 'function') ? window.CU() : null;
+    if (!cu || !ed) return false;
+    var uid = cu.id || cu.uid;
+    return uid && ed.responsibleUserId && String(ed.responsibleUserId) === String(uid);
+  }
+
+  /* V185b3+: Grup içinde herhangi bir kayda current user atanmış mı? */
+  function canViewAnyInGroup(edList) {
+    if (canEditDetay()) return true;
+    if (!edList || !edList.length) return false;
+    var cu = (typeof window.CU === 'function') ? window.CU() : null;
+    if (!cu) return false;
+    var uid = cu.id || cu.uid;
+    if (!uid) return false;
+    for (var i = 0; i < edList.length; i++) {
+      if (edList[i] && String(edList[i].responsibleUserId) === String(uid)) return true;
+    }
+    return false;
+  }
+
   function escHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -202,8 +226,13 @@
     }
 
     var detayBtn = '';
-    if (!isAtanmamis && canEditDetay()) {
-      detayBtn = '<button onclick="event.stopPropagation();window._lojIhracatDetayModal(\'' + escHtml(ihracatId) + '\')" style="padding:4px 10px;border:0.5px solid ' + color + '33;border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:' + color + ';font-family:inherit">✏ Detay</button>';
+    if (!isAtanmamis) {
+      if (canEditDetay()) {
+        detayBtn = '<button onclick="event.stopPropagation();window._lojIhracatDetayModal(\'' + escHtml(ihracatId) + '\')" style="padding:4px 10px;border:0.5px solid ' + color + '33;border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:' + color + ';font-family:inherit">✏ Detay</button>';
+      } else if (canViewAnyInGroup(edList)) {
+        /* V185b3+: atanmış user → görüntüleme butonu (readonly modal) */
+        detayBtn = '<button onclick="event.stopPropagation();window._lojIhracatDetayModal(\'' + escHtml(ihracatId) + '\')" style="padding:4px 10px;border:0.5px solid ' + color + '33;border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:' + color + ';font-family:inherit" title="Salt okunur">👁 Detay</button>';
+      }
     }
 
     var collapseBtn = ihracatId ? '<button onclick="event.stopPropagation();window._lojGrupToggle(\'' + escHtml(ihracatId) + '\')" style="padding:4px 8px;border:0.5px solid ' + color + '33;border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:' + color + ';font-family:inherit;margin-left:6px" title="Aç/Kapat">' + arrow + '</button>' : '';
@@ -369,11 +398,16 @@
   /* ─────────────── İhracat Detay Modal ─────────────── */
 
   window._lojIhracatDetayModal = function(ihracatId) {
-    if (!canEditDetay()) {
+    if (!ihracatId) return;
+    /* V185b3+: edList yükle → atanma kontrolü */
+    var allEd = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+    var groupEd = allEd.filter(function(e) { return String(e.ihracatId) === String(ihracatId); });
+    var canEdit = canEditDetay();
+    var canView = canEdit || canViewAnyInGroup(groupEd);
+    if (!canView) {
       window.toast && window.toast('Bu işlem için yetkiniz yok', 'warn');
       return;
     }
-    if (!ihracatId) return;
 
     var detay = getDetay(ihracatId) || {};
     var old = document.getElementById('mo-loj-ihracat-detay');
@@ -396,7 +430,7 @@
     }
 
     mo.innerHTML = '<div class="moc" style="max-width:680px;padding:0;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
-      + '<div style="padding:14px 20px;border-bottom:0.5px solid var(--b);font-size:14px;font-weight:600">📦 İhracat Detayı — ' + escHtml(ihracatId) + '</div>'
+      + '<div data-modal-title style="padding:14px 20px;border-bottom:0.5px solid var(--b);font-size:14px;font-weight:600">📦 İhracat Detayı — ' + escHtml(ihracatId) + '</div>'
       + '<div style="padding:18px 20px;overflow-y:auto;flex:1">'
       + '<div style="font-size:10px;font-weight:600;color:#185FA5;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">📦 Konteyner Bilgisi</div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
@@ -427,11 +461,23 @@
       + '</div>'
       + '</div>'
       + '<div style="padding:12px 20px;border-top:0.5px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
-      + '<button class="btn btns" onclick="document.getElementById(\'mo-loj-ihracat-detay\')?.remove()">İptal</button>'
-      + '<button class="btn btnp" onclick="window._lojIhracatDetayKaydet(\'' + escHtml(ihracatId) + '\')">Kaydet</button>'
+      + '<button class="btn btns" onclick="document.getElementById(\'mo-loj-ihracat-detay\')?.remove()">' + (canEdit ? 'İptal' : 'Kapat') + '</button>'
+      + (canEdit ? '<button class="btn btnp" onclick="window._lojIhracatDetayKaydet(\'' + escHtml(ihracatId) + '\')">Kaydet</button>' : '')
       + '</div>'
       + '</div>';
     document.body.appendChild(mo);
+    /* V185b3+: salt okunur → tüm input/textarea/select disable et */
+    if (!canEdit) {
+      mo.querySelectorAll('input, textarea, select').forEach(function(el) {
+        el.readOnly = true;
+        el.disabled = true;
+        el.style.background = 'var(--s2,#f3f4f6)';
+        el.style.color = 'var(--t3,#9CA3AF)';
+        el.style.cursor = 'not-allowed';
+      });
+      var titleEl = mo.querySelector('[data-modal-title]');
+      if (titleEl) titleEl.textContent = '🔒 İhracat Detayı (Salt Okunur)';
+    }
     setTimeout(function() { mo.classList.add('open'); }, 10);
   };
 

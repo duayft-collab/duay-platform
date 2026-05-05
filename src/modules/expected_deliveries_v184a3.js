@@ -37,14 +37,20 @@
     return role === 'admin' || role === 'manager' || role === 'super_admin';
   }
 
-  /* V184a6: Asistan da İhracat ID readonly görsün — ama düzenleyemesin
-   * Talimat: 'İhracat ID, Sipariş Kodu, Sorumlu, Renk hariç... Yönetici Asistanı girebilir.'
-   * → asistan: input EDIT YOK, readonly OK */
-  function canViewIhracatId() {
+  /* V184a6 + V185b3: Kim İhracat ID GÖRÜR (readonly)?
+   *   - admin / manager / super_admin / asistan → her zaman
+   *   - staff/lead/user → SADECE kendi atandığı kayıt (ed.responsibleUserId === cu.id)
+   * Kim DÜZENLER? Sadece admin/manager (isAdminOrManager) — wizard yeni kayıt input'u. */
+  function canViewIhracatId(ed) {
     var cu = (typeof window.CU === 'function') ? window.CU() : null;
     if (!cu) return false;
     var role = cu.role || cu.rol;
-    return role === 'admin' || role === 'manager' || role === 'super_admin' || role === 'asistan';
+    if (role === 'admin' || role === 'manager' || role === 'super_admin' || role === 'asistan') return true;
+    if (ed && ed.responsibleUserId) {
+      var uid = cu.id || cu.uid;
+      if (uid && String(ed.responsibleUserId) === String(uid)) return true;
+    }
+    return false;
   }
 
   function escHtml(s) {
@@ -53,11 +59,12 @@
     });
   }
 
-  function ihracatBolumHtml(currentValue, isReadonly) {
-    /* V184a6: readonly → asistan da görsün (canViewIhracatId)
-     *         editable → sadece admin/manager (isAdminOrManager) */
+  function ihracatBolumHtml(currentValue, isReadonly, ed) {
+    /* V184a6 + V185b3:
+     *   readonly → admin/manager/asistan VEYA atanan kullanıcı (canViewIhracatId(ed))
+     *   editable → sadece admin/manager (isAdminOrManager) */
     if (isReadonly) {
-      if (!canViewIhracatId()) return '';
+      if (!canViewIhracatId(ed)) return '';
     } else {
       if (!isAdminOrManager()) return '';
     }
@@ -84,17 +91,17 @@
     window._edEditModal = function(edId) {
       origEdEditModal.apply(this, arguments);
       try {
-        if (!canViewIhracatId()) return;
         var modal = document.getElementById('mo-ed-edit') || document.querySelector('.mo .moc');
         if (!modal) return;
         var list = (typeof window.loadExpectedDeliveries === 'function')
           ? (window.loadExpectedDeliveries({ raw: true }) || []) : [];
         var ed = list.find(function(x) { return String(x.id) === String(edId); });
+        if (!canViewIhracatId(ed)) return;
         var ihracatId = ed ? (ed.ihracatId || '') : '';
         if (modal.querySelector('#__v184a3-ihracat-bolum')) return;
         var form = modal.querySelector('div[style*="grid-template-columns"]');
         if (form) {
-          form.insertAdjacentHTML('afterbegin', ihracatBolumHtml(ihracatId, true));
+          form.insertAdjacentHTML('afterbegin', ihracatBolumHtml(ihracatId, true, ed));
         }
       } catch (e) { console.warn(LOG_PREFIX, 'düzenleme modal hook hatası:', e); }
     };
