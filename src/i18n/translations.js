@@ -428,6 +428,9 @@ let TRANSLATIONS = {
     'ed.toolbar.json':                    '📋 JSON',
     'ed.toast.jsonGenerating':            'JSON indiriliyor…',
     'ed.export.json.filename':            'Beklenen-Teslimatlar',
+
+    // ── Toolbar Sayım (V187j) ────────────────────────────────────
+    'ed.toolbar.records.filtered':        '{total} kayıt ({filtered} görünür)',
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -845,6 +848,9 @@ let TRANSLATIONS = {
     'ed.toolbar.json':                    '📋 JSON',
     'ed.toast.jsonGenerating':            'Downloading JSON…',
     'ed.export.json.filename':            'Expected-Deliveries',
+
+    // ── Toolbar Records Count (V187j) ────────────────────────────
+    'ed.toolbar.records.filtered':        '{total} records ({filtered} visible)',
   },
 };
 

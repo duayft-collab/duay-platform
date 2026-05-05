@@ -625,6 +625,30 @@
     }
   };
 
+  /* V187j — _edFilterState'i bir listeye uygula (Excel/JSON export ortak mantık).
+   * KX10: tek kaynak — renderEdList'teki filter logic'i ile birebir aynı kurallar. */
+  window._edApplyFilterState = function (list) {
+    if (!Array.isArray(list)) return [];
+    if (!window._edFilterState) window._edFilterState = { yon: '', status: '', search: '' };
+    var fs = window._edFilterState;
+    var cariMap = {};
+    try {
+      (typeof window.loadCari === 'function' ? window.loadCari() : []).forEach(function (c) {
+        if (c && c.id) cariMap[String(c.id)] = c.name || c.unvan || c.ad || c.firmaAdi || '';
+      });
+    } catch (e) {}
+    return list.filter(function (ed) {
+      if (fs.yon && (ed.yon || 'GIDEN') !== fs.yon) return false;
+      if (fs.status && ed.status !== fs.status) return false;
+      if (fs.search) {
+        var q = String(fs.search).trim().toLowerCase();
+        var hay = ((ed.productName || '') + ' ' + (ed.supplierId || '') + ' ' + (cariMap[String(ed.supplierId)] || '') + ' ' + (ed.konteynerNo || '')).toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+  };
+
   /* LOJ-1B-E: Eke göz at — belge varsa yeni sekmede aç, yoksa toast */
   window._edEkeGozAt = function(edId) {
     var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
@@ -2305,6 +2329,8 @@
     /* LOJ-1B-D: Filter state + apply + filterBar */
     if (!window._edFilterState) window._edFilterState = { yon: '', status: '', search: '' };
     var __fs = window._edFilterState;
+    /* V187j — total (filtre öncesi RBAC-filtreli görünür kayıt sayısı) */
+    var __totalBeforeFilter = list.length;
     list = list.filter(function(__ed) {
       if (__fs.yon && (__ed.yon || 'GIDEN') !== __fs.yon) return false;
       if (__fs.status && __ed.status !== __fs.status) return false;
@@ -2414,7 +2440,7 @@
 
     return '<div id="ed-list-container" style="'+card+'">'
       + '<div style="'+hdr+'">'
-      + '<span style="font-size:13px;font-weight:500">Beklenen Teslimatlar <span style="font-weight:400;color:var(--t3);font-size:11px;margin-left:6px">'+list.length+' kayıt</span></span>'
+      + '<span style="font-size:13px;font-weight:500">Beklenen Teslimatlar <span style="font-weight:400;color:var(--t3);font-size:11px;margin-left:6px">' + (__totalBeforeFilter !== list.length ? (__totalBeforeFilter + ' kayıt (' + list.length + ' görünür)') : (list.length + ' kayıt')) + '</span></span>'
       /* V187g — Export Center: PDF butonu (+ Yeni öncesi, görünür) */
       + (list.length > 0 ? '<button onclick="window._edExportJson && window._edExportJson()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px" title="' + (typeof window.t === 'function' ? window.t('ed.toolbar.json') : '📋 JSON') + '">' + (typeof window.t === 'function' ? window.t('ed.toolbar.json') : '📋 JSON') + '</button>' : '')
       + (list.length > 0 ? '<button onclick="window._edExportXlsx && window._edExportXlsx()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px" title="' + (typeof window.t === 'function' ? window.t('ed.toolbar.xlsx') : '📊 Excel') + '">' + (typeof window.t === 'function' ? window.t('ed.toolbar.xlsx') : '📊 Excel') + '</button>' : '')
@@ -2476,6 +2502,8 @@
       : [];
     /* K06: soft-deleted hariç */
     list = list.filter(function (d) { return d && !d.isDeleted; });
+    /* V187j — filterState uygula (toolbar'da görünenle aynı export edilsin) */
+    if (typeof window._edApplyFilterState === 'function') list = window._edApplyFilterState(list);
     if (list.length === 0) {
       if (typeof window.toast === 'function') window.toast(t('ed.toast.xlsxGenerating'), 'warn');
       return;
@@ -2580,6 +2608,8 @@
       : [];
     /* K06: soft-deleted hariç */
     list = list.filter(function (d) { return d && !d.isDeleted; });
+    /* V187j — filterState uygula (toolbar'da görünenle aynı export edilsin) */
+    if (typeof window._edApplyFilterState === 'function') list = window._edApplyFilterState(list);
     if (list.length === 0) return;
 
     if (typeof window.toast === 'function') window.toast(t('ed.toast.jsonGenerating'), 'ok');
