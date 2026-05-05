@@ -57,34 +57,44 @@
   };
 
   /* SHIPMENT-LIST-COLUMNS-002: konteyner kapasite hesaplayıcı (V133.1) */
+  /* V184a4 / LOJ-CONTAINER-CALC-001: Konteyner öneri algoritması.
+   * Kapasiteler (gerçek payload): 20ft 28m³/28000kg · 40ft 56m³/26000kg · 40HC 68m³/26000kg
+   * Kural: 2×20ft ASLA otomatik öneri DEĞİL — 40ft/40HC her zaman tercih edilir (operasyonel verimlilik). */
   window._edCalculateContainers = function(ed) {
     var wt = parseFloat(ed && ed.weightKg) || 0;
     var vol = parseFloat(ed && ed.volumeM3) || 0;
     if (wt === 0 && vol === 0) return null;
-    var C20_VOL = 33, C20_WT = 28000;
-    var C40_VOL = 67, C40_WT = 26500;
-    var need20 = Math.max(Math.ceil(vol / C20_VOL), Math.ceil(wt / C20_WT));
-    var limitedBy = (wt / C20_WT) > (vol / C20_VOL) ? 'ağırlık' : 'hacim';
-    var fits40 = vol <= C40_VOL && wt <= C40_WT;
-    var fillVol = Math.round((vol / C20_VOL) * 100);
-    var fillWt = Math.round((wt / C20_WT) * 100);
-    if (need20 === 1) {
-      return { wt: wt, vol: vol, need20: 1, limitedBy: limitedBy, level: 'ok',
-               text: '✅ 1 × 20ft yeter (' + fillVol + '% hacim, ' + fillWt + '% ağırlık)',
+    var C20_VOL = 28, C20_WT = 28000;
+    var C40_VOL = 56, C40_WT = 26000;
+    var C40HC_VOL = 68, C40HC_WT = 26000;
+
+    /* 1×20ft yeterli mi? */
+    if (vol <= C20_VOL && wt <= C20_WT) {
+      var fillVol20 = Math.round((vol / C20_VOL) * 100);
+      return { wt: wt, vol: vol, count: 1, type: '20ft', level: 'ok',
+               text: '✅ 1 × 20ft yeter (%' + fillVol20 + ' hacim)',
                color: '#3B6D11' };
     }
-    if (need20 === 2 && fits40) {
-      return { wt: wt, vol: vol, need20: 2, limitedBy: limitedBy, level: 'warn',
-               text: '⚠️ 2 × 20ft veya 1 × 40ft (' + limitedBy + ' limiti)',
-               color: '#BA7517' };
+    /* 1×40ft yeterli mi? (40HC daha pahalı, 40ft mümkünse onu tercih et) */
+    if (vol <= C40_VOL && wt <= C40_WT) {
+      var fillVol40 = Math.round((vol / C40_VOL) * 100);
+      return { wt: wt, vol: vol, count: 1, type: '40ft', level: 'ok',
+               text: '✅ 1 × 40ft yeter (%' + fillVol40 + ' hacim)',
+               color: '#3B6D11' };
     }
-    if (need20 === 2) {
-      return { wt: wt, vol: vol, need20: 2, limitedBy: limitedBy, level: 'warn',
-               text: '⚠️ 2 × 20ft gerekli (' + limitedBy + ' limiti)',
-               color: '#BA7517' };
+    /* 1×40HC yeterli mi? */
+    if (vol <= C40HC_VOL && wt <= C40HC_WT) {
+      var fillVol40HC = Math.round((vol / C40HC_VOL) * 100);
+      return { wt: wt, vol: vol, count: 1, type: '40HC', level: 'warn',
+               text: '✅ 1 × 40HC yeter (%' + fillVol40HC + ' hacim)',
+               color: '#185FA5' };
     }
-    return { wt: wt, vol: vol, need20: need20, limitedBy: limitedBy, level: 'critical',
-             text: '🔴 ' + need20 + ' × 20ft gerekli (' + limitedBy + ' limiti)',
+    /* Birden fazla 40HC */
+    var needHC = Math.max(Math.ceil(vol / C40HC_VOL), Math.ceil(wt / C40HC_WT));
+    var totalCapVol = needHC * C40HC_VOL;
+    var fillMulti = Math.round((vol / totalCapVol) * 100);
+    return { wt: wt, vol: vol, count: needHC, type: '40HC', level: 'critical',
+             text: '🔴 ' + needHC + ' × 40HC gerekli (%' + fillMulti + ' hacim)',
              color: '#A32D2D' };
   };
 
@@ -104,7 +114,7 @@
 
   /* ─── VALIDATION ──────────────────────────────────────────── */
   var PRIORITIES = ['LOW', 'NORMAL', 'CRITICAL'];
-  var STATUSES = ['TEDARIK_ASAMASINDA','URETIMDE','SATICIDA_HAZIR','YUKLEME_NOKTASINDA','YUKLEME_PLANLANDI','YUKLEME_BEKLIYOR','SEVK_EDILDI','YOLDA','GUMRUKTE','DEPODA','TESLIM_ALINDI','KONTEYNIRA_YUKLENDI','MUSTERI_TESLIM_ALDI','GECIKTI'];
+  var STATUSES = ['SIPARIS_ASAMASINDA','TEDARIK_ASAMASINDA','URETIMDE','SATICIDA_HAZIR','YUKLEME_NOKTASINDA','YUKLEME_PLANLANDI','YUKLEME_BEKLIYOR','SEVK_EDILDI','YOLDA','GUMRUKTE','DEPODA','TESLIM_ALINDI','KONTEYNIRA_YUKLENDI','MUSTERI_TESLIM_ALDI','GECIKTI'];
   var DELAY_OWNERS = ['supplier', 'logistics', 'internal'];
 
   window._edValidate = function(ed) {
@@ -1330,6 +1340,7 @@
   };
 
   var STATUS_LABELS = {
+    SIPARIS_ASAMASINDA: 'Sipariş Aşamasında',
     TEDARIK_ASAMASINDA: 'Tedarik',
     URETIMDE: 'Üretimde',
     SATICIDA_HAZIR: 'Satıcıda Hazır',
@@ -1347,6 +1358,7 @@
   };
   /* V184b / LOJ-STATUS-EXPAND-001: akış sırası — non-admin geri dönemez (GECIKTI sıra dışı) */
   var STATUS_ORDER = {
+    SIPARIS_ASAMASINDA: 0,
     TEDARIK_ASAMASINDA: 1,
     URETIMDE: 2,
     SATICIDA_HAZIR: 3,
@@ -1363,6 +1375,7 @@
     GECIKTI: -1
   };
   var STATUS_COLORS = {
+    SIPARIS_ASAMASINDA: '#9CA3AF',
     TEDARIK_ASAMASINDA: '#888780',
     URETIMDE: '#D97706',
     SATICIDA_HAZIR: '#0EA5E9',
@@ -2094,6 +2107,7 @@
     });
 
     var STATUS = {
+      'SIPARIS_ASAMASINDA':{t:'Sipariş Aşamasında',c:'#6B7280',bg:'#F9FAFB'},
       'TEDARIK_ASAMASINDA':{t:'Tedarik',c:'#6B7280',bg:'#F3F4F6'},
       'URETIMDE':{t:'Üretimde',c:'#2563EB',bg:'#EFF6FF'},
       'SATICIDA_HAZIR':{t:'Satıcıda Hazır',c:'#0EA5E9',bg:'#E0F2FE'},
@@ -2188,7 +2202,7 @@
         + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+qd+'/'+qt+' <span style="color:var(--t3);font-size:10px">(%'+pct+')</span></div>'
         /* SHIPMENT-LIST-COLUMNS-002: KG/m³ + konteyner uyarı (V133.1) */
         + '<div style="font-size:10px;line-height:1.3">' + ((ed.weightKg || ed.volumeM3) ? '<div style="font-family:ui-monospace,monospace;color:var(--t2);font-weight:500">' + (ed.weightKg ? Math.round(ed.weightKg).toLocaleString('tr-TR') + ' kg' : '—') + (ed.volumeM3 ? ' / ' + ed.volumeM3.toLocaleString('tr-TR') + ' m³' : '') + '</div>' : '<span style="color:var(--t3)">—</span>') + '</div>'
-        + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+esc(eta)+'</div>'
+        + '<div style="font-variant-numeric:tabular-nums;font-weight:' + (rd !== null && rd < 7 ? '600' : '400') + ';color:' + (rd !== null && rd < 0 ? '#DC2626' : (rd !== null && rd === 0 ? '#EA580C' : (rd !== null && rd < 7 ? '#CA8A04' : 'var(--t2)'))) + '">' + esc(eta) + (rd !== null && rd < 0 ? ' <span style="font-size:9px;font-weight:500">(' + Math.abs(rd) + ' gün geç)</span>' : (rd !== null && rd >= 0 && rd < 7 ? ' <span style="font-size:9px;font-weight:500">(' + (rd === 0 ? 'bugün' : rd + ' gün') + ')</span>' : '')) + '</div>'
         + '<div style="text-align:center"><div style="font-size:11px;font-weight:600;color:var(--t2)" title="' + esc(__sorumluAd || 'Atanmamış') + '">' + esc(__sorumluInitials) + '</div>' + (ed.teslimTipi === 'SATICI_TESLIM' ? '<div style="font-size:9px;color:var(--t3);margin-top:1px" title="Satıcı teslim eder">📦</div>' : (ed.teslimTipi === 'FIRMA_ALIR' ? '<div style="font-size:9px;color:var(--t3);margin-top:1px" title="Firma alır">🏭</div>' : '')) + '</div>'
         /* LOJISTIK-RENK-001: Sipariş Kodu + Renk hücreleri */
         + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ed.siparisKodu ? esc(String(ed.siparisKodu)) : '<span style="color:var(--t3)">—</span>') + '</div>'

@@ -157,10 +157,10 @@ function renderLojistik() {
         const totalM3 = edActive.reduce((s, d) => s + (parseFloat(d.volumeM3) || 0), 0);
         const sorumluCount = new Set(edActive.map(d => d.responsibleUserId).filter(Boolean)).size;
         const tedarikciCount = new Set(edActive.map(d => d.supplierId).filter(Boolean)).size;
-        const conByVolume = totalM3 > 0 ? Math.ceil(totalM3 / 33) : 0;
-        const conByWeight = totalKg > 0 ? Math.ceil(totalKg / 28000) : 0;
-        const conNeeded = Math.max(conByVolume, conByWeight);
-        const fillPct = conNeeded > 0 ? Math.min(100, Math.round((totalM3 / (conNeeded * 33)) * 100)) : 0;
+        /* V184a4: ortak helper kullan (40ft/40HC tercih, 2×20ft varsayılan değil) */
+        const calc = (typeof window._edCalculateContainers === 'function')
+          ? window._edCalculateContainers({ weightKg: totalKg, volumeM3: totalM3 })
+          : null;
         return `<div style="${card};padding:14px">
           <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">Toplam KG</div>
           <div style="font-size:20px;font-weight:600;color:var(--t);line-height:1">${Math.round(totalKg).toLocaleString('tr-TR')} <span style="font-size:11px;${t3};font-weight:400">kg</span></div>
@@ -176,7 +176,7 @@ function renderLojistik() {
         </div>
         <div style="${card};padding:14px">
           <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">Konteyner Doluluk</div>
-          ${conNeeded > 0 ? `<div style="font-size:11px;${t3};line-height:1.4">Toplam: ${totalM3.toFixed(1)} m³ / ${Math.round(totalKg).toLocaleString('tr-TR')} kg</div><div style="font-size:13px;font-weight:500;color:var(--t);margin-top:4px">→ ${conNeeded} × 20ft yeter <span style="${t3};font-weight:400">(%${fillPct} doluluk)</span></div>` : `<div style="font-size:12px;${t3};text-align:center;padding:6px 0">Veri yok</div>`}
+          ${calc ? `<div style="font-size:11px;${t3};line-height:1.4">Toplam: ${totalM3.toFixed(1)} m³ / ${Math.round(totalKg).toLocaleString('tr-TR')} kg</div><div style="font-size:13px;font-weight:500;color:${calc.color};margin-top:4px">→ ${calc.count} × ${calc.type} yeter</div>` : `<div style="font-size:12px;${t3};text-align:center;padding:6px 0">Veri yok</div>`}
         </div>`;
       })()}
     </div>`,

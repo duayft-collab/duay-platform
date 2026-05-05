@@ -1,26 +1,32 @@
 /* ============================================================================
- * V184a3 / LOJ-IHRACAT-WIZARD-GROUP-001
+ * V184a3 / LOJ-IHRACAT-WIZARD-GROUP-001  (V184a4-fix iterasyonu)
  * ----------------------------------------------------------------------------
- * Wrap modülü: orijinal expected_deliveries.js INTACT kalır, davranış genişler.
+ * Wrap modülü: orijinal expected_deliveries.js INTACT kalır.
  *
  * 1) Wizard tepesine "İhracat Bilgileri" bölümü (admin/manager-only)
- *    - Yeni kayıt: editable (max 15 char, manuel input)
+ *    - Yeni kayıt: editable manuel input (max 15 char)
  *    - Düzenleme: readonly (değişiklik için aksiyon menüsü → tahkim)
  *
  * 2) renderEdList wrap → liste İhracat ID'ye göre gruplandırılır
- *    - Her grup: başlık + alt satırlar (mevcut row HTML'i intact)
- *    - Atanmamış kayıtlar ÜSTTE ayrı grup (Q2 onayı)
- *    - Sadece admin/manager grup görür; user/staff/lead düz liste görür
+ *    - Atanmamış kayıtlar ÜSTTE
+ *    - Sadece admin/manager grup görür; user/staff/lead düz liste
  *
- * 3) Gruplama mekanizması: row'da data-ihracat-id attribute'ı (EDIT 1 ile eklendi)
+ * 3) Boundary algoritması — DETERMINISTIC brace counting:
+ *    - Her row için <div> open/close depth sayılır
+ *    - Row sonu: depth=0'a düştüğü ilk </div>
+ *    - Postface: son row sonu sonrasında kalan tüm HTML (footer + container kapanışı)
+ *    - Container açılışı + header + filterBar + hdrRow = preface (ilk match öncesi)
+ *    - Container kapanışı string slicing ile karışmaz
  *
- * Rollback: bu dosyayı sil + index.html script tag kaldır.
+ * 4) Idempotent guard: zaten gruplandırılmış HTML'i (marker varsa) tekrar gruplandırma
+ *
  * Co-Authored-By: Claude
  * ========================================================================== */
 (function() {
   'use strict';
 
   var LOG_PREFIX = '[V184a3]';
+  var GROUP_MARKER = 'data-v184a3-group="1"'; // idempotent kontrol marker
 
   /* ─────────────── Yardımcılar ─────────────── */
 
@@ -69,7 +75,7 @@
           ? (window.loadExpectedDeliveries({ raw: true }) || []) : [];
         var ed = list.find(function(x) { return String(x.id) === String(edId); });
         var ihracatId = ed ? (ed.ihracatId || '') : '';
-        if (modal.querySelector('#__v184a3-ihracat-bolum')) return; // çift enjeksiyon engeli
+        if (modal.querySelector('#__v184a3-ihracat-bolum')) return;
         var form = modal.querySelector('div[style*="grid-template-columns"]');
         if (form) {
           form.insertAdjacentHTML('afterbegin', ihracatBolumHtml(ihracatId, true));
@@ -89,7 +95,7 @@
         if (!window._edWizardState || window._edWizardState.step !== 1) return;
         var modal = document.getElementById('ed-wizard-modal');
         if (!modal) return;
-        if (modal.querySelector('#__v184a3-ihracat-bolum')) return; // step rerender'da duplicate engeli
+        if (modal.querySelector('#__v184a3-ihracat-bolum')) return;
         var ihracatId = window._edWizardState.data.ihracatId || '';
         var form = modal.querySelector('div[style*="grid-template-columns"]');
         if (!form) return;
@@ -112,7 +118,7 @@
   if (typeof origRenderEdList === 'function') {
     window.renderEdList = function() {
       var html = origRenderEdList.apply(this, arguments);
-      if (!isAdminOrManager()) return html; // user/staff/lead düz liste görür
+      if (!isAdminOrManager()) return html; // user/staff/lead düz liste
       try {
         return groupRowsByIhracatId(html);
       } catch (e) {
@@ -122,54 +128,89 @@
     };
   }
 
-  /* HTML string içindeki row'ları (data-ed-id'li div'leri) ihracatId'ye göre grupla */
+  /* DETERMINISTIC brace counting: row başından kapanış </div>'ine doğru atomic boundary bul */
+  function findRowEnd(html, startIdx) {
+    /* startIdx = '<div data-ed-id="..."'in başlangıcı.
+     * Önce o div'in '>' kapanışını bul, sonra depth-counting ile atomic kapanış. */
+    var openTagEnd = html.indexOf('>', startIdx);
+    if (openTagEnd === -1) return -1;
+    var i = openTagEnd + 1;
+    var depth = 1; // başta 1 (outer div açık)
+    var openRe = /<div\b/g;
+    var closeRe = /<\/div>/g;
+    openRe.lastIndex = i;
+    closeRe.lastIndex = i;
+    while (depth > 0 && i < html.length) {
+      openRe.lastIndex = i;
+      closeRe.lastIndex = i;
+      var openMatch = openRe.exec(html);
+      var closeMatch = closeRe.exec(html);
+      if (!closeMatch) return -1; // malformed HTML
+      if (openMatch && openMatch.index < closeMatch.index) {
+        depth++;
+        i = openMatch.index + 4;
+      } else {
+        depth--;
+        i = closeMatch.index + 6;
+        if (depth === 0) return i; // atomic row sonu
+      }
+    }
+    return -1;
+  }
+
   function groupRowsByIhracatId(html) {
     if (!html || typeof html !== 'string') return html;
-    /* Tüm row'ları regex ile bul: <div data-ed-id="..." data-ihracat-id="..."...>...</div> (top-level)
-     * NOT: nested div'ler için bracket counting gerekir. Bunun yerine row başlangıçlarını bul,
-     * ardından bir sonraki row başlangıcına kadar olan kısmı grupla. */
+
+    /* Idempotent guard: zaten gruplanmış HTML'i tekrar gruplandırma */
+    if (html.indexOf(GROUP_MARKER) !== -1) {
+      console.warn(LOG_PREFIX, 'idempotent skip — HTML zaten gruplandırılmış');
+      return html;
+    }
+
+    /* Tüm row başlangıçlarını bul */
     var marker = /<div data-ed-id="[^"]*" data-ihracat-id="([^"]*)"/g;
     var matches = [];
     var m;
     while ((m = marker.exec(html)) !== null) {
       matches.push({ index: m.index, ihracatId: m[1] });
     }
-    if (matches.length === 0) return html; // row bulunamadı, orijinal döndür
+    if (matches.length === 0) return html;
 
-    /* Her match'in başladığı yer + sonraki match'in başına kadar = bir row */
+    /* Her row için atomic boundary (brace counting) */
     var rows = [];
     for (var i = 0; i < matches.length; i++) {
       var start = matches[i].index;
-      var end = (i + 1 < matches.length) ? matches[i + 1].index : html.length;
+      var end = findRowEnd(html, start);
+      if (end === -1) {
+        console.warn(LOG_PREFIX, 'malformed row HTML — gruplama iptal');
+        return html;
+      }
       rows.push({ ihracatId: matches[i].ihracatId, html: html.substring(start, end) });
     }
 
-    /* Match'lerden öncesi (header vs.) ve sonrası (footer vs.) — burada yok ama her ihtimale karşı koru */
+    /* Preface: ilk row öncesi (container açılışı + header + filterBar + hdrRow) */
     var preface = html.substring(0, matches[0].index);
-    var postface = ''; // tüm satırlar match arasında bittiği için son row'un sonu html.length
 
-    /* Gruplara böl */
-    var groups = {}; // ihracatId → [rows]
-    var groupOrder = []; // ID'lerin listede ilk göründüğü sıra
+    /* Postface: son row sonrası (footer + container kapanışı) — atomic boundary'den geri kalan */
+    var lastRowEnd = findRowEnd(html, matches[matches.length - 1].index);
+    var postface = html.substring(lastRowEnd);
+
+    /* Gruplama */
+    var groups = {}; // ihracatId → [rowHtml]
     rows.forEach(function(row) {
       var id = row.ihracatId || '__atanmamış__';
-      if (!(id in groups)) {
-        groups[id] = [];
-        groupOrder.push(id);
-      }
+      if (!(id in groups)) groups[id] = [];
       groups[id].push(row.html);
     });
 
-    /* Render: önce ATANMAMIŞ (Q2), sonra diğerleri */
+    /* Render: önce ATANMAMIŞ, sonra alfabetik */
     var output = preface;
     if (groups['__atanmamış__']) {
       output += renderGroupHeader(null, groups['__atanmamış__'].length);
       output += groups['__atanmamış__'].join('');
       delete groups['__atanmamış__'];
     }
-    /* Diğer gruplar — ihracat ID alfabetik sıraya göre (yeni ID'ler genelde tarih içerir, doğal sırada gelir) */
-    var idList = Object.keys(groups).sort();
-    idList.forEach(function(id) {
+    Object.keys(groups).sort().forEach(function(id) {
       output += renderGroupHeader(id, groups[id].length);
       output += groups[id].join('');
     });
@@ -177,7 +218,7 @@
     return output + postface;
   }
 
-  /* Grup başlığı HTML'i — her ed listesini topluca özetler */
+  /* Grup başlığı — idempotent marker içerir */
   function renderGroupHeader(ihracatId, count) {
     var bg, color, title, subtitle;
     if (ihracatId === null || !ihracatId) {
@@ -191,7 +232,7 @@
       title = '📦 ' + escHtml(ihracatId);
       subtitle = count + ' kalem';
     }
-    return '<div style="padding:10px 16px;background:' + bg + ';border-bottom:0.5px solid var(--b);border-top:2px solid ' + color + ';display:flex;align-items:center;justify-content:space-between">'
+    return '<div ' + GROUP_MARKER + ' style="padding:10px 16px;background:' + bg + ';border-bottom:0.5px solid var(--b);border-top:2px solid ' + color + ';display:flex;align-items:center;justify-content:space-between">'
       + '<div>'
       + '<div style="font-size:13px;font-weight:600;color:' + color + ';font-family:DM Mono,monospace">' + title + '</div>'
       + '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + subtitle + '</div>'
@@ -199,6 +240,5 @@
       + '</div>';
   }
 
-  /* ─────────────── Boot log ─────────────── */
-  console.log(LOG_PREFIX, 'V184a3 yüklendi: Wizard İhracat ID + Liste gruplama');
+  console.log(LOG_PREFIX, 'V184a3 yüklendi (Wizard İhracat ID + Gruplama, brace counting)');
 })();
