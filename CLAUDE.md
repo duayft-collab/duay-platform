@@ -637,6 +637,39 @@ Baran'a bildirim:
 
 ---
 
+## HAM-OUTPUT-KURAL-001 — Ham Çıktı Zorunluluğu (T2 Disiplini)
+
+**T2'nin bash tool çıktıları önce ham yapıştırılır, sonra T1 isterse özet ister.**
+
+Default akış: ham → dur → T1 yorumlasın → (istenirse) özet.
+
+**Ham zorunlu araçlar (anchor view):**
+- `cat`, `sed`, `head`, `tail`, `grep` (-n), `wc`, `shasum`
+- Çıktı bir karakter eksiltilmeden, başlık+kuyruk markers (`═══ ... ═══`) dahil yapıştırılır
+
+**Özet kabul edilen araçlar (durumsal):**
+- `ls -la`, `git status -s`, `git log --oneline`, `git diff --stat`
+- Tablo / kısa rapor formatı OK; ham istenirse de verilebilir
+
+**YASAKLAR:**
+1. Sentez/özet/tablo ham çıktı **yerine** geçemez (paralel sentez yok)
+2. A/B/C "öneri" yerine ham çıktı + T1'in kararı esastır
+3. "Sonraki adım önerme" yasağı — cycle planı T1'de
+4. Scope genişletme yasağı — "şunu da yapsak?" T1'in kararı
+5. **Komut değiştirme yasağı** — T2, T1'in verdiği bash komutunu kelimesi kelimesine uygular; optimize, daralt, ek komut **yetkisi yok**
+
+**İstisna — Display limiti:**
+Tool çıktısı limiti aşarsa T2 **sentez yapmaz**, parça parça ham paylaşır:
+- "1. parça (satır 1-200)" → ham
+- "2. parça (satır 201-400)" → ham
+- Toplam parça sayısı + son parça açıkça işaretlenir
+
+**Saha testi (KX5):**
+Bu kuralın çalışıp çalışmadığı bir sonraki cycle'ın ilk anchor view'unda doğrulanır. Sapma → cycle dosyasına not, kural güçlendirilir.
+
+**Çıkış noktası:**
+V182 T2-CLAUDE-MD-DISCIPLINE-001 (V179 oturumunda T2'nin 5+ ihlali ile açıldı: ham yerine özet, scope sapması, A/B/C öneri, V178.2 sırasında uydurma `git mv` komutu, V182 ADIM 2'de talimat dışı komut üretimi).
+
 ## GIT-YASAK-001 — Kesinlikle Kullanılmayan Flag'ler
 
 Hiçbir koşulda kullanılmaz:
