@@ -43,6 +43,21 @@
     try { return new Date(d).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }); } catch(e) { return String(d); }
   }
 
+  /* V184a5-r2: Tarih yaklaşma alarmı — Cut-off / Ardiye için. Eşikler:
+   * geçmiş → koyu kırmızı (acil!) · 0-3g → kırmızı · 4-7g → turuncu · 8+g → uyarı yok */
+  function getDateAlert(dateStr, label) {
+    if (!dateStr) return null;
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    d.setHours(0, 0, 0, 0);
+    var diff = Math.floor((d.getTime() - today.getTime()) / 86400000);
+    if (diff < 0) return { level: 'overdue', bg: '#991B1B', color: '#fff', text: '🚨 ' + label + ' ' + Math.abs(diff) + 'g geç' };
+    if (diff <= 3) return { level: 'critical', bg: '#DC2626', color: '#fff', text: '⏰ ' + label + (diff === 0 ? ' bugün' : ' ' + diff + 'g') };
+    if (diff <= 7) return { level: 'warn', bg: '#EA580C', color: '#fff', text: '⏰ ' + label + ' ' + diff + 'g' };
+    return null;
+  }
+
   /* ─────────────── İhracat Detay Storage ─────────────── */
 
   window.loadIhracatDetay = function() {
@@ -155,8 +170,16 @@
       var parts = [];
       if (detay.konteynerNo) parts.push('🚛 ' + escHtml(detay.konteynerNo));
       if (detay.muhurNo) parts.push('🔒 ' + escHtml(detay.muhurNo));
-      if (detay.cutOffTarihi) parts.push('⏱ Cut-off: ' + fmtTr(detay.cutOffTarihi));
-      if (detay.ardiyesizGirisTarihi) parts.push('📦 Ardiye: ' + fmtTr(detay.ardiyesizGirisTarihi));
+      if (detay.cutOffTarihi) {
+        var co = getDateAlert(detay.cutOffTarihi, 'Cut-off');
+        var coColor = co ? co.bg : 'var(--t2)';
+        parts.push('<span style="color:' + coColor + ';font-weight:' + (co ? '600' : '400') + '">⏱ Cut-off: ' + fmtTr(detay.cutOffTarihi) + '</span>');
+      }
+      if (detay.ardiyesizGirisTarihi) {
+        var ar = getDateAlert(detay.ardiyesizGirisTarihi, 'Ardiye');
+        var arColor = ar ? ar.bg : 'var(--t2)';
+        parts.push('<span style="color:' + arColor + ';font-weight:' + (ar ? '600' : '400') + '">📦 Ardiye: ' + fmtTr(detay.ardiyesizGirisTarihi) + '</span>');
+      }
       if (detay.hatLine) parts.push('🚢 ' + escHtml(detay.hatLine));
       if (detay.trackingUrl) parts.push('<a href="' + escHtml(detay.trackingUrl) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#185FA5;text-decoration:none">🔗 Tracking</a>');
       if (detay.cikisLimani || detay.varisLimani) parts.push('🏭 ' + escHtml(detay.cikisLimani || '?') + ' → ' + escHtml(detay.varisLimani || '?'));
@@ -173,6 +196,18 @@
 
     var collapseBtn = ihracatId ? '<button onclick="event.stopPropagation();window._lojGrupToggle(\'' + escHtml(ihracatId) + '\')" style="padding:4px 8px;border:0.5px solid ' + color + '33;border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:' + color + ';font-family:inherit;margin-left:6px" title="Aç/Kapat">' + arrow + '</button>' : '';
 
+    /* V184a5-r2: Tarih alarmları — sağda parlak rozet (Cut-off / Ardiye) */
+    var alerts = [];
+    if (detay) {
+      var coAlert = getDateAlert(detay.cutOffTarihi, 'Cut-off');
+      if (coAlert) alerts.push(coAlert);
+      var arAlert = getDateAlert(detay.ardiyesizGirisTarihi, 'Ardiye');
+      if (arAlert) alerts.push(arAlert);
+    }
+    var alertHtml = alerts.map(function(a) {
+      return '<span style="display:inline-block;padding:4px 10px;border-radius:12px;font-size:10px;font-weight:600;background:' + a.bg + ';color:' + a.color + ';white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.15)">' + a.text + '</span>';
+    }).join(' ');
+
     return '<div data-v184a3-group="1" data-grup-id="' + escHtml(ihracatId || '__atanmamis__') + '" style="padding:12px 16px;background:' + bg + ';border-bottom:0.5px solid var(--b);border-top:2px solid ' + color + '">'
       + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">'
       + '<div style="flex:1;min-width:0">'
@@ -182,7 +217,10 @@
       + (calcStr ? '<div style="font-size:11px;margin-top:2px">' + calcStr + '</div>' : '')
       + detayStrip
       + '</div>'
-      + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">' + detayBtn + collapseBtn + '</div>'
+      + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">'
+      + (alertHtml ? '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">' + alertHtml + '</div>' : '')
+      + '<div style="display:flex;align-items:center;gap:6px">' + detayBtn + collapseBtn + '</div>'
+      + '</div>'
       + '</div>'
       + '</div>';
   }
