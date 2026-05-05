@@ -430,16 +430,16 @@
     }
 
     mo.innerHTML = '<div class="moc" style="max-width:680px;padding:0;border-radius:14px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column">'
-      + '<div data-modal-title style="padding:14px 20px;border-bottom:0.5px solid var(--b);font-size:14px;font-weight:600">📦 İhracat Detayı — ' + escHtml(ihracatId) + '</div>'
+      + '<div data-modal-title style="padding:14px 20px;border-bottom:0.5px solid var(--b);font-size:14px;font-weight:600">📦 ' + (typeof window.t === 'function' ? window.t('ed.detay.title') : 'İhracat Detayı') + ' — ' + escHtml(ihracatId) + '</div>'
       + '<div style="padding:18px 20px;overflow-y:auto;flex:1">'
-      + '<div style="font-size:10px;font-weight:600;color:#185FA5;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">📦 Konteyner Bilgisi</div>'
+      + '<div style="font-size:10px;font-weight:600;color:#185FA5;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">📦 ' + (typeof window.t === 'function' ? window.t('ed.detay.section.konteyner') : 'Konteyner Bilgisi') + '</div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
       + fld('Konteyner No', 'lid-konteynerNo', detay.konteynerNo)
       + fld('Mühür No', 'lid-muhurNo', detay.muhurNo)
       + fld('Ardiyesiz Giriş Tarihi', 'lid-ardiyesizGirisTarihi', detay.ardiyesizGirisTarihi, 'date')
       + fld('Cut-off Tarihi', 'lid-cutOffTarihi', detay.cutOffTarihi, 'date')
       + '</div>'
-      + '<div style="font-size:10px;font-weight:600;color:#185FA5;margin:12px 0 10px;text-transform:uppercase;letter-spacing:.05em">🚢 Taşıyıcı / Hat</div>'
+      + '<div style="font-size:10px;font-weight:600;color:#185FA5;margin:12px 0 10px;text-transform:uppercase;letter-spacing:.05em">🚢 ' + (typeof window.t === 'function' ? window.t('ed.detay.section.tasiyici') : 'Taşıyıcı / Hat') + '</div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
       + fld('Booking No', 'lid-bookingNo', detay.bookingNo)
       + fld('Forwarder / Unvanı', 'lid-forwarder', detay.forwarder)
@@ -448,7 +448,7 @@
       + fld('Gemi Adı', 'lid-gemiAdi', detay.gemiAdi)
       + fld('Sefer No', 'lid-seferNo', detay.seferNo)
       + '</div>'
-      + '<div style="font-size:10px;font-weight:600;color:#185FA5;margin:12px 0 10px;text-transform:uppercase;letter-spacing:.05em">🏭 Liman / Rota</div>'
+      + '<div style="font-size:10px;font-weight:600;color:#185FA5;margin:12px 0 10px;text-transform:uppercase;letter-spacing:.05em">🏭 ' + (typeof window.t === 'function' ? window.t('ed.detay.section.liman') : 'Liman / Rota') + '</div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
       + fld('Liman / Terminal', 'lid-limanTerminal', detay.limanTerminal)
       + fld('Yükleme Noktası', 'lid-yuklemeNoktasi', detay.yuklemeNoktasi)
@@ -476,7 +476,7 @@
         el.style.cursor = 'not-allowed';
       });
       var titleEl = mo.querySelector('[data-modal-title]');
-      if (titleEl) titleEl.textContent = '🔒 İhracat Detayı (Salt Okunur)';
+      if (titleEl) titleEl.textContent = '🔒 ' + (typeof window.t === 'function' ? window.t('ed.detay.title.readonly') : 'İhracat Detayı (Salt Okunur)');
     }
     setTimeout(function() { mo.classList.add('open'); }, 10);
   };

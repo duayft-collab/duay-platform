@@ -861,7 +861,7 @@
       + '</div>';
     mo.innerHTML = '<div style="background:var(--sf,#fff);color:var(--t);width:680px;max-width:92vw;max-height:90vh;overflow-y:auto;border-radius:12px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.15);font-family:inherit" onclick="event.stopPropagation()">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
-        + '<div style="font-size:15px;font-weight:600;color:var(--t)">🔔 Onay Bekleyen Talepler (' + actions.length + ')</div>'
+        + '<div style="font-size:15px;font-weight:600;color:var(--t)">🔔 ' + (typeof window.t === 'function' ? window.t('ed.pending.title') : 'Onay Bekleyen Talepler') + ' (' + actions.length + ')</div>'
         + '<button onclick="document.getElementById(\'ed-pending-modal\').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--t3)">×</button>'
       + '</div>'
       + filterBar
@@ -1765,7 +1765,7 @@
       /* ED-HOTFIX-BUNDLE-001 fix1: Header responsive — flex-wrap + max-width:100% + min-width:0 child; buton bar ayrıca */
       + '<div style="padding:18px 24px 10px;border-bottom:0.5px solid var(--b,#CBD5E1);display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;max-width:100%">'
         + '<div style="min-width:0;flex:1 1 260px">'
-          + '<div style="font-size:16px;font-weight:600;color:var(--t,#111);display:flex;align-items:center;gap:10px;flex-wrap:wrap">🚚 Teslimat Takibi <span style="font-size:9px;padding:2px 8px;border-radius:10px;background:' + modeColor + '22;color:' + modeColor + ';font-weight:500;letter-spacing:.04em">' + mode.replace('_', ' ') + '</span></div>'
+          + '<div style="font-size:16px;font-weight:600;color:var(--t,#111);display:flex;align-items:center;gap:10px;flex-wrap:wrap">🚚 ' + (typeof window.t === 'function' ? window.t('ed.panel.title') : 'Teslimat Takibi') + ' <span style="font-size:9px;padding:2px 8px;border-radius:10px;background:' + modeColor + '22;color:' + modeColor + ';font-weight:500;letter-spacing:.04em">' + mode.replace('_', ' ') + '</span></div>'
           + '<div style="font-size:11px;color:var(--t3,#6B7280);margin-top:3px">Toplam: <b>' + counts.total + '</b> · Yaklaşan: <b style="color:#F59E0B">' + counts.upcoming + '</b> · Gecikmiş: <b style="color:#E0574F">' + counts.overdue + '</b> · Kritik: <b style="color:#E0574F">' + counts.critical + '</b></div>'
         + '</div>'
         /* ED-HOTFIX-BUNDLE-001: Yeni Teslimat butonu flex-shrink:0 — asla viewport dışına düşmez */

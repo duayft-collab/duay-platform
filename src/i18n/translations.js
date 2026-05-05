@@ -367,6 +367,16 @@ let TRANSLATIONS = {
     'ed.status.MUSTERI_TESLIM_ALDI':  'Müşteri Teslim Aldı',
     'ed.status.GECIKTI':              'Gecikti',
 
+    // ── Panel + Modal Başlıkları (V185 / B4-r6) ──────────────────
+    'ed.panel.title':                 'Teslimat Takibi',
+    'ed.pending.title':               'Onay Bekleyen Talepler',
+    'ed.detay.title':                 'İhracat Detayı',
+    'ed.detay.title.readonly':        'İhracat Detayı (Salt Okunur)',
+    'ed.detay.section.konteyner':     'Konteyner Bilgisi',
+    'ed.detay.section.tasiyici':      'Taşıyıcı / Hat',
+    'ed.detay.section.liman':         'Liman / Rota',
+    'ed.wrap.ihracatBilgi':           'İhracat Bilgileri',
+
     'ed.actionLabel.delete':          'silme',
     'ed.actionLabel.update':          'güncelleme',
   },
@@ -724,6 +734,16 @@ let TRANSLATIONS = {
     'ed.status.KONTEYNIRA_YUKLENDI':  'Loaded to Container',
     'ed.status.MUSTERI_TESLIM_ALDI':  'Customer Received',
     'ed.status.GECIKTI':              'Delayed',
+
+    // ── Panel + Modal Headers (V185 / B4-r6) ─────────────────────
+    'ed.panel.title':                 'Delivery Tracking',
+    'ed.pending.title':               'Pending Approval Requests',
+    'ed.detay.title':                 'Export Details',
+    'ed.detay.title.readonly':        'Export Details (Read-only)',
+    'ed.detay.section.konteyner':     'Container Info',
+    'ed.detay.section.tasiyici':      'Carrier / Line',
+    'ed.detay.section.liman':         'Port / Route',
+    'ed.wrap.ihracatBilgi':           'Export Info',
 
     'ed.actionLabel.delete':          'delete',
     'ed.actionLabel.update':          'edit',

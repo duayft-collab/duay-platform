@@ -74,7 +74,7 @@
       : 'flex:1;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;font-size:12px;font-family:DM Mono,monospace';
     var readonlyAttr = isReadonly ? 'readonly title="Değişiklik için aksiyon menüsünü kullanın"' : '';
     return '<div id="__v184a3-ihracat-bolum" style="grid-column:span 2;padding:10px 12px;background:rgba(24,95,165,0.04);border:0.5px solid rgba(24,95,165,0.2);border-radius:8px;margin-bottom:8px">'
-      + '<div style="font-size:10px;font-weight:600;color:#185FA5;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">📋 İhracat Bilgileri</div>'
+      + '<div style="font-size:10px;font-weight:600;color:#185FA5;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">📋 ' + (typeof window.t === 'function' ? window.t('ed.wrap.ihracatBilgi') : 'İhracat Bilgileri') + '</div>'
       + '<div style="display:flex;gap:8px;align-items:center">'
       + '<label for="__v184a3-ihracatId" style="font-size:11px;color:var(--t2);min-width:80px">İhracat ID</label>'
       + '<input id="__v184a3-ihracatId" maxlength="15" placeholder="EXP-2026-0042" '
