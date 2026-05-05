@@ -37,6 +37,16 @@
     return role === 'admin' || role === 'manager' || role === 'super_admin';
   }
 
+  /* V184a6: Asistan da İhracat ID readonly görsün — ama düzenleyemesin
+   * Talimat: 'İhracat ID, Sipariş Kodu, Sorumlu, Renk hariç... Yönetici Asistanı girebilir.'
+   * → asistan: input EDIT YOK, readonly OK */
+  function canViewIhracatId() {
+    var cu = (typeof window.CU === 'function') ? window.CU() : null;
+    if (!cu) return false;
+    var role = cu.role || cu.rol;
+    return role === 'admin' || role === 'manager' || role === 'super_admin' || role === 'asistan';
+  }
+
   function escHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -44,7 +54,13 @@
   }
 
   function ihracatBolumHtml(currentValue, isReadonly) {
-    if (!isAdminOrManager()) return '';
+    /* V184a6: readonly → asistan da görsün (canViewIhracatId)
+     *         editable → sadece admin/manager (isAdminOrManager) */
+    if (isReadonly) {
+      if (!canViewIhracatId()) return '';
+    } else {
+      if (!isAdminOrManager()) return '';
+    }
     var val = (currentValue || '').toString().slice(0, 15);
     var inputStyle = isReadonly
       ? 'flex:1;padding:7px 10px;border:0.5px solid var(--b);border-radius:6px;font-size:12px;font-family:DM Mono,monospace;background:var(--s2);color:var(--t3);cursor:not-allowed'
@@ -68,7 +84,7 @@
     window._edEditModal = function(edId) {
       origEdEditModal.apply(this, arguments);
       try {
-        if (!isAdminOrManager()) return;
+        if (!canViewIhracatId()) return;
         var modal = document.getElementById('mo-ed-edit') || document.querySelector('.mo .moc');
         if (!modal) return;
         var list = (typeof window.loadExpectedDeliveries === 'function')

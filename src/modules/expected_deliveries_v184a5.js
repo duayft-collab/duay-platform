@@ -32,6 +32,16 @@
     return role === 'admin' || role === 'manager' || role === 'super_admin';
   }
 
+  /* V184a6: İhracat Detay düzenleme — admin/manager + asistan (Yönetici Asistanı).
+   * Talimat: 'İhracat ID, Sipariş Kodu, Sorumlu, Renk hariç tüm verileri Yönetici Asistanı girebilir.'
+   * Bu modal İhracat ID/Sipariş/Renk/Sorumlu içermez → asistan açabilir. */
+  function canEditDetay() {
+    var cu = (typeof window.CU === 'function') ? window.CU() : null;
+    if (!cu) return false;
+    var role = cu.role || cu.rol;
+    return role === 'admin' || role === 'manager' || role === 'super_admin' || role === 'asistan';
+  }
+
   function escHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -181,6 +191,8 @@
         parts.push('<span style="color:' + arColor + ';font-weight:' + (ar ? '600' : '400') + '">📦 Ardiye: ' + fmtTr(detay.ardiyesizGirisTarihi) + '</span>');
       }
       if (detay.hatLine) parts.push('🚢 ' + escHtml(detay.hatLine));
+      if (detay.bookingNo) parts.push('🎫 Booking: ' + escHtml(detay.bookingNo));
+      if (detay.forwarder) parts.push('🏢 ' + escHtml(detay.forwarder));
       if (detay.trackingUrl) parts.push('<a href="' + escHtml(detay.trackingUrl) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#185FA5;text-decoration:none">🔗 Tracking</a>');
       if (detay.cikisLimani || detay.varisLimani) parts.push('🏭 ' + escHtml(detay.cikisLimani || '?') + ' → ' + escHtml(detay.varisLimani || '?'));
       if (detay.gemiAdi) parts.push('Gemi: ' + escHtml(detay.gemiAdi) + (detay.seferNo ? ' (' + escHtml(detay.seferNo) + ')' : ''));
@@ -190,7 +202,7 @@
     }
 
     var detayBtn = '';
-    if (!isAtanmamis && isAdminOrManager()) {
+    if (!isAtanmamis && canEditDetay()) {
       detayBtn = '<button onclick="event.stopPropagation();window._lojIhracatDetayModal(\'' + escHtml(ihracatId) + '\')" style="padding:4px 10px;border:0.5px solid ' + color + '33;border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:' + color + ';font-family:inherit">✏ Detay</button>';
     }
 
@@ -357,7 +369,7 @@
   /* ─────────────── İhracat Detay Modal ─────────────── */
 
   window._lojIhracatDetayModal = function(ihracatId) {
-    if (!isAdminOrManager()) {
+    if (!canEditDetay()) {
       window.toast && window.toast('Bu işlem için yetkiniz yok', 'warn');
       return;
     }
@@ -395,6 +407,8 @@
       + '</div>'
       + '<div style="font-size:10px;font-weight:600;color:#185FA5;margin:12px 0 10px;text-transform:uppercase;letter-spacing:.05em">🚢 Taşıyıcı / Hat</div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + fld('Booking No', 'lid-bookingNo', detay.bookingNo)
+      + fld('Forwarder / Unvanı', 'lid-forwarder', detay.forwarder)
       + fld('Hat / Line (MSC, CMA, MAERSK)', 'lid-hatLine', detay.hatLine)
       + fld('Tracking URL', 'lid-trackingUrl', detay.trackingUrl, 'url')
       + fld('Gemi Adı', 'lid-gemiAdi', detay.gemiAdi)
@@ -422,7 +436,7 @@
   };
 
   window._lojIhracatDetayKaydet = function(ihracatId) {
-    if (!isAdminOrManager()) {
+    if (!canEditDetay()) {
       window.toast && window.toast('Bu işlem için yetkiniz yok', 'warn');
       return;
     }
@@ -432,6 +446,8 @@
       muhurNo: g('lid-muhurNo').slice(0, 30),
       ardiyesizGirisTarihi: g('lid-ardiyesizGirisTarihi'),
       cutOffTarihi: g('lid-cutOffTarihi'),
+      bookingNo: g('lid-bookingNo').slice(0, 50),
+      forwarder: g('lid-forwarder').slice(0, 100),
       hatLine: g('lid-hatLine').slice(0, 30),
       trackingUrl: g('lid-trackingUrl').slice(0, 500),
       gemiAdi: g('lid-gemiAdi').slice(0, 50),
