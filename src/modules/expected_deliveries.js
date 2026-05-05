@@ -150,14 +150,14 @@
   /* ─── CREATE / UPDATE / DELETE WRAPPERS ───────────────────── */
   window._edCreate = function(ed) {
     if (!window._edCanManualCreate()) {
-      window.toast && window.toast('AUTO_MODE aktif — manuel giriş için admin yetki gerekli', 'err');
+      window.toast && window.toast(t('ed.toast.autoMode'), 'err');
       return { success: false, error: 'mode_restricted' };
     }
 
     ed = ed || {};
     var v = window._edValidate(ed);
     if (!v.valid) {
-      window.toast && window.toast('Eksik: ' + v.errors.join(', '), 'err');
+      window.toast && window.toast(t('ed.toast.missingFields', null, { fields: v.errors.join(', ') }), 'err');
       return { success: false, errors: v.errors };
     }
 
@@ -325,7 +325,7 @@
     /* V184a2 / LOJ-ROTA-INFO-001: eski kayıt soft uyarısı (Q3) — 4 alan boşsa toast */
     if (!ed.originCity || !ed.originDistrict || !ed.destinationCity || !ed.destinationDistrict) {
       if (typeof window.toast === 'function') {
-        window.toast('Eski kayıt — rota bilgisi ekleyin', 'warn');
+        window.toast(t('ed.toast.oldRecordRoute'), 'warn');
       }
     }
   };
@@ -1573,20 +1573,20 @@
     var qtyStr = window.prompt('Eklenecek teslim miktarı:', '');
     if (qtyStr === null) return;
     var qty = parseFloat(qtyStr);
-    if (isNaN(qty) || qty <= 0) { if (window.toast) window.toast('Geçersiz miktar', 'err'); return; }
+    if (isNaN(qty) || qty <= 0) { if (window.toast) window.toast(t('ed.toast.invalidQty'), 'err'); return; }
     var r = window._edAddDelivery(edId, { qty: qty, deliveryDate: new Date().toISOString(), status: 'delivered' });
     if (r && r.success) {
-      if (window.toast) window.toast('Teslimat eklendi', 'ok');
+      if (window.toast) window.toast(t('ed.toast.deliveryAdded'), 'ok');
       window._edRenderPanel();
     } else {
-      if (window.toast) window.toast((r && r.error) || 'Ekleme hatası', 'err');
+      if (window.toast) window.toast((r && r.error) || t('ed.toast.addError'), 'err');
     }
   };
 
   window._edOpenDetail = function(edId) {
     var all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
     var ed = all.find(function(e) { return e.id === edId; });
-    if (!ed) { if (window.toast) window.toast('Kayıt bulunamadı', 'err'); return; }
+    if (!ed) { if (window.toast) window.toast(t('ed.toast.notFound'), 'err'); return; }
     var deliveries = (ed.deliveries || []).map(function(d, i) {
       return '<tr style="border-bottom:0.5px solid var(--b)"><td style="padding:6px 8px;font-size:11px">' + (i + 1) + '</td><td style="padding:6px 8px;font-size:11px;font-variant-numeric:tabular-nums">' + (d.qty || 0) + '</td><td style="padding:6px 8px;font-size:11px">' + (d.shipmentDate ? new Date(d.shipmentDate).toLocaleDateString('tr-TR') : '—') + '</td><td style="padding:6px 8px;font-size:11px">' + (d.deliveryDate ? new Date(d.deliveryDate).toLocaleDateString('tr-TR') : '—') + '</td><td style="padding:6px 8px;font-size:10px;color:var(--t3)">' + _uiEsc(d.status || '—') + '</td></tr>';
     }).join('') || '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--t3);font-size:11px">Teslimat kaydı yok</td></tr>';
@@ -1979,7 +1979,7 @@
     var r = window._edCreate(d);
     if (r && r.success) {
       var mo = document.getElementById('ed-wizard-modal'); if (mo) mo.remove();
-      if (window.toast) window.toast('Yeni teslimat oluşturuldu', 'ok');
+      if (window.toast) window.toast(t('ed.toast.deliveryCreated'), 'ok');
       _edWizardState = null;
       window._edRenderPanel();
     } else {
@@ -2021,8 +2021,8 @@
     if (!pri) return;
     pri = pri.trim().toUpperCase();
     var r = window._edUpdatePriority(edId, pri);
-    if (r && r.success) { if (window.toast) window.toast('Öncelik güncellendi', 'ok'); window._edRenderPanel(); }
-    else { if (window.toast) window.toast((r && r.error) || 'Hata', 'err'); }
+    if (r && r.success) { if (window.toast) window.toast(t('ed.toast.priorityUpdated'), 'ok'); window._edRenderPanel(); }
+    else { if (window.toast) window.toast((r && r.error) || t('ed.toast.genericError'), 'err'); }
   };
 
   window._edChangeResponsibleModal = function(edId) {
@@ -2048,16 +2048,16 @@
   window._edChangeRespSubmit = function(edId) {
     var userSel = document.getElementById('edcr-user');
     var reason = (document.getElementById('edcr-reason') || {}).value || '';
-    if (!userSel || !userSel.value) { if (window.toast) window.toast('Yeni sorumlu seçin', 'err'); return; }
+    if (!userSel || !userSel.value) { if (window.toast) window.toast(t('ed.toast.selectNewResponsible'), 'err'); return; }
     var opt = userSel.selectedOptions && userSel.selectedOptions[0];
     var role = (opt && opt.getAttribute('data-role')) || 'staff';
     var r = window._edChangeResponsible(edId, userSel.value, role, reason.trim());
     if (r && r.success) {
       document.getElementById('ed-change-resp-modal').remove();
-      if (window.toast) window.toast('Sorumlu değiştirildi', 'ok');
+      if (window.toast) window.toast(t('ed.toast.responsibleChanged'), 'ok');
       window._edRenderPanel();
     } else {
-      if (window.toast) window.toast((r && r.error) || 'Hata', 'err');
+      if (window.toast) window.toast((r && r.error) || t('ed.toast.genericError'), 'err');
     }
   };
 
@@ -2089,10 +2089,10 @@
     var r = window._edSetDelayOwner(edId, owner, reason);
     if (r && r.success) {
       document.getElementById('ed-delay-modal').remove();
-      if (window.toast) window.toast('Gecikme bilgisi kaydedildi', 'ok');
+      if (window.toast) window.toast(t('ed.toast.delaySaved'), 'ok');
       window._edRenderPanel();
     } else {
-      if (window.toast) window.toast((r && r.error) || 'Hata', 'err');
+      if (window.toast) window.toast((r && r.error) || t('ed.toast.genericError'), 'err');
     }
   };
 
