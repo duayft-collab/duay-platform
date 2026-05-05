@@ -74,6 +74,45 @@
     return html;
   }
 
+  /* RBAC: 4 KISITLI ALAN — İhracat ID / Sipariş Kodu / Sorumlu / Renk
+   * Talimat: 'asistan İhracat ID/Sipariş/Sorumlu/Renk hariç tüm verileri girebilir' */
+  function canEditRestricted() { return isAdminOrManager(); }
+  function canEditGeneral() { return isPrivileged(); }
+
+  /* V186c: STATUS + RENK kopya listeleri (K10 ihlali, V186e'de
+   * window.STATUSES_LIST / LOJ_RENK_LIST global expose ile düzeltilecek) */
+  var V186_STATUSES = [
+    ['SIPARIS_ASAMASINDA',     'Sipariş Aşamasında',    '#6B7280'],
+    ['TEDARIK',                'Tedarik',                '#9333EA'],
+    ['URETIM',                 'Üretimde',               '#EA580C'],
+    ['SATICIDA_HAZIR',         'Satıcıda Hazır',         '#0EA5E9'],
+    ['YUKLEME_NOKTASINDA',     'Yükleme Noktasında',     '#0891B2'],
+    ['YUKLEME_PLANLANDI',      'Yükleme Planlandı',      '#0284C7'],
+    ['YUKLEME_BEKLIYOR',       'Yükleme Bekliyor',       '#1D4ED8'],
+    ['SEVK_EDILDI',            'Sevk Edildi',            '#2563EB'],
+    ['YOLDA',                  'Yolda',                  '#3B82F6'],
+    ['GUMRUKTE',               'Gümrükte',               '#F59E0B'],
+    ['DEPODA',                 'Depoda',                 '#10B981'],
+    ['TESLIM_ALINDI',          'Teslim Alındı',          '#16A34A'],
+    ['KONTEYNIRA_YUKLENDI',    'Konteynıra Yüklendi',    '#059669'],
+    ['MUSTERI_TESLIM_ALDI',    'Müşteri Teslim Aldı',    '#15803D'],
+    ['GECIKTI',                'Gecikti',                '#DC2626'],
+  ];
+  var V186_RENK = [
+    { k: 'kirmizi',    h: '#FF3B30', a: 'Kırmızı' },
+    { k: 'turuncu',    h: '#FF9500', a: 'Turuncu' },
+    { k: 'sari',       h: '#FFCC00', a: 'Sarı' },
+    { k: 'yesil',      h: '#34C759', a: 'Yeşil' },
+    { k: 'mint',       h: '#00C7BE', a: 'Mint' },
+    { k: 'cyan',       h: '#32ADE6', a: 'Cyan' },
+    { k: 'mavi',       h: '#007AFF', a: 'Mavi' },
+    { k: 'mor',        h: '#AF52DE', a: 'Mor' },
+    { k: 'pembe',      h: '#FF2D55', a: 'Pembe' },
+    { k: 'kahve',      h: '#A2845E', a: 'Kahve' },
+    { k: 'siyah',      h: '#1C1C1E', a: 'Siyah' },
+  ];
+  var V186_PRIORITY = [['LOW', 'Düşük', '#6B7280'], ['NORMAL', 'Normal', '#185FA5'], ['CRITICAL', 'Kritik', '#DC2626']];
+
   /* ─── Form alanı style + label helper'ları ─── */
   var INPUT_CSS = 'width:100%;padding:8px 10px;border:0.5px solid var(--b,#D1D5DB);border-radius:7px;font-size:12px;background:var(--sf,#fff);color:var(--t);font-family:inherit;box-sizing:border-box';
   function lbl(text) {
@@ -197,18 +236,125 @@
       + '</div>';
   }
   function renderStep3() {
-    return '<div style="padding:60px 20px;text-align:center;color:var(--t3)">'
-      + '<div style="font-size:48px;margin-bottom:12px">🌐</div>'
-      + '<div style="font-size:14px;font-weight:500;color:var(--t2);margin-bottom:6px">Step 3 — İhracat & Sorumluluk</div>'
-      + '<div style="font-size:11px;color:var(--t3)">' + (isAdminOrManager() ? '✓ Yetkin var' : (isAsistan() ? '⚠ Asistan: kısıtlı (İhracat ID/Sipariş/Renk hariç)' : '🔒 Sadece görüntüleme')) + '</div>'
-      + '<div style="font-size:12px;color:var(--t3);font-style:italic;margin-top:6px">İskelet — V186c cycle\'ında alanlar eklenecek</div>'
+    var d = state.formData;
+    var canRestricted = canEditRestricted();
+    var canGeneral    = canEditGeneral();
+    var dis = function (allow) { return allow ? '' : ' disabled style="opacity:.6;cursor:not-allowed"'; };
+    var userOpts = (typeof window._edUserOpts === 'function') ? window._edUserOpts(d.responsibleUserId) : '<option value="">— Sorumlu —</option>';
+    var teklifOnaylayanOpts = (typeof window._edUserOpts === 'function') ? window._edUserOpts(d.teklifOnaylayan || '') : '<option value="">—</option>';
+    var satinAlmaOpts       = (typeof window._edUserOpts === 'function') ? window._edUserOpts(d.satinAlmaSorumlusu || '') : '<option value="">—</option>';
+
+    /* RBAC etiketi üstte */
+    var rbacBanner = '';
+    if (!canRestricted && canGeneral) {
+      rbacBanner = '<div style="grid-column:span 2;padding:10px 14px;background:#FEF3C7;border:0.5px solid #FCD34D;border-radius:8px;font-size:11px;color:#92400E;display:flex;align-items:center;gap:8px"><span style="font-size:16px">⚠</span><span>Yönetici Asistanı modu — <b>İhracat ID, Sipariş Kodu, Sorumlu ve Renk</b> alanlarını <b>düzenleyemezsiniz</b> (sadece görüntüleme).</span></div>';
+    } else if (!canGeneral) {
+      rbacBanner = '<div style="grid-column:span 2;padding:10px 14px;background:#F3F4F6;border:0.5px solid #D1D5DB;border-radius:8px;font-size:11px;color:#4B5563;display:flex;align-items:center;gap:8px"><span style="font-size:16px">🔒</span><span>Salt okunur — düzenleme yetkiniz yok.</span></div>';
+    }
+
+    return '<div style="padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+      + rbacBanner
+      + sect('🌐', 'İhracat / Sipariş', canRestricted ? '' : 'Sadece admin / manager düzenleyebilir')
+      + '<div>' + lbl('İhracat ID' + (canRestricted ? '' : ' 🔒'))
+        + '<input type="text" maxlength="30" oninput="window._v186SetField(\'ihracatId\', this.value)" value="' + _val(d.ihracatId) + '"' + dis(canRestricted) + ' style="' + INPUT_CSS + '">'
+      + '</div>'
+      + '<div>' + lbl('Sipariş Kodu' + (canRestricted ? '' : ' 🔒'))
+        + '<input type="text" maxlength="30" oninput="window._v186SetField(\'siparisKodu\', this.value)" value="' + _val(d.siparisKodu) + '"' + dis(canRestricted) + ' style="' + INPUT_CSS + '">'
+      + '</div>'
+      + '<div style="grid-column:span 2">' + lbl('Renk' + (canRestricted ? '' : ' 🔒'))
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap">'
+        + V186_RENK.map(function (r) {
+            var sel = d.renk === r.k;
+            var border = sel ? '3px solid var(--t)' : '0.5px solid var(--b)';
+            var click = canRestricted ? 'window._v186SetField(\'renk\',\'' + r.k + '\');document.querySelectorAll(\'[data-v186-renk]\').forEach(function(b){b.style.border=\'0.5px solid var(--b)\';});this.style.border=\'3px solid var(--t)\';' : '';
+            var cur = canRestricted ? 'pointer' : 'not-allowed';
+            return '<button type="button" data-v186-renk="' + r.k + '" onclick="' + click + '" title="' + r.a + '" style="width:34px;height:34px;border:' + border + ';border-radius:50%;background:' + r.h + ';cursor:' + cur + ';transition:.15s"' + (canRestricted ? '' : ' disabled') + '></button>';
+          }).join('')
+        + '</div>'
+      + '</div>'
+      + sect('👤', 'Sorumluluk', canRestricted ? '' : 'Sorumlu atama: sadece admin / manager')
+      + '<div style="grid-column:span 2">' + lbl('Sorumlu *' + (canRestricted ? '' : ' 🔒'))
+        + '<select onchange="window._v186SetField(\'responsibleUserId\', this.value)"' + dis(canRestricted) + ' style="' + INPUT_CSS + '">' + userOpts + '</select>'
+      + '</div>'
+      + '<div>' + lbl('Teklif Onaylayan')
+        + '<select onchange="window._v186SetField(\'teklifOnaylayan\', this.value)"' + dis(canGeneral) + ' style="' + INPUT_CSS + '">' + teklifOnaylayanOpts + '</select>'
+      + '</div>'
+      + '<div>' + lbl('Teklif Onay Tarihi')
+        + '<input type="datetime-local" oninput="window._v186SetField(\'teklifOnayTarihi\', this.value)" value="' + _val(d.teklifOnayTarihi) + '"' + dis(canGeneral) + ' style="' + INPUT_CSS + '">'
+      + '</div>'
+      + '<div>' + lbl('Avans Ödeme Tarihi')
+        + '<input type="datetime-local" oninput="window._v186SetField(\'avansOdemeTarihi\', this.value)" value="' + _val(d.avansOdemeTarihi) + '"' + dis(canGeneral) + ' style="' + INPUT_CSS + '">'
+      + '</div>'
+      + '<div>' + lbl('Satınalma Sorumlusu')
+        + '<select onchange="window._v186SetField(\'satinAlmaSorumlusu\', this.value)"' + dis(canGeneral) + ' style="' + INPUT_CSS + '">' + satinAlmaOpts + '</select>'
+      + '</div>'
+      + sect('🚦', 'Durum & Öncelik')
+      + '<div>' + lbl('Öncelik')
+        + '<select onchange="window._v186SetField(\'priority\', this.value)"' + dis(canGeneral) + ' style="' + INPUT_CSS + '">'
+        + V186_PRIORITY.map(function (p) { return '<option value="' + p[0] + '"' + ((d.priority || 'NORMAL') === p[0] ? ' selected' : '') + '>' + p[1] + '</option>'; }).join('')
+        + '</select>'
+      + '</div>'
+      + '<div>' + lbl('Durum')
+        + '<select onchange="window._v186SetField(\'status\', this.value)"' + dis(canGeneral) + ' style="' + INPUT_CSS + '">'
+        + V186_STATUSES.map(function (s) { return '<option value="' + s[0] + '"' + ((d.status || 'SIPARIS_ASAMASINDA') === s[0] ? ' selected' : '') + '>' + s[1] + '</option>'; }).join('')
+        + '</select>'
+      + '</div>'
       + '</div>';
   }
   function renderStep4() {
-    return '<div style="padding:60px 20px;text-align:center;color:var(--t3)">'
-      + '<div style="font-size:48px;margin-bottom:12px">📄</div>'
-      + '<div style="font-size:14px;font-weight:500;color:var(--t2);margin-bottom:6px">Step 4 — Belge & Özet</div>'
-      + '<div style="font-size:12px;color:var(--t3);font-style:italic">İskelet — V186c cycle\'ında alanlar eklenecek</div>'
+    var d = state.formData;
+    var canGeneral = canEditGeneral();
+    var dis = function (allow) { return allow ? '' : ' disabled style="opacity:.6;cursor:not-allowed"'; };
+
+    /* ÖZET — tüm alanların görüntülenmesi */
+    var sup = (typeof window.loadSuppliers === 'function') ? (window.loadSuppliers() || []).find(function (s) { return String(s.id) === String(d.supplierId); }) : null;
+    var supName = sup ? (sup.name || sup.unvan || '—') : (d.supplierId ? '#' + d.supplierId : '—');
+    var statusLabel = (V186_STATUSES.find(function (s) { return s[0] === d.status; }) || [d.status, d.status || '—'])[1];
+    var renkLabel = d.renk ? ((V186_RENK.find(function (r) { return r.k === d.renk; }) || { a: d.renk }).a) : '—';
+    var priLabel  = (V186_PRIORITY.find(function (p) { return p[0] === d.priority; }) || ['', d.priority || 'Normal'])[1];
+    function row(k, v) {
+      return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px dashed var(--b)"><span style="color:var(--t3);font-size:11px">' + k + '</span><span style="color:var(--t);font-size:12px;font-weight:500;text-align:right;max-width:60%">' + (v == null || v === '' ? '<span style="color:var(--t3);font-style:italic">—</span>' : esc(v)) + '</span></div>';
+    }
+    var rotaCikis = (d.originCity || '?') + (d.originDistrict ? ', ' + d.originDistrict : '');
+    var rotaVaris = (d.destinationCity || '?') + (d.destinationDistrict ? ', ' + d.destinationDistrict : '');
+
+    return '<div style="padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+      + sect('📄', 'Belge / Sözleşme')
+      + '<div style="grid-column:span 2">' + lbl('Belge / Sözleşme PDF')
+        + '<div style="display:flex;flex-direction:column;gap:6px">'
+        + '<input type="file" accept=".pdf,application/pdf" onchange="window._v186BelgeUpload && window._v186BelgeUpload(this)"' + dis(canGeneral) + ' style="font-size:11px;padding:6px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);color:var(--t);font-family:inherit">'
+        + '<input type="hidden" id="v186-belgeUrl" value="' + _val(d.belgeUrl) + '">'
+        + '<div id="v186-belge-status" style="font-size:11px;color:var(--t3);padding:4px 0">'
+          + (d.belgeUrl
+              ? '✓ Mevcut belge · <a href="' + _val(d.belgeUrl) + '" target="_blank" rel="noopener" style="color:var(--ac,#185FA5)">Görüntüle</a>'
+              : 'Belge yok')
+        + '</div>'
+        + '</div>'
+      + '</div>'
+      + sect('📋', 'Özet — Tüm Bilgiler')
+      + '<div style="grid-column:span 2;background:var(--s2,#F5F5F7);border-radius:10px;padding:16px;font-size:12px">'
+        + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">📦 Temel</div>'
+        + row('Ürün Adı', d.productName)
+        + row('Tedarikçi', supName)
+        + row('Miktar', (d.quantityTotal ? d.quantityTotal + ' ' + (d.unit || 'adet') : ''))
+        + row('Ağırlık / Hacim', ((d.weightKg ? d.weightKg + ' kg' : '—') + ' / ' + (d.volumeM3 ? d.volumeM3 + ' m³' : '—')))
+        + row('Tahmini Teslim', d.estimatedDeliveryDate)
+        + row('Tolerans', (d.toleranceDays ? d.toleranceDays + ' gün' : ''))
+        + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin:14px 0 10px;text-transform:uppercase;letter-spacing:.05em">🚛 Rota & Lojistik</div>'
+        + row('Yön', (d.yon === 'GELEN' ? '📥 Gelen' : '📤 Giden'))
+        + row('Çıkış → Varış', rotaCikis + ' → ' + rotaVaris)
+        + row('Yükleme Firma', d.yuklemeFirmaAd)
+        + row('Teslim Tipi', (d.teslimTipi === 'SATICI_TESLIM' ? '📦 Satıcı teslim' : (d.teslimTipi === 'FIRMA_ALIR' ? '🏭 Firma alır' : '')))
+        + row('Konteyner', d.konteynerNo)
+        + row('Armatör', d.armator)
+        + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin:14px 0 10px;text-transform:uppercase;letter-spacing:.05em">🌐 İhracat & Sorumluluk</div>'
+        + row('İhracat ID', d.ihracatId)
+        + row('Sipariş Kodu', d.siparisKodu)
+        + row('Renk', renkLabel)
+        + row('Sorumlu', d.responsibleUserId)
+        + row('Öncelik', priLabel)
+        + row('Durum', statusLabel)
+      + '</div>'
       + '</div>';
   }
   function renderBody() {
