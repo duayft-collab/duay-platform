@@ -86,21 +86,31 @@
 
   /* V186f / K10 cleanup: STATUSES + RENK ortak veri TEK KAYNAK (expected_deliveries.js).
    * V186_STATUSES/V186_RENK kopyaları silindi → window.STATUSES_LIST + window.LOJ_RENK_LIST.
-   * Bu sayede 'TEDARIK_ASAMASINDA' vs 'TEDARIK' uyumsuzluk bug'ı da kapandı. */
+   * Bu sayede 'TEDARIK_ASAMASINDA' vs 'TEDARIK' uyumsuzluk bug'ı da kapandı.
+   * V185b4-r5: status + renk label'ları i18n sözlüğünden okur. */
   function _statuses() {
     var list = window.STATUSES_LIST || [];
-    var labels = window.STATUS_LABELS || {};
-    return list.map(function (k) { return [k, labels[k] || k]; });
+    return list.map(function (k) { return [k, _statusLabel(k)]; });
   }
   function _renkList() { return window.LOJ_RENK_LIST || []; }
-  function _statusLabel(key) { return (window.STATUS_LABELS && window.STATUS_LABELS[key]) || key; }
+  function _statusLabel(key) {
+    /* Önce ed.status.X i18n key'i, yoksa fallback STATUS_LABELS map */
+    var i18nKey = 'ed.status.' + key;
+    var i18n = _t(i18nKey);
+    if (i18n !== i18nKey) return i18n;
+    return (window.STATUS_LABELS && window.STATUS_LABELS[key]) || key;
+  }
   function _renkAd(key) {
+    /* ed.color.X i18n key'i, yoksa fallback _LOJ_KOLI_RENK[].a */
+    var i18nKey = 'ed.color.' + key;
+    var i18n = _t(i18nKey);
+    if (i18n !== i18nKey) return i18n;
     var r = (_renkList()).find(function (x) { return x.k === key; });
     return r ? r.a : key;
   }
 
   /* V186_PRIORITY — başka modülde kullanılmıyor, V186 dosyasında kalır */
-  var V186_PRIORITY = [['LOW', 'Düşük', '#6B7280'], ['NORMAL', 'Normal', '#185FA5'], ['CRITICAL', 'Kritik', '#DC2626']];
+  var V186_PRIORITY = [['LOW', _t('ed.priority.low'), '#6B7280'], ['NORMAL', _t('ed.priority.normal'), '#185FA5'], ['CRITICAL', _t('ed.priority.critical'), '#DC2626']];
 
   /* ─── Form alanı style + label helper'ları ─── */
   var INPUT_CSS = 'width:100%;padding:8px 10px;border:0.5px solid var(--b,#D1D5DB);border-radius:7px;font-size:12px;background:var(--sf,#fff);color:var(--t);font-family:inherit;box-sizing:border-box';
@@ -162,9 +172,18 @@
   }
   function renderStep2() {
     var d = state.formData;
-    var yonOpts = [['GIDEN', '📤 Giden'], ['GELEN', '📥 Gelen']];
-    var teslimOpts = [['', '— Belirtilmedi —'], ['SATICI_TESLIM', '📦 Satıcı teslim eder'], ['FIRMA_ALIR', '🏭 Firma alır']];
-    var paketOpts = [['', '— Seç —'], ['palet', 'Palet'], ['koli', 'Koli'], ['big-bag', 'Big Bag'], ['kafes', 'Kafes/Kasa'], ['cuval', 'Çuval'], ['dokme', 'Dökme'], ['diger', 'Diğer']];
+    var yonOpts = [['GIDEN', _t('ed.yon.giden')], ['GELEN', _t('ed.yon.gelen')]];
+    var teslimOpts = [['', _t('ed.teslim.empty')], ['SATICI_TESLIM', _t('ed.teslim.satici')], ['FIRMA_ALIR', _t('ed.teslim.firma')]];
+    var paketOpts = [
+      ['',          _t('ed.pkg.empty')],
+      ['palet',     _t('ed.pkg.palet')],
+      ['koli',      _t('ed.pkg.koli')],
+      ['big-bag',   _t('ed.pkg.bigBag')],
+      ['kafes',     _t('ed.pkg.kafes')],
+      ['cuval',     _t('ed.pkg.cuval')],
+      ['dokme',     _t('ed.pkg.dokme')],
+      ['diger',     _t('ed.pkg.diger')],
+    ];
     var armatorList = ['', 'MSC', 'Maersk', 'CMA CGM', 'COSCO', 'Hapag-Lloyd', 'ONE', 'Evergreen', 'Yang Ming', 'HMM', 'ZIM', 'PIL', 'OOCL', 'Diger'];
     return '<div style="padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px">'
       + '<div style="grid-column:span 2">' + lbl(_t('ed.label.yon'))
@@ -213,7 +232,7 @@
       + '</div>'
       + '<div>' + lbl(_t('ed.label.armator'))
         + '<select onchange="window._v186SetField(\'armator\', this.value)" style="' + INPUT_CSS + '">'
-        + armatorList.map(function (c) { return '<option value="' + c + '"' + ((d.armator || '') === c ? ' selected' : '') + '>' + (c || '— Seçin —') + '</option>'; }).join('')
+        + armatorList.map(function (c) { return '<option value="' + c + '"' + ((d.armator || '') === c ? ' selected' : '') + '>' + (c || _t('ed.armator.empty')) + '</option>'; }).join('')
         + '</select>'
       + '</div>'
       + '<div style="grid-column:span 2">' + lbl(_t('ed.label.trackingUrl'))
@@ -257,7 +276,7 @@
             var border = sel ? '3px solid var(--t)' : '0.5px solid var(--b)';
             var click = canRestricted ? 'window._v186SetField(\'renk\',\'' + r.k + '\');document.querySelectorAll(\'[data-v186-renk]\').forEach(function(b){b.style.border=\'0.5px solid var(--b)\';});this.style.border=\'3px solid var(--t)\';' : '';
             var cur = canRestricted ? 'pointer' : 'not-allowed';
-            return '<button type="button" data-v186-renk="' + r.k + '" onclick="' + click + '" title="' + r.a + '" style="width:34px;height:34px;border:' + border + ';border-radius:50%;background:' + r.h + ';cursor:' + cur + ';transition:.15s"' + (canRestricted ? '' : ' disabled') + '></button>';
+            return '<button type="button" data-v186-renk="' + r.k + '" onclick="' + click + '" title="' + esc(_renkAd(r.k)) + '" style="width:34px;height:34px;border:' + border + ';border-radius:50%;background:' + r.h + ';cursor:' + cur + ';transition:.15s"' + (canRestricted ? '' : ' disabled') + '></button>';
           }).join('')
         + '</div>'
       + '</div>'
@@ -299,8 +318,8 @@
     var sup = (typeof window.loadSuppliers === 'function') ? (window.loadSuppliers() || []).find(function (s) { return String(s.id) === String(d.supplierId); }) : null;
     var supName = sup ? (sup.name || sup.unvan || '—') : (d.supplierId ? '#' + d.supplierId : '—');
     var statusLabel = (_statuses().find(function (s) { return s[0] === d.status; }) || [d.status, d.status || '—'])[1];
-    var renkLabel = d.renk ? ((_renkList().find(function (r) { return r.k === d.renk; }) || { a: d.renk }).a) : '—';
-    var priLabel  = (V186_PRIORITY.find(function (p) { return p[0] === d.priority; }) || ['', d.priority || 'Normal'])[1];
+    var renkLabel = d.renk ? _renkAd(d.renk) : '—';
+    var priLabel  = (V186_PRIORITY.find(function (p) { return p[0] === d.priority; }) || ['', d.priority || _t('ed.priority.normal')])[1];
     function row(k, v) {
       return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px dashed var(--b)"><span style="color:var(--t3);font-size:11px">' + k + '</span><span style="color:var(--t);font-size:12px;font-weight:500;text-align:right;max-width:60%">' + (v == null || v === '' ? '<span style="color:var(--t3);font-style:italic">—</span>' : esc(v)) + '</span></div>';
     }
