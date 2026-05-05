@@ -19,6 +19,10 @@
 
   var LOG_PREFIX = '[V186-WIZARD]';
 
+  /* ─── i18n + toast yardımcıları (yukarıda tanımlı, her yerde kullanılabilir) ─── */
+  function _toast(msg, kind) { if (typeof window.toast === 'function') window.toast(msg, kind || 'ok'); }
+  function _t(key, vars) { return (typeof window.t === 'function') ? window.t(key, null, vars || null) : key; }
+
   /* ─── State ─── */
   var state = {
     mode: null,         // 'create' | 'edit'
@@ -27,12 +31,13 @@
     formData: {},       // birleşik alanlar
   };
 
-  /* ─── Step tanımları ─── */
+  /* ─── Step tanımları — i18n key'lerden okur ─── */
+  function _stepTitle(n) { return _t('ed.wizard.step.' + n); }
   var STEPS = [
-    { n: 1, title: 'Temel Bilgiler',          icon: '📦' },
-    { n: 2, title: 'Rota & Lojistik',         icon: '🚛' },
-    { n: 3, title: 'İhracat & Sorumluluk',    icon: '🌐' },
-    { n: 4, title: 'Belge & Özet',            icon: '📄' },
+    { n: 1, icon: '📦' },
+    { n: 2, icon: '🚛' },
+    { n: 3, icon: '🌐' },
+    { n: 4, icon: '📄' },
   ];
 
   /* ─── RBAC helper'ları ─── */
@@ -63,7 +68,7 @@
         +   '<div style="width:32px;height:32px;border-radius:50%;background:' + bg + ';color:' + color + ';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;transition:.2s">'
         +     (done ? '✓' : s.n)
         +   '</div>'
-        +   '<div style="font-size:10px;font-weight:' + weight + ';color:' + txtColor + ';margin-top:6px;white-space:nowrap">' + s.icon + ' ' + s.title + '</div>'
+        +   '<div style="font-size:10px;font-weight:' + weight + ';color:' + txtColor + ';margin-top:6px;white-space:nowrap">' + s.icon + ' ' + _stepTitle(s.n) + '</div>'
         + '</div>';
       if (i < STEPS.length - 1) {
         var lineCol = done ? '#16A34A' : 'var(--s3,#E5E5EA)';
@@ -231,9 +236,9 @@
     /* RBAC etiketi üstte */
     var rbacBanner = '';
     if (!canRestricted && canGeneral) {
-      rbacBanner = '<div style="grid-column:span 2;padding:10px 14px;background:#FEF3C7;border:0.5px solid #FCD34D;border-radius:8px;font-size:11px;color:#92400E;display:flex;align-items:center;gap:8px"><span style="font-size:16px">⚠</span><span>Yönetici Asistanı modu — <b>İhracat ID, Sipariş Kodu, Sorumlu ve Renk</b> alanlarını <b>düzenleyemezsiniz</b> (sadece görüntüleme).</span></div>';
+      rbacBanner = '<div style="grid-column:span 2;padding:10px 14px;background:#FEF3C7;border:0.5px solid #FCD34D;border-radius:8px;font-size:11px;color:#92400E;display:flex;align-items:center;gap:8px"><span style="font-size:16px">⚠</span><span>' + esc(_t('ed.wizard.banner.asistan')) + '</span></div>';
     } else if (!canGeneral) {
-      rbacBanner = '<div style="grid-column:span 2;padding:10px 14px;background:#F3F4F6;border:0.5px solid #D1D5DB;border-radius:8px;font-size:11px;color:#4B5563;display:flex;align-items:center;gap:8px"><span style="font-size:16px">🔒</span><span>Salt okunur — düzenleme yetkiniz yok.</span></div>';
+      rbacBanner = '<div style="grid-column:span 2;padding:10px 14px;background:#F3F4F6;border:0.5px solid #D1D5DB;border-radius:8px;font-size:11px;color:#4B5563;display:flex;align-items:center;gap:8px"><span style="font-size:16px">🔒</span><span>' + esc(_t('ed.wizard.banner.readonly')) + '</span></div>';
     }
 
     return '<div style="padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px">'
@@ -357,19 +362,19 @@
     var isLast  = state.currentStep === 4;
     var canGeneral = canEditGeneral();
     var prevBtn = isFirst
-      ? '<button onclick="window._v186WizardClose()" style="padding:8px 16px;border:0.5px solid var(--b);border-radius:8px;background:transparent;cursor:pointer;font-size:13px;color:var(--t2);font-family:inherit">İptal</button>'
-      : '<button onclick="window._v186WizardPrev()" style="padding:8px 16px;border:0.5px solid var(--b);border-radius:8px;background:transparent;cursor:pointer;font-size:13px;color:var(--t);font-family:inherit">◀ Önceki</button>';
+      ? '<button onclick="window._v186WizardClose()" style="padding:8px 16px;border:0.5px solid var(--b);border-radius:8px;background:transparent;cursor:pointer;font-size:13px;color:var(--t2);font-family:inherit">' + _t('ed.wizard.btn.cancel') + '</button>'
+      : '<button onclick="window._v186WizardPrev()" style="padding:8px 16px;border:0.5px solid var(--b);border-radius:8px;background:transparent;cursor:pointer;font-size:13px;color:var(--t);font-family:inherit">' + _t('ed.wizard.btn.prev') + '</button>';
     var nextBtn;
     if (isLast) {
       /* V186d: salt-okunur kullanıcı için Save yok, sadece Kapat */
       nextBtn = canGeneral
-        ? '<button onclick="window._v186WizardSave()" style="padding:8px 22px;border:none;border-radius:8px;background:#16A34A;color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit">✓ Kaydet</button>'
-        : '<button onclick="window._v186WizardClose()" style="padding:8px 22px;border:0.5px solid var(--b);border-radius:8px;background:var(--s2);color:var(--t);cursor:pointer;font-size:13px;font-weight:500;font-family:inherit">Kapat</button>';
+        ? '<button onclick="window._v186WizardSave()" style="padding:8px 22px;border:none;border-radius:8px;background:#16A34A;color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit">' + _t('ed.wizard.btn.save') + '</button>'
+        : '<button onclick="window._v186WizardClose()" style="padding:8px 22px;border:0.5px solid var(--b);border-radius:8px;background:var(--s2);color:var(--t);cursor:pointer;font-size:13px;font-weight:500;font-family:inherit">' + _t('ed.wizard.btn.close') + '</button>';
     } else {
-      nextBtn = '<button onclick="window._v186WizardNext()" style="padding:8px 22px;border:none;border-radius:8px;background:#185FA5;color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit">Sonraki ▶</button>';
+      nextBtn = '<button onclick="window._v186WizardNext()" style="padding:8px 22px;border:none;border-radius:8px;background:#185FA5;color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit">' + _t('ed.wizard.btn.next') + '</button>';
     }
     return '<div style="padding:14px 24px;border-top:0.5px solid var(--b);background:var(--s2,#F5F5F7);display:flex;align-items:center;justify-content:space-between">'
-      + '<div style="font-size:11px;color:var(--t3)">Step ' + state.currentStep + ' / 4</div>'
+      + '<div style="font-size:11px;color:var(--t3)">' + _t('ed.wizard.stepProgress', { n: state.currentStep }) + '</div>'
       + '<div style="display:flex;gap:8px">' + prevBtn + nextBtn + '</div>'
       + '</div>';
   }
@@ -382,7 +387,7 @@
     mo.id = 'v186-wizard-modal';
     mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;font-family:inherit';
     mo.onclick = function (e) { if (e.target === mo) close(); };
-    var modeTitle = state.mode === 'create' ? '➕ Yeni Teslimat' : '✏ Teslimatı Düzenle';
+    var modeTitle = state.mode === 'create' ? _t('ed.wizard.title.create') : _t('ed.wizard.title.edit');
     var devBadge  = '<span style="background:#FEF3C7;color:#92400E;font-size:9px;padding:2px 6px;border-radius:6px;margin-left:8px;font-weight:600">V186 BETA</span>';
     mo.innerHTML = '<div style="background:var(--sf,#fff);width:720px;max-width:94vw;max-height:90vh;border-radius:14px;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden" onclick="event.stopPropagation()">'
       + '<div style="padding:16px 24px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between">'
@@ -454,12 +459,8 @@
     return errors;
   }
 
-  function _toast(msg, kind) { if (typeof window.toast === 'function') window.toast(msg, kind || 'ok'); }
-  function _t(key, vars) { return (typeof window.t === 'function') ? window.t(key, null, vars || null) : key; }
 
-  function close() { document.getElementById('v186-wizard-modal')?.remove(); state.mode = null; state.edId = null; state.currentStep = 1; state.formData = {}; }
-
-  function save() {
+  function close() { document.getElementById('v186-wizard-modal')?.remove(); state.mode = null; state.edId = null; state.currentStep = 1; state.formData = {}; }  function save() {
     /* 1) Validation */
     var errors = validateForm();
     if (errors.length) {
