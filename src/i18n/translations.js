@@ -410,6 +410,12 @@ let TRANSLATIONS = {
     'loj.card.geciken.sub':               'Yolda + ETA geçti',
     'loj.card.oncelikliBekleyen':         'Öncelikli Bekleyen',
     'loj.card.oncelikliBekleyen.sub':     'Zorunlu, henüz yüklenmedi',
+
+    // ── Export Center (V187g) ────────────────────────────────────
+    'ed.toolbar.pdf':                     '📄 PDF',
+    'ed.toast.pdfGenerating':             'PDF oluşturuluyor…',
+    'ed.toast.pdfMissing':                'PDF kütüphanesi yüklenemedi',
+    'ed.export.pdf.filename':             'Beklenen-Teslimatlar',
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -809,6 +815,12 @@ let TRANSLATIONS = {
     'loj.card.geciken.sub':               'In transit + ETA passed',
     'loj.card.oncelikliBekleyen':         'Priority Pending',
     'loj.card.oncelikliBekleyen.sub':     'Required, not yet loaded',
+
+    // ── Export Center (V187g) ────────────────────────────────────
+    'ed.toolbar.pdf':                     '📄 PDF',
+    'ed.toast.pdfGenerating':             'Generating PDF…',
+    'ed.toast.pdfMissing':                'PDF library not loaded',
+    'ed.export.pdf.filename':             'Expected-Deliveries',
   },
 };
 

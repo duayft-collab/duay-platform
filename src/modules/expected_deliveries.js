@@ -2415,6 +2415,8 @@
     return '<div id="ed-list-container" style="'+card+'">'
       + '<div style="'+hdr+'">'
       + '<span style="font-size:13px;font-weight:500">Beklenen Teslimatlar <span style="font-weight:400;color:var(--t3);font-size:11px;margin-left:6px">'+list.length+' kayıt</span></span>'
+      /* V187g — Export Center: PDF butonu (+ Yeni öncesi, görünür) */
+      + (list.length > 0 ? '<button onclick="window._edExportPdf && window._edExportPdf()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px" title="' + (typeof window.t === 'function' ? window.t('ed.toolbar.pdf') : '📄 PDF') + '">' + (typeof window.t === 'function' ? window.t('ed.toolbar.pdf') : '📄 PDF') + '</button>' : '')
       + '<button onclick="window._edWizardAc && window._edWizardAc()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit">+ Yeni</button>'
       + (window._edPendingBtnHTML ? window._edPendingBtnHTML() : '')
       + '</div>'
@@ -2422,6 +2424,39 @@
       + hdrRow + rows
       + (list.length > 20 ? '<div style="padding:8px 16px;text-align:center;font-size:10px;color:var(--t3)">+'+(list.length-20)+' kayıt daha</div>' : '')
       + '</div>';
+  };
+
+  /* ─── V187g — Export Center: PDF export (html2pdf wrapper) ───────
+   * #ed-list-container DOM'unu A4 PDF'e çevirir.
+   * Müşteri sunumuna uygun: filtre uygulanmış görünüm aktarılır.
+   * html2pdf yoksa toast ile bildirir, sessiz fail değil. */
+  window._edExportPdf = function () {
+    var t = (typeof window.t === 'function') ? window.t : function (k) { return k; };
+    if (typeof html2pdf === 'undefined') {
+      if (typeof window.toast === 'function') window.toast(t('ed.toast.pdfMissing'), 'err');
+      return;
+    }
+    var el = document.getElementById('ed-list-container');
+    if (!el) {
+      if (typeof window.toast === 'function') window.toast(t('ed.toast.pdfMissing'), 'err');
+      return;
+    }
+    var dateStr = new Date().toISOString().slice(0, 10);
+    var filename = t('ed.export.pdf.filename') + '_' + dateStr + '.pdf';
+    if (typeof window.toast === 'function') window.toast(t('ed.toast.pdfGenerating'), 'ok');
+    /* K05: PDF export audit log */
+    try {
+      if (typeof window.logActivity === 'function') {
+        window.logActivity('ed_pdf_export', 'recordCount=' + (el.querySelectorAll('[data-ed-id]').length || 0));
+      }
+    } catch (e) {}
+    html2pdf().set({
+      margin: 8,
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 1.5, logging: false, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }  // 14 kolon → landscape
+    }).from(el).save();
   };
 
   /* ─── V186f / K10 cleanup: STATUSES + STATUS_LABELS + STATUS_COLORS + _LOJ_KOLI_RENK ───
