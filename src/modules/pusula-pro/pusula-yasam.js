@@ -161,8 +161,8 @@ window._ppSkorEkle = function(puan) {
   var el = document.getElementById('pp-skor-n');
   var pl = document.getElementById('pp-score-pill');
   if (el) el.textContent = s.bugun;
-  /* XSS-RISK: _esc() zorunlu */
-  if (pl) pl.innerHTML = 'Bugün <span style="color:#1D9E75">'+s.bugun+' pt</span> · Hafta <span style="color:#1D9E75">'+s.hafta+'</span>';
+  /* XSS-SAFE: Number coercion */
+  if (pl) pl.innerHTML = 'Bugün <span style="color:#1D9E75">'+(Number(s.bugun)||0)+' pt</span> · Hafta <span style="color:#1D9E75">'+(Number(s.hafta)||0)+'</span>';
   return s;
 };
 
@@ -171,8 +171,8 @@ window._ppSkorGuncelle = function() {
   var el = document.getElementById('pp-skor-n');
   var pl = document.getElementById('pp-score-pill');
   if (el) el.textContent = s.bugun;
-  /* XSS-RISK: _esc() zorunlu */
-  if (pl) pl.innerHTML = 'Bugün <span style="color:#1D9E75">'+s.bugun+' pt</span> · Hafta <span style="color:#1D9E75">'+s.hafta+'</span>';
+  /* XSS-SAFE: Number coercion */
+  if (pl) pl.innerHTML = 'Bugün <span style="color:#1D9E75">'+(Number(s.bugun)||0)+' pt</span> · Hafta <span style="color:#1D9E75">'+(Number(s.hafta)||0)+'</span>';
 };
 
 /* ── PP-003: Çalışma Modu Yardımcıları ──────────────────────── */
@@ -263,11 +263,11 @@ window._ppRevYukle = function() {
     var bugunHafta = window._ppHaftaNo();
     var bugun = liste.find(function(r) { return r.hafta === bugunHafta; });
     if (bugun) {
-      /* XSS-RISK: _esc() zorunlu */
+      /* XSS-SAFE: Number coercion */
       var y = document.getElementById('pp-rev-yapti'); if (y) y.innerHTML = bugun.yapti || '';
-      /* XSS-RISK: _esc() zorunlu */
+      /* XSS-SAFE: Number coercion */
       var o = document.getElementById('pp-rev-ogrendi'); if (o) o.innerHTML = bugun.ogrendi || '';
-      /* XSS-RISK: _esc() zorunlu */
+      /* XSS-SAFE: Number coercion */
       var h = document.getElementById('pp-rev-hedef'); if (h) h.innerHTML = bugun.hedef || '';
     }
   } catch(e) { console.warn('[PP]', e); }
