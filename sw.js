@@ -131,8 +131,8 @@
 /* CACHE-BUMP-2026-05-04-V170.0.1 V170.0.1 PUSULA-CORE-POPULATE: pusula-core.js POPULATE (12 -> 269 satir). pusula_pro.js L1-289 (Bolge I L165-221 modal-task'a) birebir kopya, KX8 disiplinli. Outer IIFE wrap + var->window promotion (defensive guard 'if(!window._ppEsc)') + canonical namespace expose (window.PusulaPro.core). 78 _ppEsc + 81 _ppNow + 32 _ppCu + 19 _ppIsAdmin kullanim noktasi icin scope break onlendi. 8/8 sandbox testi PASS (XSS escape, namespace, sabitler, defensive guard). KX9: pusula_pro.js hash AYNEN korundu. Diger 13 scaffold dosyasi DOKUNULMADI. T2-prev: cycle-3-1 */
 /* CACHE-BUMP-2026-05-04-V170.1 V170.1 PUSULA-ARCHITECTURE-CORRECTION-001: Mini-Cycle 2.1 mimari duzeltme. utils kapsami daraltildi (sadece _ppHaftaNo, A2 sıkı disiplin) — state-mutate setter'lar (_ppSetMod, _ppAra, _ppSirala*, _ppCalismaFiltre, _ppSidebarSec) actions'a tasinacak. 2 yeni plugin modul: pusula-yasam.js (Frog/DW/Skor/Goal/Challenge/Habit/Hayat/Rev/Oncelik) + pusula-iletisim.js (Mesaj/Not/GorevMesaj/STT/Tab). Namespace mimarisi: PusulaPro.* (core ekosistem) + PusulaUtils/Yasam/Iletisim (flat plugin modul). Toplam scaffold dosya 14 -> 16. utils scaffold revize (PusulaPro.utils -> PusulaUtils flat). Cycle 1 store plani revize: yasam/iletisim self-contained (kendi Load/Store), store yalnizca gorev/takvim/odeme/abonelik. Altın kural: 'state degistiriyorsa utils degildir'. KX9: pusula_pro.js + _x wrapper + pusula-core.js DOKUNULMADI. POPULATE Cycle 3.2'de yapilacak. T2-prev: scaffold-2-1 */
 /* CACHE-BUMP-2026-05-04-V170.2 V170.2 PUSULA-PRO-MODULER-AKTIVASYON-001: Cycle 4 — 16 modul tamami POPULATE bitti, index.html'e Asama A paralel ekleme yapildi (eski pusula_pro.js + 16 yeni dosya beraber yuklenir). Defensive guard 'if (!window._ppXxxLoaded)' eski tanimlari korur, overwrite engellenir. 16 dosya toplam 5110 satir (orijinal 4675'ten +435 satir defensive guard + namespace expose + diagnostic). Yukleme sirasi: core -> utils -> store -> yasam -> iletisim -> sync -> migrate -> render-list/board/detail -> modal-task/payment/template -> actions -> events -> init. PRECACHE_URLS array'e 16 yeni URL eklendi. KX9: pusula_pro.js + _x wrapper'lar + tum 16 pusula-pro/*.js DOKUNULMADI (sadece index.html + sw.js degisti). 16x11=176 runtime test PASS. Saha test sonrasi V175+ ayri cycle'da pusula_pro.js cikarilacak. T2-prev: cycle-4 */
-const CACHE_NAME    = 'duay-platform-v170-2';
-const CACHE_VERSION = '170.2.0';
+const CACHE_NAME    = 'duay-platform-v175';
+const CACHE_VERSION = '175.0.0';
 
 // Offline'da kesinlikle çalışması gereken dosyalar
 // [SW-PRECACHE-AUTOSYNC-001 START]
@@ -164,7 +164,6 @@ const PRECACHE_URLS = [
   '/src/modules/navlun.js',
   '/src/modules/loj_features.js',
   '/src/modules/pirim.js',
-  '/src/modules/pusula_pro.js',
   /* V170 PUSULA-PRO MODÜLER 16 DOSYA (Cycle 4 aktivasyon) */
   '/src/modules/pusula-pro/pusula-core.js',
   '/src/modules/pusula-pro/pusula-utils.js',
@@ -207,9 +206,6 @@ const PRECACHE_URLS = [
   '/src/modules/satin_alma_v2_modal_fs_x.js',
   '/src/modules/urun_db_modal_fs_x.js',
   '/src/modules/satin_alma_v2_liste_grup_x.js',
-  '/src/modules/pusula_pro_sync_x.js',
-  '/src/modules/pusula_pro_load_fix_x.js',
-  '/src/modules/pusula_pro_migrate_x.js',
   '/src/modules/fason.js',
   '/src/modules/fason_checklist.js',
   '/src/modules/platform_standartlari.js',
