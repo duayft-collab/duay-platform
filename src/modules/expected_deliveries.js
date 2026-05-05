@@ -302,7 +302,9 @@
         + '<div>' + _edWizardLabel('Avans Ödeme Tarihi') + '<input id="ede-avansOdemeTarihi" type="datetime-local" style="' + _edWizardInput + '" value="' + (ed.avansOdemeTarihi || '') + '"></div>'
         + '<div>' + _edWizardLabel('Satınalma Sorumlusu') + '<select id="ede-satinAlmaSorumlusu" style="' + _edWizardInput + '">' + _edUserOpts(ed.satinAlmaSorumlusu || '') + '</select></div>'
         + '<div style="grid-column:span 2;font-size:11px;font-weight:600;color:var(--t2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--b)">' + (typeof window.t === 'function' ? window.t('ed.sect.sevkiyat') : 'Sevkiyat & Takip') + '</div>'
-        + '<div>' + _edWizardLabel('Konteyner No') + '<input id="ede-konteynerNo" style="' + _edWizardInput + '" value="' + _uiEsc(ed.konteynerNo || '') + '"></div>'
+        + '<div>' + _edWizardLabel('Konteyner No') + '<input id="ede-konteynerNo" oninput="window._edAutoFillTrackingUrl && window._edAutoFillTrackingUrl()" style="' + _edWizardInput + '" value="' + _uiEsc(ed.konteynerNo || '') + '"></div>'
+        + '<div>' + _edWizardLabel('Sıra No (yükleme)') + '<input id="ede-containerSequenceNo" type="number" min="1" step="1" placeholder="örn: 5" style="' + _edWizardInput + '" value="' + (ed.containerSequenceNo != null ? _uiEsc(String(ed.containerSequenceNo)) : '') + '"></div>'
+        + '<div style="grid-column:span 2">' + _edWizardLabel('Yükleme Önceliği') + '<select id="ede-loadingPriority" style="' + _edWizardInput + '">' + ['','REQUIRED','OPTIONAL'].map(function(__p){var __l = __p === 'REQUIRED' ? '⭐ Zorunlu' : (__p === 'OPTIONAL' ? '○ Opsiyonel' : '— Belirtilmedi —'); return '<option value="' + __p + '"' + ((ed.loadingPriority || '') === __p ? ' selected' : '') + '>' + __l + '</option>';}).join('') + '</select></div>'
         + '<div>' + _edWizardLabel('Ağırlık (kg)') + '<input id="ede-weightKg" type="number" min="0" step="0.1" placeholder="örn: 2450" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.weightKg || '') + '"></div>'
         + '<div>' + _edWizardLabel('Hacim (m³)') + '<input id="ede-volumeM3" type="number" min="0" step="0.1" placeholder="örn: 12.5" style="' + _edWizardInput + ';font-variant-numeric:tabular-nums" value="' + (ed.volumeM3 || '') + '"></div>'
         + '<div style="grid-column:span 2;font-size:11px;font-weight:600;color:var(--t2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--b)">' + (typeof window.t === 'function' ? window.t('ed.sect.paket') : 'Paket Bilgisi') + '</div>'
@@ -385,6 +387,8 @@
         avansOdemeTarihi: document.getElementById('ede-avansOdemeTarihi')?.value || '',
         satinAlmaSorumlusu: document.getElementById('ede-satinAlmaSorumlusu')?.value || '',
         konteynerNo: document.getElementById('ede-konteynerNo')?.value || '',
+        containerSequenceNo: (function(){var v = document.getElementById('ede-containerSequenceNo')?.value; return v ? Number(v) : null;})(),
+        loadingPriority: document.getElementById('ede-loadingPriority')?.value || '',
         /* V184a2 / LOJ-ROTA-INFO-001: Çıkış-Varış lokasyonu (Q4: düzenleme'de validation yok) */
         originCity: (document.getElementById('ede-originCity')?.value || '').trim().slice(0, 50),
         originDistrict: (document.getElementById('ede-originDistrict')?.value || '').trim().slice(0, 50),
@@ -426,6 +430,9 @@
     list[idx].avansOdemeTarihi = document.getElementById('ede-avansOdemeTarihi')?.value || '';
     list[idx].satinAlmaSorumlusu = document.getElementById('ede-satinAlmaSorumlusu')?.value || '';
     list[idx].konteynerNo = document.getElementById('ede-konteynerNo')?.value || '';
+    var __seqVal = document.getElementById('ede-containerSequenceNo')?.value;
+    list[idx].containerSequenceNo = __seqVal ? Number(__seqVal) : null;
+    list[idx].loadingPriority = document.getElementById('ede-loadingPriority')?.value || '';
     /* V184a2 / LOJ-ROTA-INFO-001: rota alanları (direct save path - eksikti) */
     list[idx].originCity = (document.getElementById('ede-originCity')?.value || '').trim().slice(0, 50);
     list[idx].originDistrict = (document.getElementById('ede-originDistrict')?.value || '').trim().slice(0, 50);
@@ -493,24 +500,16 @@
   /* LOJ-1B-C2: Armatör seçildiğinde tracking URL otomatik dolum
      13 carrier URL pattern (kargo modülündeki autoFillKonteynUrl ile aynı) */
   window._edAutoFillTrackingUrl = function() {
+    /* V187d: Merkezi config (carrier_tracking_map.js) kullanılır.
+     * Container No varsa URL'e otomatik gömülür ({CONTAINER} placeholder). */
     var hat = document.getElementById('ede-armator')?.value || '';
-    var urls = {
-      'MSC': 'https://www.msc.com/track-a-shipment?agencyPath=msc',
-      'Maersk': 'https://www.maersk.com/tracking/',
-      'CMA CGM': 'https://www.cma-cgm.com/ebusiness/tracking/search',
-      'COSCO': 'https://elines.coscoshipping.com/ebusiness/cargoTracking',
-      'Hapag-Lloyd': 'https://www.hapag-lloyd.com/en/online-business/track/track-by-container-solution.html',
-      'ONE': 'https://ecomm.one-line.com/ecom/CUP_HOM_3301.do',
-      'Evergreen': 'https://www.shipmentlink.com/servlet/TUF1_CargoTracking.do',
-      'Yang Ming': 'https://www.yangming.com/e-service/Track_Trace/track_trace_cargo_tracking.aspx',
-      'HMM': 'https://www.hmm21.com/cms/business/ebiz/trackTrace/trackTrace/index.jsp',
-      'ZIM': 'https://www.zim.com/tools/track-a-shipment',
-      'PIL': 'https://www.pilship.com/shared/ajax/?fn=get_track_trace',
-      'OOCL': 'https://www.oocl.com/eng/ourservices/eservices/cargotracking/Pages/cargotracking.aspx',
-      'Diger': ''
-    };
+    var containerNo = document.getElementById('ede-konteynerNo')?.value || '';
     var input = document.getElementById('ede-trackingUrl');
-    if (input && urls[hat]) input.value = urls[hat];
+    if (!input || !hat) return;
+    var url = (typeof window.__buildTrackingUrl === 'function')
+      ? window.__buildTrackingUrl(hat, containerNo)
+      : '';
+    if (url) input.value = url;
   };
 
   /* LOJ-1B-C3: Tracking URL'i yeni sekmede aç (🔗 Aç butonu handler) */
