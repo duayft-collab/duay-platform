@@ -185,10 +185,15 @@ function renderLojistik() {
           ? top3.map(([f, c]) => `${emojiMap[f] || '?'} <strong>${c}</strong>`).join(' · ')
           : `<span style="${t3}">—</span>`;
 
-        /* Kart 7: Geciken (eta < bugün AND status YOLDA/GUMRUKTE) — operasyonel */
+        /* Kart 7: Geciken (V189d — algoritma genişletildi: P0-3 fix)
+         * Tamamlanmamış tüm aktif statuslarda ETA geçmişse geciken.
+         * Önceden sadece YOLDA + GUMRUKTE sayılıyordu — TEDARIK / URETIM /
+         * YUKLEME_BEKLIYOR'da ETA geçen kayıtlar gizleniyordu (operasyonel hata). */
         const today0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const COMPLETED_STATUSES_FOR_OVERDUE = ['KONTEYNIRA_YUKLENDI', 'TESLIM_ALINDI', 'MUSTERI_TESLIM_ALDI'];
         const geciken = edActive.filter(d => {
-          if (d.status !== 'YOLDA' && d.status !== 'GUMRUKTE') return false;
+          if (COMPLETED_STATUSES_FOR_OVERDUE.indexOf(d.status) >= 0) return false;
+          if (d.status === 'GECIKTI') return true;
           if (!d.estimatedDeliveryDate) return false;
           return new Date(d.estimatedDeliveryDate) < today0;
         }).length;
@@ -229,7 +234,7 @@ function renderLojistik() {
         <div style="${card};padding:14px" title="${_t('loj.card.geciken.sub','Yolda + ETA geçti')}">
           <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">⏰ ${_t('loj.card.geciken','Geciken')}</div>
           <div style="font-size:20px;font-weight:600;color:${geciken > 0 ? '#A32D2D' : 'var(--t)'};line-height:1">${geciken} <span style="font-size:11px;${t3};font-weight:400">kayıt</span></div>
-          <div style="font-size:10px;${t3};margin-top:4px">yolda + ETA geçti</div>
+          <div style="font-size:10px;${t3};margin-top:4px">ETA geçen aktif kayıt</div>
         </div>
         <div style="${card};padding:14px" title="${_t('loj.card.oncelikliBekleyen.sub','Zorunlu, henüz yüklenmedi')}">
           <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">⭐ ${_t('loj.card.oncelikliBekleyen','Öncelikli Bekleyen')}</div>
