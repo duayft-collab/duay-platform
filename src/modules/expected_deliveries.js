@@ -210,6 +210,14 @@
 
   window._edDelete = function(edId) {
     if (!edId) return false;
+    /* V191c1 — RBAC defensive guard: sadece admin/manager silebilir.
+     * UI tarafında 🗑️ Sil butonu da koşullu, ama console/script ile çağrı
+     * gelse bile bu guard durdurur. Audit log üst katmandan _edDeleteConfirm
+     * tarafından düşülür. */
+    if (typeof window._edCanManage === 'function' && !window._edCanManage()) {
+      if (typeof window.toast === 'function') window.toast(t('ed.toast.permissionDenied'), 'warn');
+      return false;
+    }
     var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
     var idx = -1;
     for (var i = 0; i < list.length; i++) { if (list[i].id === edId) { idx = i; break; } }
@@ -227,23 +235,17 @@
       window.toast?.(t('ed.toast.confirmModalMissing'), 'err');
       return;
     }
-    /* LOJ-1B-H: 48h+ + non-admin → admin onayı talebi */
-    var __all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
-    var __ed = __all.find(function(e){ return e.id === edId; });
-    if (__ed && !window._edIsAdmin() && window._edIsOlderThan24h(__ed)) {
-      window.confirmModal('Bu kayıt 48 saatten eski. Silme talebiniz admin onayına gönderilecek.', {
-        title: 'Onay Gerekli',
-        danger: false,
-        confirmText: 'Talep Gönder',
-        cancelText: 'İptal',
-        onConfirm: function() {
-          var __r = window._edRequestApproval('delete', edId, null);
-          if (__r && __r.success === false) return; // dedup → toast _edRequestApproval içinde
-          window.toast?.(t('ed.toast.deleteRequestSent'), 'ok');
-        }
-      });
+    /* V191c1 — RBAC guard: sadece admin/manager silebilir.
+     * Önceki 48h+ pending action mantığı kaldırıldı (kuralın değişmesiyle gereksiz):
+     * 'Kayıttan sonra hiçbir veri normal kullanıcı tarafından silinemez.'
+     * Pending action sistemi diğer aksiyonlar için kalır. */
+    if (typeof window._edCanManage === 'function' && !window._edCanManage()) {
+      window.toast?.(t('ed.toast.permissionDenied'), 'warn');
       return;
     }
+    /* Silme öncesi ed snapshot — audit log için */
+    var __all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+    var __ed = __all.find(function(e){ return e.id === edId; }) || {};
     window.confirmModal('Bu kaydı silmek istediğinizden emin misiniz?', {
       title: 'Kayıt Sil',
       danger: true,
@@ -251,6 +253,14 @@
       cancelText: 'İptal',
       onConfirm: function() {
         if (window._edDelete(edId)) {
+          /* V191c1 — Audit log: silme işlemi (admin.js:_auditLog reuse, KX10) */
+          try {
+            if (typeof window._auditLog === 'function') {
+              window._auditLog('ed_delete', edId, 'edId=' + edId
+                + ' yon=' + (__ed.yon || '?')
+                + ' productName=' + (__ed.productName || '?'));
+            }
+          } catch(e) {}
           window.toast?.(t('ed.toast.deleted'), 'ok');
           window._edRefresh?.();
         } else {
@@ -751,6 +761,14 @@
     if (typeof window.isAdmin === 'function') return !!window.isAdmin();
     var cu = (typeof window.CU === 'function' ? window.CU() : null) || {};
     return (cu.role || cu.rol) === 'admin';
+  };
+  /* V191c1 — admin VEYA manager → silme + arşiv yetkisi.
+   * user/staff/lead/asistan: false (görüntüleyebilir ama silemez/arşivleyemez).
+   * RBAC kuralı: 'Kayıttan sonra hiçbir veri normal kullanıcı tarafından silinemez.' */
+  window._edCanManage = function() {
+    var cu = (typeof window.CU === 'function' ? window.CU() : null) || {};
+    var role = cu.role || cu.rol;
+    return role === 'admin' || role === 'manager';
   };
   window._edIsOlderThan24h = function(ed) {
     if (!ed) return false;
@@ -2334,7 +2352,8 @@
       + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edEditModal && window._edEditModal(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">✏️ Düzenle</button>'
       /* V188a — Sevkiyat Wizard: konteynerNo/armator/trackingUrl/varisZamani için ayrı modal */
       + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edSevkiyatWizardAc && window._edSevkiyatWizardAc(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">' + (typeof window.t === 'function' ? window.t('ed.actionMenu.sevkiyat') : '🚛 Sevkiyat Bilgisi') + '</button>'
-      + '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edDeleteConfirm && window._edDeleteConfirm(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px;color:#E0574F" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">🗑️ Sil</button>'
+      /* V191c1 — 🗑️ Sil sadece admin/manager görür. user/staff/lead/asistan görmez. */
+      + ((typeof window._edCanManage === 'function' && window._edCanManage()) ? '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edDeleteConfirm && window._edDeleteConfirm(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px;color:#E0574F" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">🗑️ Sil</button>' : '')
     + '</div>';
     document.body.appendChild(mo);
   };

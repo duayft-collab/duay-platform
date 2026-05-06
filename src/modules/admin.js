@@ -2801,6 +2801,10 @@ function _auditLog(action, targetUid, detail) {
   d.unshift({ id: generateNumericId(), action, targetUid, detail, by: cu?.id, byName: cu?.name||'Sistem', ts: nowTs() });
   _storeAudit(d);
 }
+/* V191c1 — Audit log window expose (KX10: tek kaynak).
+ * Dış modüller (expected_deliveries.js silme/arşiv işlemleri vb.) bu fn'i kullanır.
+ * Yeni audit altyapısı yaratmak yerine mevcut admin.js sistemini reuse ederiz. */
+if (typeof window !== 'undefined' && !window._auditLog) window._auditLog = _auditLog;
 
 function openAuditLog() {
   if (!isAdmin()) return;
