@@ -115,6 +115,38 @@
     return window.storeIhracatDetay(map);
   }
 
+  /* ─────────────── V191d — 15 gün alarm helper'ları ───────────────
+   * Liman varış tarihi hesabı + alarm HTML üretici. Detayda evrakDurumu
+   * MUSTERIYE_KARGOLANDI veya TESLIM_EDILDI ise alarm gösterme. */
+  function _calcLimanVarisGunKaldi(detay) {
+    if (!detay) return null;
+    var sure = parseInt(detay.tahminiVarisSuresi, 10);
+    if (!sure || isNaN(sure) || sure <= 0) return null;
+    /* Fallback: cutOffTarihi varsa cutoff'tan, yoksa ardiyesizGirisTarihi'nden */
+    var baseDateStr = detay.cutOffTarihi || detay.ardiyesizGirisTarihi;
+    if (!baseDateStr) return null;
+    var baseDate = new Date(baseDateStr);
+    if (isNaN(baseDate.getTime())) return null;
+    var limanVaris = new Date(baseDate.getTime() + sure * 86400000);
+    var bugun = new Date();
+    bugun.setHours(0, 0, 0, 0);
+    var diff = Math.ceil((limanVaris.getTime() - bugun.getTime()) / 86400000);
+    return diff;
+  }
+
+  function _renderEvrakAlarm(detay) {
+    if (!detay) return '';
+    var ed = detay.evrakDurumu || 'HAZIRLANIYOR';
+    /* Kargolandı/teslim edildi → alarm yok */
+    if (ed === 'MUSTERIYE_KARGOLANDI' || ed === 'TESLIM_EDILDI') return '';
+    var gunKaldi = _calcLimanVarisGunKaldi(detay);
+    if (gunKaldi === null || gunKaldi > 15) return '';
+    var msg = (typeof window.t === 'function')
+      ? window.t('ed.alarm.evrak15Gun').replace('{n}', gunKaldi)
+      : '🔴 Liman varışına ' + gunKaldi + ' gün kaldı. Evrakların acilen kargolanması gerekir.';
+    return '<div style="margin-top:6px;padding:6px 10px;background:var(--rdb);border-left:3px solid var(--rd);border-radius:4px;font-size:11px;color:var(--rdt);font-weight:500">' + msg + '</div>';
+  }
+
   /* ─────────────── Collapse State ─────────────── */
 
   function loadCollapseState() {
@@ -272,6 +304,8 @@
       + '<div style="font-size:11px;color:var(--t2);margin-top:3px">' + ozet + '</div>'
       + (etaStr ? '<div style="font-size:11px;color:var(--t3);margin-top:2px">' + etaStr + '</div>' : '')
       + (calcStr ? '<div style="font-size:11px;margin-top:2px">' + calcStr + '</div>' : '')
+      /* V191d — 15 gün liman varış alarmı (evrak hazırlanıyor/eksik durumda) */
+      + _renderEvrakAlarm(detay)
       + detayStrip
       + '</div>'
       + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">'
@@ -472,6 +506,21 @@
       + fld('Varış Limanı', 'lid-varisLimani', detay.varisLimani)
       + fld('Tahmini Varış Süresi (gün)', 'lid-tahminiVarisSuresi', detay.tahminiVarisSuresi, 'number')
       + '</div>'
+      /* V191d — Section 4: Evrak Durumu + Müşteri Kargo (15 gün alarm tetiği) */
+      + '<div style="font-size:10px;font-weight:600;color:#185FA5;margin:12px 0 10px;text-transform:uppercase;letter-spacing:.05em">📑 ' + (typeof window.t === 'function' ? window.t('ed.detay.section.evrak') : 'Evrak Durumu + Müşteri Kargo') + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + '<div style="margin-bottom:10px;grid-column:span 2"><div style="' + labelStyle + '">' + (typeof window.t === 'function' ? window.t('ed.detay.evrakDurumu') : 'Evrak Durumu') + '</div>'
+        + '<select id="lid-evrakDurumu" style="' + inputStyle + '">'
+        + '<option value="HAZIRLANIYOR"' + ((detay.evrakDurumu || 'HAZIRLANIYOR') === 'HAZIRLANIYOR' ? ' selected' : '') + '>' + (typeof window.t === 'function' ? window.t('ed.detay.evrakDurumu.HAZIRLANIYOR') : 'Hazırlanıyor') + '</option>'
+        + '<option value="MUSTERIYE_KARGOLANDI"' + (detay.evrakDurumu === 'MUSTERIYE_KARGOLANDI' ? ' selected' : '') + '>' + (typeof window.t === 'function' ? window.t('ed.detay.evrakDurumu.MUSTERIYE_KARGOLANDI') : 'Müşteriye Kargolandı') + '</option>'
+        + '<option value="TESLIM_EDILDI"' + (detay.evrakDurumu === 'TESLIM_EDILDI' ? ' selected' : '') + '>' + (typeof window.t === 'function' ? window.t('ed.detay.evrakDurumu.TESLIM_EDILDI') : 'Teslim Edildi') + '</option>'
+        + '<option value="EKSIK_EVRAK"' + (detay.evrakDurumu === 'EKSIK_EVRAK' ? ' selected' : '') + '>' + (typeof window.t === 'function' ? window.t('ed.detay.evrakDurumu.EKSIK_EVRAK') : 'Eksik Evrak') + '</option>'
+        + '</select></div>'
+      + fld((typeof window.t === 'function' ? window.t('ed.detay.kargoFirmasi') : 'Kargo Firması') + ' *', 'lid-kargoFirmasi', detay.kargoFirmasi)
+      + fld((typeof window.t === 'function' ? window.t('ed.detay.kargoTakipNo') : 'Kargo Takip No') + ' *', 'lid-kargoTakipNo', detay.kargoTakipNo)
+      + '<div style="margin-bottom:10px;grid-column:span 2"><div style="' + labelStyle + '">' + (typeof window.t === 'function' ? window.t('ed.detay.kargoTakipLink') : 'Kargo Takip Linki') + '</div>'
+        + '<input id="lid-kargoTakipLink" type="url" value="' + escHtml(detay.kargoTakipLink || '') + '" style="' + inputStyle + '"></div>'
+      + '</div>'
       + '<div style="display:grid;grid-template-columns:1fr;gap:10px;margin-top:8px">'
       + textarea('Notlar', 'lid-notlar', detay.notlar)
       + '</div>'
@@ -519,8 +568,20 @@
       cikisLimani: g('lid-cikisLimani').slice(0, 50),
       varisLimani: g('lid-varisLimani').slice(0, 50),
       tahminiVarisSuresi: g('lid-tahminiVarisSuresi'),
+      /* V191d — Evrak + Müşteri Kargo (15 gün alarm tetiği) */
+      evrakDurumu: g('lid-evrakDurumu') || 'HAZIRLANIYOR',
+      kargoFirmasi: g('lid-kargoFirmasi').slice(0, 80),
+      kargoTakipNo: g('lid-kargoTakipNo').slice(0, 80),
+      kargoTakipLink: g('lid-kargoTakipLink').slice(0, 500),
       notlar: g('lid-notlar').slice(0, 500)
     };
+    /* V191d — Form validation: MUSTERIYE_KARGOLANDI seçilirse kargoFirmasi + kargoTakipNo zorunlu */
+    if (data.evrakDurumu === 'MUSTERIYE_KARGOLANDI') {
+      if (!data.kargoFirmasi || !data.kargoTakipNo) {
+        window.toast && window.toast(t('ed.toast.kargoZorunlu'), 'warn');
+        return;
+      }
+    }
     var ok = saveDetay(ihracatId, data);
     if (ok) {
       window.toast && window.toast(t('ed.toast.detaySaved'), 'ok');
