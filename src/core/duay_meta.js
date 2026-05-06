@@ -35,90 +35,139 @@
    * Sistemde 12+ farkli yerde hardcoded. V157 bu degerleri TEK
    * yere koyar. V158+ kademeli geçis yapilacak.
    * ════════════════════════════════════════════════════════════ */
-  window.DUAY_META = {
-    sirket: {
+  /* V194a: sirket alt-objesi Object.freeze + ust obje Object.freeze (K03 veri butunlugu).
+     V194b+'da bu alanlara YAZAN bulunursa exception firlar — silent mutation engellenir. */
+  window.DUAY_META = Object.freeze({
+    sirket: Object.freeze({
       unvan_tr:    'DUAY ULUSLARARASI TICARET LTD. STI.',
       unvan_en:    'DUAY GLOBAL LLC',
       adres_kisa:  'Istanbul, Turkey',
       web:         'www.duaycor.com',
       tel:         '+90 212 625 5 444',
       whatsapp:    '+90 532 270 5 113'
-    },
-    /* Versiyon — V158 refactor sirasinda hangi dosya hangi versiyondan beslendi izlemek icin */
-    _version: '157.0.0',
-    _master_keys: {
+    }),
+    /* Versiyon — V194a master-data-foundation tamamlandi */
+    _version: '194.0.0',
+    _master_keys: Object.freeze({
       banka: 'ak_bankalar1',
       cari:  'ak_cari1',
       terms: 'ak_pi_sartlar',
       kur:   '_saKur (in-memory) + ak_kur_rates (cache)'
-    }
-  };
+    })
+  });
 
   /* ════════════════════════════════════════════════════════════
-   * DUAY_BANKA — null-safe accessor
+   * DUAY_BANKA — null-safe accessor (V194a: frozen return)
    * Mevcut master: window._loadBankalar (satin_alma_v2_satis.js:836)
    * localStorage key: ak_bankalar1
    *
    * Kullanim:
-   *   window.DUAY_BANKA('USD')  -> { hesapSahibi, banka, sube, iban, swift }
-   *   window.DUAY_BANKA()       -> { USD: {...}, EUR: {...} }
+   *   window.DUAY_BANKA('USD')  -> { hesapSahibi, banka, sube, iban, swift } (frozen)
+   *   window.DUAY_BANKA()       -> { USD: {...}, EUR: {...} } (frozen, alt-objeler frozen)
+   *
+   * V194a: caller mutate edemez. Icerik V157 ile birebir ayni — sadece donus frozen.
+   * Ihtiyac varsa caller Object.assign({}, DUAY_BANKA('USD')) ile yeni mutable kopya alir.
    * ════════════════════════════════════════════════════════════ */
   window.DUAY_BANKA = function (cur) {
     try {
       if (typeof window._loadBankalar === 'function') {
         var b = window._loadBankalar() || {};
-        if (cur) return b[cur] || b['USD'] || null;
-        return b;
+        if (cur) {
+          var single = b[cur] || b['USD'] || null;
+          return single ? Object.freeze(Object.assign({}, single)) : null;
+        }
+        /* Tum bankalar — shallow freeze (her alt-obje ayrica frozen) */
+        var clone = {};
+        Object.keys(b).forEach(function (k) {
+          clone[k] = Object.freeze(Object.assign({}, b[k]));
+        });
+        return Object.freeze(clone);
       }
     } catch (e) {
-      console.warn('[V157 DUAY_BANKA] error:', e);
+      console.warn('[V194a DUAY_BANKA] error:', e);
     }
     return null;
   };
 
   /* ════════════════════════════════════════════════════════════
-   * DUAY_KUR_GET — null-safe kur accessor
+   * V194a: DUAY_KUR_FALLBACK — kur master null ise donen sabit degerler.
+   *
+   * KAYNAK: satin_alma_v2.js:110 _saKur init degerleri (KX8 anchor view).
+   * AMAC:  Hardcoded `||44.55` kalibini dosya genelinde kaldirmak icin
+   *        TEK frozen referans. (V194c migration cycle'i kullanacak.)
+   *
+   * NE DEGIL:
+   *   - Bu degerler "dogru kur" degildir, sadece guvenli fallback.
+   *   - Gercek kur _saKur'dan gelir; bu obje yalniz master null iken devreye girer.
+   * ════════════════════════════════════════════════════════════ */
+  window.DUAY_KUR_FALLBACK = Object.freeze({
+    USD: 44.55,
+    EUR: 51.70,
+    GBP: 59.30,
+    CNY: 6.20,
+    TRY: 1
+  });
+
+  /* ════════════════════════════════════════════════════════════
+   * DUAY_KUR_GET — null-safe kur accessor (V194a: fallback parametresi)
    *
    * MEVCUT window.DUAY_KUR'a DOKUNMAZ (database.js:3293 set ediyor).
    * Yeni isim DUAY_KUR_GET ile kafa karisikligi yok.
    *
    * Kullanim:
-   *   window.DUAY_KUR_GET('USD')  -> 44.55
-   *   window.DUAY_KUR_GET()       -> { USD:44.55, EUR:51.70, ... }
+   *   window.DUAY_KUR_GET('USD')         -> 44.55  (master varsa)
+   *   window.DUAY_KUR_GET('USD', true)   -> 44.55  (master null ise FALLBACK'ten)
+   *   window.DUAY_KUR_GET()              -> { USD:44.55, EUR:51.70, ... }
+   *   window.DUAY_KUR_GET(null, true)    -> DUAY_KUR_FALLBACK (master null ise)
+   *
+   * V157 davranisi korunur: 1 parametreli cagrilarda fallback YOK (geriye uyumlu).
+   * Yeni 2. parametre opt-in.
    * ════════════════════════════════════════════════════════════ */
-  window.DUAY_KUR_GET = function (cur) {
+  window.DUAY_KUR_GET = function (cur, useFallback) {
     try {
       var k = window._saKur || window.DUAY_KUR || null;
-      if (!k || typeof k !== 'object') return null;
-      if (cur) {
-        var v = k[cur];
-        return (typeof v === 'number' && v > 0) ? v : null;
+      if (k && typeof k === 'object') {
+        if (cur) {
+          var v = k[cur];
+          if (typeof v === 'number' && v > 0) return v;
+          /* master var ama bu para birimi yok -> fallback'e dus (opt-in) */
+        } else {
+          return k;
+        }
       }
-      return k;
+      /* master null ya da deger gecersiz */
+      if (useFallback === true) {
+        if (cur) return window.DUAY_KUR_FALLBACK[cur] || null;
+        return window.DUAY_KUR_FALLBACK;
+      }
     } catch (e) {
-      console.warn('[V157 DUAY_KUR_GET] error:', e);
+      console.warn('[V194a DUAY_KUR_GET] error:', e);
     }
     return null;
   };
 
   /* ════════════════════════════════════════════════════════════
-   * DUAY_TERMS — null-safe terms accessor
+   * DUAY_TERMS — null-safe terms accessor (V194a: frozen return)
    * Mevcut master: window._saV2Sartlar (satin_alma_v2_satis.js:840)
    * localStorage key: ak_pi_sartlar
    *
    * Kullanim:
-   *   window.DUAY_TERMS()  -> ['Payment: 30% deposit...', ...]
+   *   window.DUAY_TERMS()  -> ['Payment: 30% deposit...', ...] (frozen array)
+   *
+   * V194a: caller .push/.splice ile master'i bozamaz.
+   * Master fn (_saV2Sartlar) zaten yeni array donuyor (JSON.parse), shallow freeze yeterli.
+   * Ihtiyac varsa caller [...DUAY_TERMS()] ile yeni mutable kopya alir.
    * ════════════════════════════════════════════════════════════ */
   window.DUAY_TERMS = function () {
     try {
       if (typeof window._saV2Sartlar === 'function') {
         var arr = window._saV2Sartlar();
-        if (Array.isArray(arr)) return arr;
+        if (Array.isArray(arr)) return Object.freeze(arr.slice());
       }
     } catch (e) {
-      console.warn('[V157 DUAY_TERMS] error:', e);
+      console.warn('[V194a DUAY_TERMS] error:', e);
     }
-    return [];
+    return Object.freeze([]);
   };
 
   /* ════════════════════════════════════════════════════════════
@@ -145,6 +194,58 @@
       mail:     '',
       web:      window.DUAY_META.sirket.web
     };
+  };
+
+  /* ════════════════════════════════════════════════════════════
+   * V194a: DUAY_FOOTER — PDF/PI footer standart string accessor.
+   *
+   * Coklu yerde kullanilan "DUAY ULUSLARARASI TICARET LTD. STI. · www.duaycor.com"
+   * pattern'i icin tek uretici.
+   *
+   * Kullanim:
+   *   window.DUAY_FOOTER()         -> 'DUAY ULUSLARARASI TICARET LTD. STI. · www.duaycor.com'
+   *   window.DUAY_FOOTER('en')     -> 'DUAY GLOBAL LLC · www.duaycor.com'
+   *
+   * KX10: Sirket bilgisi DUAY_META.sirket'ten okunur — hardcoded degil.
+   * Default lang 'tr'. Gecersiz lang verilirse 'tr' fallback.
+   *
+   * NOT: Mevcut footer literal'leri (orn. pdf_v2.js:253) BU CYCLE'DA migrate
+   *      EDILMEZ — yeni feature ekleme. V194d migration cycle'i kullanacak.
+   * ════════════════════════════════════════════════════════════ */
+  window.DUAY_FOOTER = function (lang) {
+    try {
+      var s = window.DUAY_META && window.DUAY_META.sirket;
+      if (!s) return '';
+      var unvan = (lang === 'en') ? s.unvan_en : s.unvan_tr;
+      var web = s.web || '';
+      return unvan + (web ? ' · ' + web : '');
+    } catch (e) {
+      console.warn('[V194a DUAY_FOOTER] error:', e);
+      return '';
+    }
+  };
+
+  /* ════════════════════════════════════════════════════════════
+   * V194a: DUAY_META_HEALTH — master kaynak saglik raporu (lightweight).
+   *
+   * Mevcut DUAY_META_STATUS object dondururken,
+   * HEALTH boolean + missing[] verir — CI/console assertion icin.
+   *
+   * Kullanim:
+   *   window.DUAY_META_HEALTH()  ->  { ok: true, missing: [] }
+   *                                  { ok: false, missing: ['banka', 'kur'] }
+   *
+   * Sayfa yuklemede otomatik cagrilirsa, eksik master varsa console error
+   * uretir (V194b cycle bu cagriyi ekleyecek — bu cycle SADECE fn tanimi).
+   * ════════════════════════════════════════════════════════════ */
+  window.DUAY_META_HEALTH = function () {
+    var missing = [];
+    if (typeof window._loadBankalar !== 'function') missing.push('banka');
+    if (!window._saKur && !window.DUAY_KUR) missing.push('kur');
+    if (typeof window._saV2Sartlar !== 'function') missing.push('terms');
+    if (!window.PI_ADRES && !window.DUAY_META) missing.push('adres');
+    if (!window.DUAY_META) missing.push('sirket');
+    return { ok: missing.length === 0, missing: missing };
   };
 
   /* ════════════════════════════════════════════════════════════
