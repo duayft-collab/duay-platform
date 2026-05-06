@@ -109,8 +109,9 @@ function renderLojistik() {
         <div class="phs">10 metric · 4 mini özet · canlı operasyon görünümü</div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn btns" onclick="window._lojistikXlsx?.()" style="font-size:12px" title="Excel (V118)">Excel</button>
-        <button class="btn btns" onclick="window._lojistikPdf?.()" style="font-size:12px" title="PDF Rapor (V119)">PDF</button>
+        <!-- V189c — Üst Excel + PDF butonları kaldırıldı:
+             window._lojistikXlsx ve window._lojistikPdf hiçbir yerde tanımlı değildi
+             (silent fail). ED listesindeki V187g/h/i export butonları korundu. -->
         <button class="btn btns" onclick="window.nav?.('kargo')" style="font-size:12px">Kargo Yönetimi</button>
         <button class="btn btns" onclick="window.openKonteynModal?.(null)" style="font-size:12px">+ Konteynır</button>
         <button class="btn btnp" onclick="window._edWizardAc?.()" style="font-size:12px">+ Yeni Teslimat</button>
