@@ -330,6 +330,10 @@ let TRANSLATIONS = {
     'ed.handling.odor':               '👃 Kokulu',
     'ed.handling.perishable':         '🥗 Bozulabilir',
     'ed.handling.refrigerated':       '🧊 Soğutmalı',
+    /* V191e — İstif uyarıları */
+    'ed.handling.nonStackable':       '🚫📦 İstiflenemez',
+    'ed.handling.topLoadOnly':        '⬆️📦 En üste konmalı',
+    'ed.handling.doNotStackOnTop':    '⛔⬆️ Üstüne ürün konamaz',
     'ed.sect.cikis':                  'Çıkış Lokasyonu',
     'ed.sect.varis':                  'Varış Lokasyonu',
     'ed.sect.trIci':                  'Türkiye içi',
@@ -790,6 +794,10 @@ let TRANSLATIONS = {
     'ed.handling.odor':               '👃 Odor',
     'ed.handling.perishable':         '🥗 Perishable',
     'ed.handling.refrigerated':       '🧊 Refrigerated',
+    /* V191e — Stacking advisories */
+    'ed.handling.nonStackable':       '🚫📦 Non-stackable',
+    'ed.handling.topLoadOnly':        '⬆️📦 Top load only',
+    'ed.handling.doNotStackOnTop':    '⛔⬆️ Do not stack on top',
     'ed.sect.cikis':                  'Origin Location',
     'ed.sect.varis':                  'Destination Location',
     'ed.sect.trIci':                  'Within Turkey',

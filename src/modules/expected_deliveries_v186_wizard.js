@@ -24,7 +24,9 @@
    * STRICT: enum array (string yok, virgül yok, küçük yazım farkı yok).
    * Tüm modüller bu sabitleri window üstünden okur.
    * ──────────────────────────────────────────────────────────────── */
-  var HANDLING_FLAGS_ENUM = ['DANGEROUS', 'FRAGILE', 'KEEP_UPRIGHT', 'LIQUID_LEAK_RISK', 'ODOR', 'PERISHABLE', 'REFRIGERATED'];
+  /* V191e — Mevcut 7 enum + 3 yeni istif uyarısı (NON_STACKABLE, TOP_LOAD_ONLY, DO_NOT_STACK_ON_TOP).
+   * Geri uyumlu: eski kayıtlardaki 7-enum array'ler etkilenmez. */
+  var HANDLING_FLAGS_ENUM = ['DANGEROUS', 'FRAGILE', 'KEEP_UPRIGHT', 'LIQUID_LEAK_RISK', 'ODOR', 'PERISHABLE', 'REFRIGERATED', 'NON_STACKABLE', 'TOP_LOAD_ONLY', 'DO_NOT_STACK_ON_TOP'];
   var HANDLING_FLAGS_EMOJI = {
     DANGEROUS: '🔥',
     FRAGILE: '⚠',
@@ -32,7 +34,11 @@
     LIQUID_LEAK_RISK: '💧',
     ODOR: '👃',
     PERISHABLE: '🥗',
-    REFRIGERATED: '🧊'
+    REFRIGERATED: '🧊',
+    /* V191e */
+    NON_STACKABLE: '🚫📦',
+    TOP_LOAD_ONLY: '⬆️📦',
+    DO_NOT_STACK_ON_TOP: '⛔⬆️'
   };
   var HANDLING_FLAGS_LABEL_KEY = {
     DANGEROUS: 'ed.handling.dangerous',
@@ -41,7 +47,11 @@
     LIQUID_LEAK_RISK: 'ed.handling.liquidLeakRisk',
     ODOR: 'ed.handling.odor',
     PERISHABLE: 'ed.handling.perishable',
-    REFRIGERATED: 'ed.handling.refrigerated'
+    REFRIGERATED: 'ed.handling.refrigerated',
+    /* V191e */
+    NON_STACKABLE: 'ed.handling.nonStackable',
+    TOP_LOAD_ONLY: 'ed.handling.topLoadOnly',
+    DO_NOT_STACK_ON_TOP: 'ed.handling.doNotStackOnTop'
   };
   /* Window expose — diğer modüller (expected_deliveries.js _edEditModal, renderEdList) buradan okur */
   if (!window.HANDLING_FLAGS_ENUM)      window.HANDLING_FLAGS_ENUM      = HANDLING_FLAGS_ENUM;
