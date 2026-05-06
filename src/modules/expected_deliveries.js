@@ -606,6 +606,58 @@
     if (statusEl) statusEl.textContent = 'Belge yok';
   };
 
+  /* ════════════════════════════════════════════════════════════════
+   * V189b — ARAMA HELPER'LARI (KX10 — tek kaynak)
+   * ────────────────────────────────────────────────────────────────
+   * P0-1: Eksik alanlar (ihracatId, siparisKodu, armator, sorumlu, vs.)
+   * P0-2: Türkçe karakter normalleşmesi (İ→i, I→ı)
+   * Yeni aranabilir alan eklemek için yalnızca _edBuildSearchHaystack
+   * helper'ı düzenlenir — _edApplyFilterState ve renderEdList ortak okur.
+   * ════════════════════════════════════════════════════════════════ */
+
+  /* V189b — Türkçe-bilinçli lowercase. JS toLowerCase 'İ' → 'i̇' (i+combining dot)
+   * üretir, hem 'ı' (dotless i) hem 'i' (dotted i) ile karışır. Bu helper
+   * önce 'İ'→'i' ve 'I'→'ı' map'lediği için Türkçe arama tutarlı çalışır. */
+  function _edTurkishLower(s) {
+    if (s == null) return '';
+    return String(s)
+      .replace(/İ/g, 'i')
+      .replace(/I/g, 'ı')
+      .toLowerCase();
+  }
+  if (!window._edTurkishLower) window._edTurkishLower = _edTurkishLower;
+
+  /* V189b — KX10 tek kaynak: aranabilir alanları tek string'e birleştirir.
+   * Türkçe-bilinçli lowercase uygulanır.
+   * Yeni alan eklemek için sadece bu listeye ekle. */
+  function _edBuildSearchHaystack(ed, cariMap, userMap) {
+    if (!ed) return '';
+    cariMap = cariMap || {};
+    userMap = userMap || {};
+    var supplierName    = cariMap[String(ed.supplierId || '')]            || '';
+    var responsibleName = userMap[String(ed.responsibleUserId || '')]     || '';
+    var fields = [
+      ed.id              || '',
+      ed.ihracatId       || '',
+      ed.siparisKodu     || '',
+      ed.productName     || '',
+      ed.supplierId      || '',
+      supplierName,
+      ed.konteynerNo     || '',
+      ed.armator         || '',
+      ed.trackingUrl     || '',
+      ed.proformaId      || '',
+      ed.yuklemeFirmaAd  || '',
+      ed.originCity      || '',
+      ed.originDistrict  || '',
+      ed.destinationCity || '',
+      ed.destinationDistrict || '',
+      responsibleName
+    ];
+    return _edTurkishLower(fields.join(' '));
+  }
+  if (!window._edBuildSearchHaystack) window._edBuildSearchHaystack = _edBuildSearchHaystack;
+
   /* LOJ-1B-D: Filter state update + re-render */
   window._edFilter = function(field, value) {
     if (!window._edFilterState) window._edFilterState = { yon: '', status: '', search: '' };
@@ -617,7 +669,8 @@
   };
 
   /* V187j — _edFilterState'i bir listeye uygula (Excel/JSON export ortak mantık).
-   * KX10: tek kaynak — renderEdList'teki filter logic'i ile birebir aynı kurallar. */
+   * KX10: tek kaynak — renderEdList'teki filter logic'i ile birebir aynı kurallar.
+   * V189b — arama: _edBuildSearchHaystack + _edTurkishLower (Türkçe + 16 alan). */
   window._edApplyFilterState = function (list) {
     if (!Array.isArray(list)) return [];
     if (!window._edFilterState) window._edFilterState = { yon: '', status: '', search: '' };
@@ -628,12 +681,20 @@
         if (c && c.id) cariMap[String(c.id)] = c.name || c.unvan || c.ad || c.firmaAdi || '';
       });
     } catch (e) {}
+    /* V189b — userMap (sorumlu adı arama için, helper iterasyon dışı build) */
+    var userMap = {};
+    try {
+      (typeof window.loadUsers === 'function' ? window.loadUsers() : []).forEach(function (u) {
+        if (u && u.id) userMap[String(u.id)] = u.name || u.displayName || u.ad || u.email || '';
+      });
+    } catch (e) {}
+    /* V189b — query bir kez normalize et (her ed için tekrar etmesin) */
+    var q = fs.search ? _edTurkishLower(String(fs.search).trim()) : '';
     return list.filter(function (ed) {
       if (fs.yon && (ed.yon || 'GIDEN') !== fs.yon) return false;
       if (fs.status && ed.status !== fs.status) return false;
-      if (fs.search) {
-        var q = String(fs.search).trim().toLowerCase();
-        var hay = ((ed.productName || '') + ' ' + (ed.supplierId || '') + ' ' + (cariMap[String(ed.supplierId)] || '') + ' ' + (ed.konteynerNo || '')).toLowerCase();
+      if (q) {
+        var hay = _edBuildSearchHaystack(ed, cariMap, userMap);
         if (hay.indexOf(q) === -1) return false;
       }
       return true;
@@ -2324,16 +2385,11 @@
     var __fs = window._edFilterState;
     /* V187j — total (filtre öncesi RBAC-filtreli görünür kayıt sayısı) */
     var __totalBeforeFilter = list.length;
-    list = list.filter(function(__ed) {
-      if (__fs.yon && (__ed.yon || 'GIDEN') !== __fs.yon) return false;
-      if (__fs.status && __ed.status !== __fs.status) return false;
-      if (__fs.search) {
-        var __q = String(__fs.search).trim().toLowerCase();
-        var __hay = ((__ed.productName || '') + ' ' + (__ed.supplierId || '') + ' ' + (cariMap[String(__ed.supplierId)] || '') + ' ' + (__ed.konteynerNo || '')).toLowerCase();
-        if (__hay.indexOf(__q) === -1) return false;
-      }
-      return true;
-    });
+    /* V189b — KX10 fix: filter logic _edApplyFilterState (tek kaynak) üzerinden uygula.
+     * Eski duplicate filter (yön + status + search) buradan kaldırıldı. */
+    list = (typeof window._edApplyFilterState === 'function')
+      ? window._edApplyFilterState(list)
+      : list;
     var __fbStyle = 'font-size:11px;padding:5px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--sf);color:var(--t);font-family:inherit;cursor:pointer';
     var __fbActive = 'font-size:11px;padding:5px 10px;border:0.5px solid var(--ac);border-radius:5px;background:var(--ac);color:#fff;font-family:inherit;cursor:pointer;font-weight:500';
     var filterBar = '<div style="padding:8px 16px;background:var(--s2);border-bottom:0.5px solid var(--b);display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
@@ -2344,7 +2400,7 @@
         + '<option value=""' + (__fs.status === '' ? ' selected' : '') + '>Tüm Durumlar</option>'
         + STATUSES.map(function(__sk){var __s = STATUS[__sk]; return '<option value="' + __sk + '"' + (__fs.status === __sk ? ' selected' : '') + '>' + (__s ? __s['t'] : __sk) + '</option>';}).join('')
       + '</select>'
-      + '<input type="search" placeholder="Ara: ürün, tedarikçi, konteyner..." value="' + esc(__fs.search || '') + '" oninput="window._edFilter && window._edFilter(\'search\', this.value)" style="' + __fbStyle + ';flex:1;min-width:160px;cursor:text">'
+      + '<input type="search" placeholder="Ara: ürün, tedarikçi, EXP, sipariş, sorumlu, şehir, armatör..." value="' + esc(__fs.search || '') + '" oninput="window._edFilter && window._edFilter(\'search\', this.value)" style="' + __fbStyle + ';flex:1;min-width:160px;cursor:text">'
     + '</div>';
     var rows = list.slice(0,20).map(function(ed){
       var st = STATUS[ed.status] || {t: ed.status || '-', c:'#6B7280', bg:'#F3F4F6'};
