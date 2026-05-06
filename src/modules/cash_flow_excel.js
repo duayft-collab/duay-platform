@@ -1,30 +1,35 @@
 /**
  * ════════════════════════════════════════════════════════════════
- * src/modules/cash_flow_excel.js — v1.0.0 (V193 MUHASEBAT-001)
- * CASH-FLOW-EXCEL-MODULE-001 — XLSX export (SheetJS)
+ * src/modules/cash_flow_excel.js — v2.0.0 (V193 EDIT 5.1 REWRITE)
+ * CASH-FLOW-EXCEL-MODULE — XLSX export (SheetJS), 12 kolon
  * ════════════════════════════════════════════════════════════════
  * Bağımlı:
- *   • window.XLSX (SheetJS — index.html cdn.sheetjs.com xlsx.full.min.js)
- *   • window.CashFlow (cash_flow.js) — _cfLoad ile aktif tablo + kalkulasyon
- *   • window.calculateCashFlow (cash_flow.js) — toplam satır için
- *   • window.toast — kullanıcı uyarıları
+ *   • window.XLSX (SheetJS — index.html cdn.sheetjs.com)
+ *   • window.CashFlow (cash_flow.js) — load
+ *   • window.CashFlowCompute (cash_flow_compute.js) — runningBalance, applyFilter, tryEq
+ *   • window.toast — uyarılar
  *
- * Sorumluluk:
- *   • Aktif çalışmanın satırlarını Excel'e dök
- *   • UTF-8 Türkçe karakter uyumu (SheetJS native — encoding ayrı işlem yok)
- *   • Kolonlar: Tarih · Tür · Açıklama · Tutar · Para Birimi · Kaynak · Kategori
- *   • Para birimi başına toplam blok + TRY genel toplam
- *   • Dosya adı: nakit-akis-{calismaAd-slug}-{YYYYMMDD}.xlsx
+ * V193 EDIT 5.1 — REWRITE kapsamı:
+ *   • 12 kolon: Sıra · Tarih · Açıklama · Tür · Tutar · Para Birimi ·
+ *               Kur · TRY Karşılığı · Kaynak · Kategori · Kasa Mevcudu · Notlar
+ *   • Filtre uygulanmış liste export (window._cfFilter saygılı)
+ *   • Sabit kolon düzeni — muhasebeci Excel filtresi açtığında bozulmaz
+ *   • Running balance filter ÖNCESİ hesaplanır (TRY karşılığı tutarlı)
+ *   • Sıra no orijinal (filter ÖNCESİ liste sırası)
+ *   • Toplam blok: Açılış · Para birimi başına Gelir/Gider/Net · Son Bakiye
+ *   • UTF-8 Türkçe native (SheetJS native, encoding ek işlem yok)
  *
- * Inline onclick: 0 (data-cf-action="export-xlsx" — cash_flow.js _cfBindEvents'e
- *   ek case eklenir, EDIT 4 cash_flow.js refactor kapsamı).
+ * Inline onclick: 0 · Native alert/prompt/confirm: 0
  * ════════════════════════════════════════════════════════════════
  */
 'use strict';
 
 (function() {
 
-  // ── 1. HELPER'LAR ─────────────────────────────────────────────────
+  // TODO[KX10]: shared/config/rates.js'e taşınacak
+  var FALLBACK_RATES = { TRY: 1, USD: 44.55, EUR: 51.70, GBP: 59.30 };
+
+  // ── HELPER'LAR ────────────────────────────────────────────────────
   function _cfxToast(msg, level) {
     if (typeof window.toast === 'function') window.toast(msg, level || 'ok');
     else console.log('[CF-XLSX]', level || 'ok', msg);
@@ -53,13 +58,11 @@
       + String(d.getDate()).padStart(2, '0');
   }
 
-  /** Sayı yuvarlama — 2 ondalık (Excel native sayı tipinde tutulur) */
   function _cfxRound2(n) {
     var v = Number(n) || 0;
     return Math.round(v * 100) / 100;
   }
 
-  /** Kategori TR label: gelir/gider/transfer */
   function _cfxKategoriLabel(k) {
     if (k === 'gelir') return 'Gelir';
     if (k === 'gider') return 'Gider';
@@ -67,7 +70,6 @@
     return String(k || '—');
   }
 
-  /** Tür kolonu: + / − / ↔ — kategori'den türetilir (raporda hızlı tarama) */
   function _cfxTurIsaret(k) {
     if (k === 'gelir') return '+';
     if (k === 'gider') return '−';
@@ -75,12 +77,24 @@
     return '';
   }
 
-  // ── 2. EXCEL EXPORT ──────────────────────────────────────────────
-  /**
-   * cash_flow.js _cfBindEvents → data-cf-action="export-xlsx" tetikler.
-   * Aktif çalışmayı CashFlow.load() ile alır, satırları sheet'e döker,
-   * para birimi gruplu toplam blok ekler ve dosyayı download eder.
-   */
+  /** Kur snapshot — satırın paraBirimi için. Yoksa fallback. */
+  function _cfxKur(s) {
+    var cur = s.paraBirimi || 'TRY';
+    if (cur === 'TRY') return 1;
+    if (s.kurSnapshot && typeof s.kurSnapshot[cur] === 'number') return s.kurSnapshot[cur];
+    return FALLBACK_RATES[cur] || 1;
+  }
+
+  /** TRY karşılığı — CashFlowCompute reuse, yoksa fallback */
+  function _cfxTryEq(s) {
+    if (window.CashFlowCompute && typeof window.CashFlowCompute.tryEq === 'function') {
+      try { return window.CashFlowCompute.tryEq(s); } catch (_) {}
+    }
+    var amt = Number(s.tutar) || 0;
+    return amt * _cfxKur(s);
+  }
+
+  // ── ANA EXPORT FN ────────────────────────────────────────────────
   function exportXlsx() {
     if (!_cfxXlsxReady()) {
       _cfxToast('Excel kütüphanesi yüklenemedi. Sayfayı yenileyip tekrar dene.', 'err');
@@ -91,7 +105,7 @@
       return;
     }
 
-    var state, tablo, calc;
+    var state, tablo;
     try {
       state = window.CashFlow.load();
       tablo = (state.tablolar || []).find(function(t) { return t.id === state.aktifTabloId; });
@@ -99,84 +113,126 @@
         _cfxToast('Aktif çalışma bulunamadı.', 'warn');
         return;
       }
-      calc = (typeof window.calculateCashFlow === 'function')
-        ? window.calculateCashFlow(tablo)
-        : { byCurrency: {}, totalTRY: 0 };
     } catch (e) {
       console.error('[CF-XLSX] state load error:', e);
       _cfxToast('Veri okunamadı: ' + (e && e.message ? e.message : 'bilinmeyen hata'), 'err');
       return;
     }
 
-    var satirlar = tablo.satirlar || [];
-    if (!satirlar.length) {
+    var allSatirlar = tablo.satirlar || [];
+    if (!allSatirlar.length) {
       _cfxToast('İndirilecek satır yok.', 'warn');
       return;
     }
 
-    /* ── Sheet 1: Satırlar ──
-     * Kolonlar: Tarih, Tür, Açıklama, Tutar, Para Birimi, Kaynak, Kategori
-     * SheetJS aoa_to_sheet ile array-of-arrays — sayılar Excel'de native sayı tipinde tutulur. */
+    /* Compute pipeline — _cfRenderPanel ile tutarlı:
+     * 1) runningBalance: TÜM satırlar üzerinden, filter ÖNCESİ → birikmiş bakiye doğru
+     * 2) applyFilter:    in-memory _cfFilter state'e göre satırları süz
+     * 3) originalIndex:  sıra no orijinal (filter öncesi 1-bazlı) */
+    var acilis = Number(tablo.acilisKasaBakiyesi) || 0;
+    var runningMap = {};
+    var filtered = allSatirlar;
+    if (window.CashFlowCompute) {
+      try {
+        runningMap = window.CashFlowCompute.runningBalance(allSatirlar, acilis) || {};
+        filtered = window.CashFlowCompute.applyFilter(allSatirlar, window._cfFilter) || allSatirlar;
+      } catch (e) {
+        console.warn('[CF-XLSX] compute error:', e && e.message);
+        runningMap = { _initial: acilis, _final: acilis };
+      }
+    }
+    var originalIndex = {};
+    allSatirlar.forEach(function(s, i) { originalIndex[s.id] = i + 1; });
+
+    if (!filtered.length) {
+      _cfxToast('Filtreyle eşleşen satır yok. Excel için filtreyi temizle.', 'warn');
+      return;
+    }
+
+    /* ── Sheet: 12 kolon (sabit düzen — muhasebeci filtre açınca bozulmaz) ── */
     var aoa = [
-      ['Tarih', 'Tür', 'Açıklama', 'Tutar', 'Para Birimi', 'Kaynak', 'Kategori']
+      ['Sıra', 'Tarih', 'Açıklama', 'Tür', 'Tutar', 'Para Birimi',
+       'Kur', 'TRY Karşılığı', 'Kaynak', 'Kategori', 'Kasa Mevcudu (TRY)', 'Notlar']
     ];
-    satirlar.forEach(function(s) {
+
+    filtered.forEach(function(s) {
+      var sira = (originalIndex[s.id] != null) ? originalIndex[s.id] : '';
+      var kur = _cfxKur(s);
+      var trEq = _cfxTryEq(s);
+      var bakiye = (typeof runningMap[s.id] === 'number') ? runningMap[s.id] : null;
+      /* Transfer satırında bakiye değişmez ama gösterilir (cumulative) */
       aoa.push([
+        sira,
         s.tarih || '',
-        _cfxTurIsaret(s.kategori),
         s.aciklama || '',
+        _cfxTurIsaret(s.kategori),
         _cfxRound2(s.tutar),
         s.paraBirimi || 'TRY',
+        (s.paraBirimi === 'TRY') ? 1 : _cfxRound2(kur),
+        _cfxRound2(trEq),
         s.kaynak || '',
-        _cfxKategoriLabel(s.kategori)
+        _cfxKategoriLabel(s.kategori),
+        bakiye != null ? _cfxRound2(bakiye) : '',
+        s.aciklamaNot || ''   // gelecek için yer ayrıldı, şu an boş
       ]);
     });
 
-    /* ── Toplam blok (sheet'in altına) ──
-     * Boş satır → Para birimi başına Gelir/Gider/Net → Genel TRY toplam */
+    /* ── Toplam blok ── */
     aoa.push([]);
     aoa.push(['ÖZET']);
+    aoa.push(['Açılış Kasa Bakiyesi (TRY)', _cfxRound2(acilis)]);
+    aoa.push([]);
     aoa.push(['Para Birimi', 'Gelir', 'Gider', 'Net']);
-    var byCur = (calc && calc.byCurrency) || {};
-    var paraBirimleri = Object.keys(byCur);
-    if (!paraBirimleri.length) {
-      /* calculateCashFlow çıktısı boşsa satırlardan manuel hesapla */
-      var manuel = {};
-      satirlar.forEach(function(s) {
-        var c = s.paraBirimi || 'TRY';
-        if (!manuel[c]) manuel[c] = { gelir: 0, gider: 0 };
-        if (s.kategori === 'gelir') manuel[c].gelir += Number(s.tutar) || 0;
-        else if (s.kategori === 'gider') manuel[c].gider += Number(s.tutar) || 0;
-      });
-      Object.keys(manuel).forEach(function(c) {
-        var net = manuel[c].gelir - manuel[c].gider;
-        aoa.push([c, _cfxRound2(manuel[c].gelir), _cfxRound2(manuel[c].gider), _cfxRound2(net)]);
-      });
-    } else {
-      paraBirimleri.forEach(function(c) {
-        var b = byCur[c] || {};
-        aoa.push([c, _cfxRound2(b.gelir || 0), _cfxRound2(b.gider || 0), _cfxRound2(b.net || 0)]);
-      });
-    }
-    if (calc && typeof calc.totalTRY === 'number') {
+
+    /* Filtreli satırlardan para birimi başına gelir/gider/net */
+    var byCur = {};
+    filtered.forEach(function(s) {
+      var c = s.paraBirimi || 'TRY';
+      if (!byCur[c]) byCur[c] = { gelir: 0, gider: 0 };
+      var amt = Number(s.tutar) || 0;
+      if (s.kategori === 'gelir') byCur[c].gelir += amt;
+      else if (s.kategori === 'gider') byCur[c].gider += amt;
+    });
+    var paraSira = ['TRY', 'USD', 'EUR', 'GBP'];
+    paraSira.filter(function(c) { return !!byCur[c]; }).forEach(function(c) {
+      var b = byCur[c];
+      aoa.push([c, _cfxRound2(b.gelir), _cfxRound2(b.gider), _cfxRound2(b.gelir - b.gider)]);
+    });
+
+    aoa.push([]);
+    aoa.push(['Son Kasa Mevcudu (TRY karşılığı)',
+              _cfxRound2(runningMap._final != null ? runningMap._final : acilis)]);
+
+    /* Filtre bilgisi (varsa) */
+    var f = window._cfFilter || {};
+    if (f.tarihBaslangic || f.tarihBitis || f.kategori) {
       aoa.push([]);
-      aoa.push(['Genel Toplam (TRY karşılığı)', _cfxRound2(calc.totalTRY)]);
+      aoa.push(['FİLTRE BİLGİSİ']);
+      if (f.tarihBaslangic) aoa.push(['Başlangıç', f.tarihBaslangic]);
+      if (f.tarihBitis)     aoa.push(['Bitiş', f.tarihBitis]);
+      if (f.kategori)       aoa.push(['Tür', _cfxKategoriLabel(f.kategori)]);
     }
 
     var ws, wb;
     try {
       ws = window.XLSX.utils.aoa_to_sheet(aoa);
-
-      /* Kolon genişlikleri — okunabilirlik için */
+      /* Sabit kolon genişlikleri — muhasebeci AutoFilter açınca bozulmaz */
       ws['!cols'] = [
+        { wch: 6  },   // Sıra
         { wch: 12 },   // Tarih
+        { wch: 30 },   // Açıklama
         { wch: 5  },   // Tür
-        { wch: 32 },   // Açıklama
-        { wch: 14 },   // Tutar
+        { wch: 12 },   // Tutar
         { wch: 8  },   // Para Birimi
+        { wch: 8  },   // Kur
+        { wch: 14 },   // TRY Karşılığı
         { wch: 18 },   // Kaynak
-        { wch: 12 }    // Kategori
+        { wch: 12 },   // Kategori
+        { wch: 16 },   // Kasa Mevcudu
+        { wch: 20 }    // Notlar
       ];
+      /* Header satırına dondur — muhasebeci scroll ederken header görünür kalsın */
+      ws['!freeze'] = { xSplit: 0, ySplit: 1 };
 
       wb = window.XLSX.utils.book_new();
       window.XLSX.utils.book_append_sheet(wb, ws, 'Nakit Akışı');
@@ -188,14 +244,11 @@
 
     var fileName = 'nakit-akis-' + _cfxSlug(tablo.ad) + '-' + _cfxDateStr() + '.xlsx';
     try {
-      /* SheetJS writeFile UTF-8 native — Türkçe karakterler bozulmaz.
-       * bookType: xlsx (default) — Office 2007+ uyumlu. */
       window.XLSX.writeFile(wb, fileName);
-      /* V193 EDIT 4 — audit log (varsa) */
       try {
         if (typeof window._auditLog === 'function') {
           window._auditLog('cf_export_xlsx', tablo.id || '',
-            'rows=' + satirlar.length + ' file=' + fileName);
+            'rows=' + filtered.length + '/' + allSatirlar.length + ' file=' + fileName);
         }
       } catch (_) {}
       _cfxToast('Excel indirildi: ' + fileName, 'ok');
@@ -205,7 +258,7 @@
     }
   }
 
-  // ── 3. PUBLIC API ─────────────────────────────────────────────────
+  // ── PUBLIC API ─────────────────────────────────────────────────────
   window.CashFlowExcel = {
     exportXlsx: exportXlsx
   };

@@ -59,6 +59,8 @@
         id: defId,
         ad: _DEFAULT_TABLO_AD,
         paraBirimiBaz: 'TRY',
+        /* V193 EDIT 4.3 — Açılış kasa bakiyesi (TRY). Eski state'lerde fallback 0. */
+        acilisKasaBakiyesi: 0,
         olusturulduTarih: new Date().toISOString(),
         guncellemeTarih: new Date().toISOString(),
         satirlar: []
@@ -245,53 +247,158 @@
       + ';color:' + fg + ';border-radius:10px;font-size:11px;font-weight:500">' + _esc(k) + '</span>';
   }
 
-  function _cfRenderTablo(tablo) {
-    const satirlar = tablo.satirlar || [];
-    if (!satirlar.length) {
-      return '<div style="padding:40px;text-align:center;color:#888;font-size:13px">Henüz satır yok. Aşağıdaki [+ Satır Ekle] butonu ile başlayın.</div>';
+  /* V193 EDIT 4.3 — TRY karşılığı sade format (≈ 44.550 TRY) */
+  function _cfTryEqSade(s) {
+    var trEq;
+    if (window.CashFlowCompute && typeof window.CashFlowCompute.tryEq === 'function') {
+      trEq = window.CashFlowCompute.tryEq(s);
+    } else {
+      /* Fallback — compute layer yüklenmediyse FALLBACK_RATES kullan */
+      var amt = Number(s.tutar) || 0;
+      var cur = s.paraBirimi || 'TRY';
+      var rate = (s.kurSnapshot && typeof s.kurSnapshot[cur] === 'number')
+        ? s.kurSnapshot[cur]
+        : (FALLBACK_RATES[cur] || 1);
+      trEq = amt * rate;
     }
-    const rows = satirlar.map(function(s) {
-      const renk = s.kategori === 'gelir' ? '#1A8D6F' : (s.kategori === 'gider' ? '#E0574F' : '#888');
-      const isaret = s.kategori === 'gelir' ? '+' : (s.kategori === 'gider' ? '−' : '↔');
+    return _fmtTutar(trEq);
+  }
+
+  /* V193 EDIT 4.3 — Kur snapshot label: '44.55' formatı, satırın paraBirimi için.
+   * TRY paritesi 1.00 — gösterim anlamsız, '—' olarak. */
+  function _cfKurLabel(s) {
+    var cur = s.paraBirimi || 'TRY';
+    if (cur === 'TRY') return '—';
+    var rate;
+    if (s.kurSnapshot && typeof s.kurSnapshot[cur] === 'number') {
+      rate = s.kurSnapshot[cur];
+    } else {
+      rate = FALLBACK_RATES[cur] || null;
+    }
+    if (!rate) return '—';
+    return Number(rate).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+  }
+
+  /* V193 EDIT 4.3 — Tablo: filteredSatirlar render edilir, runningMap balance verir,
+   * sıra no orijinal sıra (filter öncesi). */
+  function _cfRenderTablo(tablo, filteredSatirlar, runningMap, originalIndex) {
+    var satirlar = filteredSatirlar || [];
+    if (!satirlar.length) {
+      return '<div style="padding:40px;text-align:center;color:#888;font-size:13px">Henüz satır yok veya filtreyle eşleşen kayıt yok.</div>';
+    }
+    var rows = satirlar.map(function(s) {
+      var renk = s.kategori === 'gelir' ? '#1A8D6F' : (s.kategori === 'gider' ? '#E0574F' : '#888');
+      var isaret = s.kategori === 'gelir' ? '+' : (s.kategori === 'gider' ? '−' : '↔');
+      var siraNo = (originalIndex && originalIndex[s.id] != null) ? originalIndex[s.id] : '—';
+      var bakiye = (runningMap && typeof runningMap[s.id] === 'number') ? runningMap[s.id] : null;
+      /* Kasa mevcudu — transfer'de hafif gri (yön hissi vermez), gelir/gider'de küçük yön ikonu */
+      var bakiyeRenk = '#444';
+      var yonIkon = '';
+      if (s.kategori === 'gelir')      { bakiyeRenk = '#1A8D6F'; yonIkon = '<span style="color:#1A8D6F;font-size:9px;margin-right:3px">▲</span>'; }
+      else if (s.kategori === 'gider') { bakiyeRenk = '#E0574F'; yonIkon = '<span style="color:#E0574F;font-size:9px;margin-right:3px">▼</span>'; }
+      else                              { bakiyeRenk = '#888';   yonIkon = '<span style="color:#bbb;font-size:9px;margin-right:3px">·</span>'; }
+      var bakiyeStr = (bakiye != null) ? (yonIkon + _fmtTutar(bakiye)) : '—';
+
       return '<tr style="border-bottom:0.5px solid #e8e8e8">'
-        + '<td style="padding:10px 12px;font-variant-numeric:tabular-nums;color:#444">' + _esc(s.tarih) + '</td>'
-        + '<td style="padding:10px 12px;color:#222">' + _esc(s.aciklama || '—') + '</td>'
-        + '<td style="padding:10px 12px;text-align:right;font-variant-numeric:tabular-nums;color:' + renk + ';font-weight:500">' + isaret + ' ' + _fmtTutar(s.tutar) + '</td>'
-        + '<td style="padding:10px 12px;text-align:center;color:#666;font-size:12px">' + _esc(s.paraBirimi) + '</td>'
-        + '<td style="padding:10px 12px;text-align:center;color:' + renk + ';font-size:12px;text-transform:capitalize">' + _esc(s.kategori) + '</td>'
-        /* V193 EDIT 2 — Kaynak/Banka kolonu */
+        + '<td style="padding:10px 8px;text-align:center;color:#999;font-size:11px;font-variant-numeric:tabular-nums;width:36px">' + siraNo + '</td>'
+        + '<td style="padding:10px 12px;font-variant-numeric:tabular-nums;color:#444;font-size:12px">' + _esc(s.tarih) + '</td>'
+        + '<td style="padding:10px 12px;color:#222;font-size:13px">' + _esc(s.aciklama || '—') + '</td>'
+        + '<td style="padding:10px 12px;text-align:right;font-variant-numeric:tabular-nums;color:' + renk + ';font-weight:500;font-size:13px">' + isaret + ' ' + _fmtTutar(s.tutar) + '</td>'
+        /* Döviz + Kur 2. satır */
+        + '<td style="padding:8px 10px;text-align:center;font-size:11px;line-height:1.3">'
+          + '<div style="color:#444;font-weight:500">' + _esc(s.paraBirimi) + '</div>'
+          + '<div style="color:#999;font-size:10px;margin-top:1px">Kur: ' + _cfKurLabel(s) + '</div>'
+        + '</td>'
+        /* TRY karşılığı sade */
+        + '<td style="padding:10px 12px;text-align:right;color:#666;font-size:11px;font-variant-numeric:tabular-nums">≈ ' + _cfTryEqSade(s) + ' TRY</td>'
         + '<td style="padding:10px 12px;text-align:center">' + _cfBadge(s.kaynak) + '</td>'
-        + '<td style="padding:10px 12px;text-align:center"><button data-cf-action="row-delete" data-cf-row-id="' + _esc(s.id) + '" style="background:transparent;border:0;cursor:pointer;color:#bbb;font-size:14px" title="Sil">×</button></td>'
-        + '</tr>';
+        + '<td style="padding:10px 12px;text-align:center;color:' + renk + ';font-size:11px;text-transform:capitalize">' + _esc(s.kategori) + '</td>'
+        /* Kasa mevcudu (TRY karşılığı, running balance) */
+        + '<td style="padding:10px 12px;text-align:right;color:' + bakiyeRenk + ';font-size:12px;font-variant-numeric:tabular-nums">' + bakiyeStr + '</td>'
+        /* İşlem: Düzelt + Sil */
+        + '<td style="padding:10px 8px;text-align:center;white-space:nowrap">'
+          + '<button data-cf-action="row-edit" data-cf-row-id="' + _esc(s.id) + '" style="background:transparent;border:0;cursor:pointer;color:#1A8D6F;font-size:13px;padding:2px 4px;font-family:inherit" title="Düzelt">✏</button>'
+          + '<button data-cf-action="row-delete" data-cf-row-id="' + _esc(s.id) + '" style="background:transparent;border:0;cursor:pointer;color:#bbb;font-size:14px;padding:2px 4px;font-family:inherit;margin-left:2px" title="Sil">×</button>'
+        + '</td>'
+      + '</tr>';
     }).join('');
+
     return '<table style="width:100%;border-collapse:collapse;font-size:13px">'
-      + '<thead><tr style="border-bottom:0.5px solid #ddd;text-transform:uppercase;letter-spacing:0.05em;font-size:11px;color:#888">'
-      + '<th style="padding:10px 12px;text-align:left;font-weight:500">Tarih</th>'
-      + '<th style="padding:10px 12px;text-align:left;font-weight:500">Açıklama</th>'
-      + '<th style="padding:10px 12px;text-align:right;font-weight:500">Tutar</th>'
-      + '<th style="padding:10px 12px;text-align:center;font-weight:500">Döviz</th>'
-      + '<th style="padding:10px 12px;text-align:center;font-weight:500">Kategori</th>'
-      /* V193 EDIT 2 — Kaynak başlığı */
-      + '<th style="padding:10px 12px;text-align:center;font-weight:500">Kaynak</th>'
-      + '<th style="padding:10px 12px;text-align:center;font-weight:500;width:32px"></th>'
+      + '<thead><tr style="border-bottom:0.5px solid #ddd;text-transform:uppercase;letter-spacing:0.05em;font-size:10px;color:#888">'
+        + '<th style="padding:10px 8px;text-align:center;font-weight:500;width:36px">#</th>'
+        + '<th style="padding:10px 12px;text-align:left;font-weight:500">Tarih</th>'
+        + '<th style="padding:10px 12px;text-align:left;font-weight:500">Açıklama</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-weight:500">Tutar</th>'
+        + '<th style="padding:10px 10px;text-align:center;font-weight:500">Döviz</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-weight:500">TRY ≈</th>'
+        + '<th style="padding:10px 12px;text-align:center;font-weight:500">Kaynak</th>'
+        + '<th style="padding:10px 12px;text-align:center;font-weight:500">Kategori</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-weight:500">Kasa Mevcudu</th>'
+        + '<th style="padding:10px 8px;text-align:center;font-weight:500;width:64px">İşlem</th>'
       + '</tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
-  function _cfRenderToplam(calc) {
-    const cards = PARA_BIRIMLERI.map(function(c) {
-      const net = calc.byCurrency[c] && calc.byCurrency[c].net || 0;
-      const renk = net > 0 ? '#1A8D6F' : (net < 0 ? '#E0574F' : '#444');
-      return '<div style="flex:1;padding:14px;background:#fafafa;border-radius:8px;border:0.5px solid #e8e8e8">'
-        + '<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#888;margin-bottom:6px">' + c + ' Net</div>'
-        + '<div style="font-size:18px;font-weight:500;color:' + renk + ';font-variant-numeric:tabular-nums">' + _fmtTutar(net) + '</div>'
-        + '</div>';
-    }).join('');
-    const totalRenk = calc.totalTRY > 0 ? '#1A8D6F' : (calc.totalTRY < 0 ? '#E0574F' : '#444');
-    return '<div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">' + cards + '</div>'
-      + '<div style="margin-top:14px;padding:16px 18px;background:linear-gradient(135deg,#fafafa,#f3f3f3);border-radius:10px;border:0.5px solid #ddd;display:flex;justify-content:space-between;align-items:center">'
-      + '<span style="font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:#666">Genel Toplam (TRY karşılığı)</span>'
-      + '<span style="font-size:22px;font-weight:600;color:' + totalRenk + ';font-variant-numeric:tabular-nums">' + _fmtTutar(calc.totalTRY) + ' ₺</span>'
-      + '</div>';
+  /* V193 EDIT 4.3 — CashFlowCompute.renderToplam delegate.
+   * Compute layer yüklenmemişse minimal fallback (TRY net, açılış/son bakiye yok).
+   * filteredSatirlar — kullanıcı filtresine saygılı toplamlar.
+   * runningMap — full satırlardan, _initial + _final için. */
+  function _cfRenderToplam(tablo, filteredSatirlar, runningMap) {
+    if (window.CashFlowCompute && typeof window.CashFlowCompute.renderToplam === 'function') {
+      try { return window.CashFlowCompute.renderToplam(tablo, filteredSatirlar, runningMap); }
+      catch (e) { console.warn('[CF] CashFlowCompute.renderToplam error:', e && e.message); }
+    }
+    /* Fallback — basit TRY net özet */
+    var totalTRY = 0;
+    (filteredSatirlar || []).forEach(function(s) {
+      var amt = Number(s.tutar) || 0;
+      var cur = s.paraBirimi || 'TRY';
+      var rate = (s.kurSnapshot && s.kurSnapshot[cur]) ? s.kurSnapshot[cur] : (FALLBACK_RATES[cur] || 1);
+      var tr = amt * rate;
+      if (s.kategori === 'gelir') totalTRY += tr;
+      else if (s.kategori === 'gider') totalTRY -= tr;
+    });
+    var renk = totalTRY > 0 ? '#1A8D6F' : (totalTRY < 0 ? '#E0574F' : '#444');
+    return '<div style="margin-top:14px;padding:16px 18px;background:#fafafa;border-radius:10px;border:0.5px solid #ddd;display:flex;justify-content:space-between;align-items:center">'
+      + '<span style="font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:#666">Net (TRY karşılığı)</span>'
+      + '<span style="font-size:20px;font-weight:600;color:' + renk + ';font-variant-numeric:tabular-nums">' + _fmtTutar(totalTRY) + ' ₺</span>'
+    + '</div>';
+  }
+
+  /* V193 EDIT 4.3 — In-memory filter state (persist edilmez, oturum içi).
+   * cash_flow_compute.js applyFilter() ile uyumlu şema. */
+  if (typeof window._cfFilter !== 'object' || !window._cfFilter) {
+    window._cfFilter = { tarihBaslangic: '', tarihBitis: '', kategori: '' };
+  }
+
+  /* V193 EDIT 4.3 — Filtre bar — tek satır kompakt. Apple sade, dashboard görünümü yok. */
+  function _cfRenderFilterBar() {
+    var f = window._cfFilter || {};
+    return '<div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:10px 0 12px;padding:10px 12px;background:#fafafa;border-radius:8px;border:0.5px solid #eee">'
+      + '<label style="font-size:10px;color:#888;flex:0 0 auto">Başlangıç'
+        + '<input id="cf-fb-baslangic" type="date" value="' + _esc(f.tarihBaslangic || '') + '" style="display:block;margin-top:3px;padding:5px 8px;border:0.5px solid #ddd;border-radius:5px;font-size:12px;font-family:inherit">'
+      + '</label>'
+      + '<label style="font-size:10px;color:#888;flex:0 0 auto">Bitiş'
+        + '<input id="cf-fb-bitis" type="date" value="' + _esc(f.tarihBitis || '') + '" style="display:block;margin-top:3px;padding:5px 8px;border:0.5px solid #ddd;border-radius:5px;font-size:12px;font-family:inherit">'
+      + '</label>'
+      + '<label style="font-size:10px;color:#888;flex:0 0 auto">Tür'
+        + '<select id="cf-fb-kategori" style="display:block;margin-top:3px;padding:5px 8px;border:0.5px solid #ddd;border-radius:5px;font-size:12px;font-family:inherit;min-width:110px">'
+          + '<option value=""' + (f.kategori === '' ? ' selected' : '') + '>Hepsi</option>'
+          + '<option value="gelir"' + (f.kategori === 'gelir' ? ' selected' : '') + '>Gelir</option>'
+          + '<option value="gider"' + (f.kategori === 'gider' ? ' selected' : '') + '>Gider</option>'
+          + '<option value="transfer"' + (f.kategori === 'transfer' ? ' selected' : '') + '>Transfer</option>'
+        + '</select>'
+      + '</label>'
+      + '<button data-cf-action="filter-clear" style="margin-left:auto;padding:6px 12px;background:transparent;border:0.5px solid #ddd;border-radius:5px;cursor:pointer;font-size:11px;color:#666;font-family:inherit">Temizle</button>'
+    + '</div>';
+  }
+
+  /* V193 EDIT 4.3 — Açılış kasa bakiyesi mini input (toolbar yanında küçük).
+   * Çalışma bazlı persist (tablo.acilisKasaBakiyesi). */
+  function _cfRenderAcilisInput(tablo) {
+    var v = (tablo && Number(tablo.acilisKasaBakiyesi)) || 0;
+    return '<label style="font-size:10px;color:#888;display:inline-flex;flex-direction:column;align-items:flex-start;margin-right:8px">Açılış Kasa (₺)'
+      + '<input id="cf-acilis-bakiye" type="number" step="0.01" value="' + _esc(String(v)) + '" style="margin-top:2px;padding:5px 8px;border:0.5px solid #ddd;border-radius:5px;font-size:12px;width:120px;font-variant-numeric:tabular-nums;font-family:inherit;text-align:right">'
+    + '</label>';
   }
 
   function _cfRenderSatirEkleForm() {
@@ -345,51 +452,66 @@
     if (!panel) { console.warn('[CF] panel-cash-flow-manuel div yok'); return; }
     const state = _cfLoad();
     const tablo = state.tablolar.find(t => t.id === state.aktifTabloId);
-    const calc = window.calculateCashFlow(tablo);
+
+    /* V193 EDIT 4.3 — Compute pipeline:
+     * 1) runningBalance: TÜM satırlar üzerinden, filter ÖNCESİ → birikmiş bakiye doğru
+     * 2) applyFilter:    in-memory filter state'e göre satırları süz
+     * 3) renderToplam:   filtered satırlardan para birimi başına net + Açılış/Son bakiye (runningMap'ten)
+     * 4) originalIndex:  sıra no orijinal sıra (filter öncesi 1-bazlı index)
+     * Compute layer yüklenmediyse her aşama fallback'e düşer. */
+    var allSatirlar = (tablo && tablo.satirlar) || [];
+    var acilis = (tablo && Number(tablo.acilisKasaBakiyesi)) || 0;
+    var runningMap = {};
+    var filteredSatirlar = allSatirlar;
+    if (window.CashFlowCompute) {
+      try {
+        runningMap = window.CashFlowCompute.runningBalance(allSatirlar, acilis) || {};
+        filteredSatirlar = window.CashFlowCompute.applyFilter(allSatirlar, window._cfFilter) || allSatirlar;
+      } catch (e) { console.warn('[CF] compute error:', e && e.message); }
+    } else {
+      runningMap = { _initial: acilis, _final: acilis };
+    }
+    /* Sıra no — orijinal listeye göre 1-bazlı (createdAt ASC veya tarih ASC değil; user'ın eklediği sıra) */
+    var originalIndex = {};
+    allSatirlar.forEach(function(s, i) { originalIndex[s.id] = i + 1; });
 
     /* V193 EDIT 2 — Toolbar entegrasyonu:
-     * Çalışma adı CashFlowWorks.getActiveWork()'tan gelir (varsa). Yüklü değilse fallback tablo.ad.
-     * Dirty işareti CashFlowWorks.isDirty() — true ise başlık yanında kırmızı '*'.
-     * UI sade: ekstra border/shadow yok, sade text-only.
-     * V193 EDIT 3 — CashFlowWorksUI varsa toolbar'ı oraya delege et;
-     * yoksa workTitle + dirty mark fallback (data layer açık ama UI yüklenmemişse). */
+     * V193 EDIT 3 — CashFlowWorksUI varsa toolbar'ı oraya delege et
+     * V193 EDIT 4.3 — Toolbar yanında açılış kasa input'u küçük gösterilir */
     var workTitle = (tablo && tablo.ad) || 'Manuel Kasa';
     var isDirty = !!(window.CashFlowWorks && typeof window.CashFlowWorks.isDirty === 'function' && window.CashFlowWorks.isDirty());
     var dirtyMark = isDirty ? '<span style="color:#E0574F;margin-left:4px" title="Kaydedilmemiş değişiklik">*</span>' : '';
     var hasUI = !!(window.CashFlowWorksUI && typeof window.CashFlowWorksUI.renderToolbar === 'function');
-    /* hasUI=true → workTitle metni gizli, toolbar buton dolgusu var; aktif çalışma adı kart modal'da görünür.
-     * hasUI=false → eski fallback gösterimi (geri uyumlu). */
     var toolbarHtml = hasUI
-      ? '<div id="cf-toolbar"></div>'
-      : '<span style="font-size:13px;color:#666">' + _esc(workTitle) + dirtyMark + '</span>';
+      ? '<div style="display:flex;gap:12px;align-items:flex-end">' + _cfRenderAcilisInput(tablo) + '<div id="cf-toolbar"></div></div>'
+      : '<div style="display:flex;gap:12px;align-items:flex-end">' + _cfRenderAcilisInput(tablo) + '<span style="font-size:13px;color:#666">' + _esc(workTitle) + dirtyMark + '</span></div>';
 
-    panel.innerHTML = '<div style="max-width:1200px;margin:0 auto;padding:24px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif">'
-      + '<div style="margin-bottom:18px">'
+    panel.innerHTML = '<div style="max-width:1280px;margin:0 auto;padding:24px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif">'
+      + '<div style="margin-bottom:14px">'
       + '<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#999;margin-bottom:4px">Finans › Nakit Akışı Manuel</div>'
-      + '<div style="display:flex;justify-content:space-between;align-items:baseline">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">'
       + '<h2 style="margin:0;font-size:18px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#222">Nakit Akışı — Manuel</h2>'
       + toolbarHtml
       + '</div></div>'
-      + '<div style="background:#fff;border-radius:10px;border:0.5px solid #e8e8e8;box-shadow:0 1px 2px rgba(0,0,0,0.04);overflow:hidden">'
-      + _cfRenderTablo(tablo)
+      /* V193 EDIT 4.3 — Filtre bar */
+      + _cfRenderFilterBar()
+      + '<div style="background:#fff;border-radius:10px;border:0.5px solid #e8e8e8;box-shadow:0 1px 2px rgba(0,0,0,0.04);overflow-x:auto">'
+      + _cfRenderTablo(tablo, filteredSatirlar, runningMap, originalIndex)
       + '</div>'
-      /* V193 EDIT 2 — Add Row buton: inline onclick yerine data-cf-action (event delegation) */
       + '<button data-cf-action="add-row-toggle" style="margin-top:14px;padding:12px;width:100%;background:transparent;border:1px dashed #bbb;border-radius:8px;cursor:pointer;font-size:13px;color:#666">+ Satır Ekle</button>'
       + _cfRenderSatirEkleForm()
-      + _cfRenderToplam(calc)
+      /* V193 EDIT 4.3 — Compute renderToplam (filteredSatirlar + runningMap) */
+      + _cfRenderToplam(tablo, filteredSatirlar, runningMap)
       + '<div style="margin-top:18px;display:flex;justify-content:flex-end;gap:8px">'
-      /* V193 EDIT 4 — Excel İndir butonu (CashFlowExcel modülü). Sade, JSON ile aynı stil. */
       + '<button data-cf-action="export-xlsx" style="padding:9px 16px;background:#fff;border:0.5px solid #ddd;border-radius:6px;cursor:pointer;font-size:12px;color:#444">Excel İndir</button>'
+      /* V193 EDIT 5.3 — PDF İndir butonu (CashFlowPdf modülü) */
+      + '<button data-cf-action="export-pdf" style="padding:9px 16px;background:#fff;border:0.5px solid #ddd;border-radius:6px;cursor:pointer;font-size:12px;color:#444">PDF İndir</button>'
       + '<button data-cf-action="export-json" style="padding:9px 16px;background:#fff;border:0.5px solid #ddd;border-radius:6px;cursor:pointer;font-size:12px;color:#444">JSON İndir</button>'
       + '</div>'
       + '</div>';
 
-    /* V193 EDIT 2 — Event delegation: panel root'a tek listener, data-cf-action ile dispatch.
-     * Yeni inline onclick YOK. Mevcut 5 inline onclick (V19x temizlik borç) bu cycle'da dokunulmadı. */
     _cfBindEvents(panel);
 
-    /* V193 EDIT 3 — Toolbar render: CashFlowWorksUI varsa çalışma yönetimi butonlarını
-     * #cf-toolbar div'ine enjekte eder. UI yüklenmemişse fallback span zaten gösterilmiştir. */
     if (window.CashFlowWorksUI && typeof window.CashFlowWorksUI.renderToolbar === 'function') {
       try { window.CashFlowWorksUI.renderToolbar('#cf-toolbar'); }
       catch (e) { console.warn('[CF] CashFlowWorksUI.renderToolbar error:', e && e.message); }
@@ -433,13 +555,68 @@
         } else if (window.toast) {
           window.toast('Excel modülü yüklenemedi. Sayfayı yenileyip tekrar dene.', 'err');
         }
+      } else if (action === 'export-pdf') {
+        /* V193 EDIT 5.3 — PDF İndir: CashFlowPdf modülü. Yüklenmemişse toast. */
+        if (window.CashFlowPdf && typeof window.CashFlowPdf.exportPdf === 'function') {
+          window.CashFlowPdf.exportPdf();
+        } else if (window.toast) {
+          window.toast('PDF modülü yüklenemedi. Sayfayı yenileyip tekrar dene.', 'err');
+        }
       } else if (action === 'row-delete') {
         var rid = btn.getAttribute('data-cf-row-id');
         if (rid) _cfSatirSil(rid);
+      } else if (action === 'row-edit') {
+        /* V193 EDIT 4.3 — Düzelt: CashFlowEdit modülü modal açar. Yüklenmemişse toast. */
+        var eid = btn.getAttribute('data-cf-row-id');
+        if (!eid) return;
+        if (window.CashFlowEdit && typeof window.CashFlowEdit.openEditModal === 'function') {
+          window.CashFlowEdit.openEditModal(eid);
+        } else if (window.toast) {
+          window.toast('Düzenleme modülü yüklenemedi. Sayfayı yenileyip tekrar dene.', 'err');
+        }
+      } else if (action === 'filter-clear') {
+        /* V193 EDIT 4.3 — Filtreyi sıfırla, paneli yenile */
+        window._cfFilter = { tarihBaslangic: '', tarihBitis: '', kategori: '' };
+        _cfRenderPanel();
       }
     };
     panel.__cfHandler = handler;
     panel.addEventListener('click', handler);
+
+    /* V193 EDIT 4.3 — Change/blur listener: filtre input'ları + açılış kasa bakiyesi.
+     * Idempotent — her render'da yenisi bağlanır, eskisi removeEventListener ile kaldırılır. */
+    if (panel.__cfChangeHandler) {
+      panel.removeEventListener('change', panel.__cfChangeHandler);
+    }
+    var changeHandler = function(e) {
+      var t = e.target;
+      if (!t || !t.id) return;
+      if (t.id === 'cf-fb-baslangic') {
+        window._cfFilter.tarihBaslangic = t.value || '';
+        _cfRenderPanel();
+      } else if (t.id === 'cf-fb-bitis') {
+        window._cfFilter.tarihBitis = t.value || '';
+        _cfRenderPanel();
+      } else if (t.id === 'cf-fb-kategori') {
+        window._cfFilter.kategori = t.value || '';
+        _cfRenderPanel();
+      } else if (t.id === 'cf-acilis-bakiye') {
+        /* Açılış kasa bakiyesi — change'da persist (çalışma bazlı, tablo.acilisKasaBakiyesi). */
+        var v = Number(t.value) || 0;
+        var st = _cfLoad();
+        var tb = (st.tablolar || []).find(function(x) { return x.id === st.aktifTabloId; });
+        if (tb) {
+          tb.acilisKasaBakiyesi = v;
+          _cfSaveImmediate(st);
+          if (window.CashFlowWorks && typeof window.CashFlowWorks.markDirty === 'function') {
+            window.CashFlowWorks.markDirty();
+          }
+          _cfRenderPanel();
+        }
+      }
+    };
+    panel.__cfChangeHandler = changeHandler;
+    panel.addEventListener('change', changeHandler);
   }
 
   window._cfRenderPanel = _cfRenderPanel;
