@@ -12,7 +12,10 @@ var HM_REF_KEY  = 'ak_ref_prices1';
 var HM_PORT_KEY = 'ak_portfolio1';
 var HM_TEKLIF_KEY = 'ak_cmp_teklif1';
 
-var HM_RATES = { USD: 38.50, EUR: 41.20, GBP: 48.90, ALTIN_GR: 3850, ALTIN_ONS: 2650 };
+// V194b: USD 38.50 → 44.55, EUR 41.20 → 51.70, GBP 48.90 → 59.30 — _saKur init (satin_alma_v2.js:110) ile uyum.
+// ALTIN_GR ve ALTIN_ONS dokunulmadi (ayri kaynak, V194c kapsaminda degil).
+// V194c'de bu literal silinecek, DUAY_KUR_GET(cur, true) kullanilacak.
+var HM_RATES = { USD: 44.55, EUR: 51.70, GBP: 59.30, ALTIN_GR: 3850, ALTIN_ONS: 2650 };
 
 // TCMB'den kur çek — CORS proxy ile
 (function _hmFetchRates() {

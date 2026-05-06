@@ -98,7 +98,8 @@ window._saV2TeklifOlustur = function(id) {
   ['30% Advance, 70% L/C at sight','50% Advance, 50% L/C at sight','100% Advance before shipment','L/C at sight','T/T 30 days after B/L','T/T 60 days after B/L','D/P at sight','Open Account 30 days'].forEach(function(o){ic += '<option>'+o+'</option>';});
   ic += '</select></div>';
   /* T03-8 v2: sol banka div hidden — sağ PI altında yeni görünür div var */
-  ic += '<div id="st-banka-bilgi" style="display:none;font-size:9px;padding:6px 10px;background:#E6F1FB;border-radius:5px;border:0.5px solid #B5D4F4;color:#0C447C">USD IBAN: TR12 0001 2003 4500 0123 4567 89 · Garanti Bankası</div>';
+  // V194b: placeholder IBAN (TR12... sahte test değeri) silindi — _saV2BankaGuncelle() runtime'da textContent ile dolduruyor.
+  ic += '<div id="st-banka-bilgi" style="display:none;font-size:9px;padding:6px 10px;background:#E6F1FB;border-radius:5px;border:0.5px solid #B5D4F4;color:#0C447C"></div>';
   
   /* SATIS-JOBID-001: Job ID seçimi + tedarikçi karşılaştırma */
   ic += '<div style="display:flex;align-items:end;gap:8px;padding:8px 10px;background:#FFFCF5;border:0.5px solid #F4E4BC;border-radius:5px;margin-top:6px">';
@@ -729,12 +730,14 @@ setTimeout(function(){ window._saV2TakipKontrol?.(); }, 3000);
 
 /* ── SATIS-FORM-C-001: Canlı PI Önizleme + Banka + Kaydet&Git ─── */
 window._saV2BankaGuncelle = function(para) {
-  // BANKA-IBAN-FIX-001: gerçek IBAN'larla güncellendi (Garanti + Albaraka)
+  // BANKA-IBAN-FIX-001 + V194b GBP-DEVRE-DISI: gerçek IBAN'larla güncellendi (Garanti + Albaraka).
+  // GBP fallback YANLIS USD IBAN'ı gösteriyordu — devre dışı bırakıldı (gerçek GBP IBAN yok).
+  // V194d'de bu blok DUAY_BANKA(cur) accessor'ına bağlanacak.
   var bankalar = {
     'USD': 'T. GARANTİ BANKASI A.Ş. · USD IBAN: TR39 0006 2001 1810 0009 0812 68 · SWIFT: TGBATRIS · YEŞİLPINAR ŞUBESİ / 1181',
     'EUR': 'T. GARANTİ BANKASI A.Ş. · EUR IBAN: TR66 0006 2001 1810 0009 0812 67 · SWIFT: TGBATRIS · YEŞİLPINAR ŞUBESİ / 1181',
     'TRY': 'T. GARANTİ BANKASI A.Ş. · TL IBAN: TR24 0006 2001 1810 0006 2960 86 · YEŞİLPINAR ŞUBESİ / 1181 | ALBARAKA TÜRK · TL IBAN: TR54 0020 3000 0889 5310 0000 05 · ALİBEYKÖY / 117',
-    'GBP': 'T. GARANTİ BANKASI A.Ş. · USD IBAN: TR39 0006 2001 1810 0009 0812 68 · SWIFT: TGBATRIS'
+    'GBP': 'GBP transfer şu an desteklenmiyor — lütfen USD veya EUR seçin.'
   };
   var el = document.getElementById('st-banka-bilgi');
   if(el) el.textContent = bankalar[para] || bankalar['USD'];
@@ -824,12 +827,14 @@ window._saV2SatisKaydetVeGit = function(alisId) {
 /** Banka bilgisi — ak_bankalar1 key'inden veya varsayılan */
 window._saV2BankaMetni = function(para) {
   var ayarlar = typeof window._loadBankalar === 'function' ? window._loadBankalar() : {};
-  // BANKA-IBAN-FIX-001: gerçek IBAN'larla güncellendi (Garanti + Albaraka)
+  // BANKA-IBAN-FIX-001 + V194b GBP-DEVRE-DISI: gerçek IBAN'larla güncellendi (Garanti + Albaraka).
+  // GBP fallback YANLIS USD IBAN'ı gösteriyordu — devre dışı bırakıldı (gerçek GBP IBAN yok).
+  // V194d'de bu blok DUAY_BANKA(cur) accessor'ına bağlanacak.
   var varsayilan = {
     'USD': 'T. GARANTİ BANKASI A.Ş. · USD IBAN: TR39 0006 2001 1810 0009 0812 68 · SWIFT: TGBATRIS · YEŞİLPINAR ŞUBESİ / 1181',
     'EUR': 'T. GARANTİ BANKASI A.Ş. · EUR IBAN: TR66 0006 2001 1810 0009 0812 67 · SWIFT: TGBATRIS · YEŞİLPINAR ŞUBESİ / 1181',
     'TRY': 'T. GARANTİ BANKASI A.Ş. · TL IBAN: TR24 0006 2001 1810 0006 2960 86 · YEŞİLPINAR ŞUBESİ / 1181 | ALBARAKA TÜRK · TL IBAN: TR54 0020 3000 0889 5310 0000 05 · ALİBEYKÖY / 117',
-    'GBP': 'T. GARANTİ BANKASI A.Ş. · USD IBAN: TR39 0006 2001 1810 0009 0812 68 · SWIFT: TGBATRIS'
+    'GBP': 'GBP transfer şu an desteklenmiyor — lütfen USD veya EUR seçin.'
   };
   return ayarlar[para] || varsayilan[para] || varsayilan['USD'];
 };

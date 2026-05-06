@@ -39,9 +39,11 @@ var BANK_ACCOUNTS = {
     branch: 'Yeşilpınar / 267',
     swift: 'KTEFTRIS',
     accounts: {
+      // V194b: USD/EUR'da 5001 → 5000 sapma fix (platform_standartlari.js:18-19 master ile uyum).
+      // TRY zaten dogru (5000) — dokunulmadi. V194d'de bu ikiz tablo tamamen silinecek, IBAN_DATA okunacak.
       TRY: 'TR06 0020 5000 0956 8147 5000 01',
-      USD: 'TR22 0020 5000 0956 8147 5001 01',
-      EUR: 'TR92 0020 5000 0956 8147 5001 02'
+      USD: 'TR22 0020 5000 0956 8147 5000 01',
+      EUR: 'TR92 0020 5000 0956 8147 5000 02'
     }
   }
 };

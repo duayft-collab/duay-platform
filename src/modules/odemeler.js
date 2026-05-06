@@ -95,8 +95,11 @@ function _odmSaveKurConfig(cfg) {
   localStorage.setItem(ODM_KUR_CONFIG_KEY, JSON.stringify(cfg));
 }
 
+// V194b: USD 38.50 → 44.55, EUR 41.20 → 51.70, GBP 48.90 → 59.30 — _saKur init (satin_alma_v2.js:110) ile uyum.
+// CHF, JPY, AED, SAR, XAU, XAG dokunulmadi (ayri kaynak, V194c kapsaminda degil).
+// V194c'de bu literal silinecek, DUAY_KUR_GET(cur, true) kullanilacak.
 const ODM_RATES_DEFAULT = {
-  TRY: 1, USD: 38.50, EUR: 41.20, GBP: 48.90,
+  TRY: 1, USD: 44.55, EUR: 51.70, GBP: 59.30,
   CHF: 43.10, JPY: 0.26, AED: 10.48, SAR: 10.27,
   XAU: 3850, XAG: 45.20,
 };
