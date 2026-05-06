@@ -131,8 +131,9 @@ function renderLojistik() {
         <!-- V189c — Üst Excel + PDF butonları kaldırıldı:
              window._lojistikXlsx ve window._lojistikPdf hiçbir yerde tanımlı değildi
              (silent fail). ED listesindeki V187g/h/i export butonları korundu. -->
+        <!-- V190e — '+ Konteynır' butonu kaldırıldı: Kargo paneline taşındı.
+             window.openKonteynModal başka yerde çağrılıyor, fonksiyon korundu. -->
         <button class="btn btns" onclick="window.nav?.('kargo')" style="font-size:12px">Kargo Yönetimi</button>
-        <button class="btn btns" onclick="window.openKonteynModal?.(null)" style="font-size:12px">+ Konteynır</button>
         <button class="btn btnp" onclick="window._edWizardAc?.()" style="font-size:12px">+ Yeni Teslimat</button>
       </div>
     </div>`,
