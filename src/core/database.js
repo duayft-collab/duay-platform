@@ -2328,7 +2328,14 @@ function loadExpectedDeliveries(opts) {
   var d = _read(KEYS.expectedDeliveries);
   var arr = Array.isArray(d) ? d : [];
   if (opts && opts.raw) return arr;
-  return arr.filter(function(ed) { return !ed.isDeleted; });
+  /* V191c2 — Arşiv feature:
+   *   { archived: true } → silinmemiş + arşivli (arşiv listesi görünümü)
+   *   default            → silinmemiş + arşivlenmemiş (aktif liste, eski default'tan
+   *                        DAHA KISITLAYICI: arşivli kayıtlar varsayılan listeden kalkar)
+   *   { raw: true }      → her şey (silinmiş + arşivli dahil) — DOKUNULMADI,
+   *                        38 yerdeki çağrılar etkilenmez. */
+  if (opts && opts.archived) return arr.filter(function(ed) { return !ed.isDeleted && ed.isArchived; });
+  return arr.filter(function(ed) { return !ed.isDeleted && !ed.isArchived; });
 }
 /** @param {Array<Object>} d */
 function storeExpectedDeliveries(d) {
