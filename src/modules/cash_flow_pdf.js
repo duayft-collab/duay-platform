@@ -26,6 +26,10 @@
 (function() {
 
   var TEMP_ID = 'cf-pdf-render';
+  var OVERLAY_ID = 'cf-pdf-overlay';
+
+  /* V193 EDIT 7.1 — Double-click koruması. Export sırasında ikinci tıklama no-op. */
+  var _cfpBusy = false;
 
   // TODO[KX10]: shared/config/rates.js
   var FALLBACK_RATES = { TRY: 1, USD: 44.55, EUR: 51.70, GBP: 59.30 };
@@ -104,6 +108,26 @@
 
   function _cfpRemoveTemp() {
     var ex = document.getElementById(TEMP_ID);
+    if (ex) ex.remove();
+  }
+
+  /* V193 EDIT 7.1 — Loading overlay (PDF üretilirken görünür spinner).
+   * pure CSS spinner — image yüklemesi yok, anında çıkar. Body'e eklenir. */
+  function _cfpShowOverlay() {
+    _cfpHideOverlay();
+    var ov = document.createElement('div');
+    ov.id = OVERLAY_ID;
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(255,255,255,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif';
+    ov.innerHTML = '<div style="background:#fff;padding:20px 28px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.12);display:flex;align-items:center;gap:14px">'
+      + '<div style="width:18px;height:18px;border:2px solid #E0E0E0;border-top-color:#1A8D6F;border-radius:50%;animation:cfpSpin 0.8s linear infinite"></div>'
+      + '<div style="font-size:13px;color:#444">PDF hazırlanıyor...</div>'
+    + '</div>'
+    + '<style>@keyframes cfpSpin{to{transform:rotate(360deg)}}</style>';
+    document.body.appendChild(ov);
+  }
+
+  function _cfpHideOverlay() {
+    var ex = document.getElementById(OVERLAY_ID);
     if (ex) ex.remove();
   }
 
@@ -210,6 +234,11 @@
 
   // ── ANA EXPORT FN ────────────────────────────────────────────────
   function exportPdf() {
+    /* V193 EDIT 7.1 — Double-click koruması. Aynı anda 2. çağrı no-op + toast. */
+    if (_cfpBusy) {
+      _cfpToast('PDF üretiliyor, lütfen bekle...', 'warn');
+      return;
+    }
     if (!_cfpReady()) {
       _cfpToast('PDF kütüphanesi (html2pdf) yüklenemedi. Sayfayı yenileyip tekrar dene.', 'err');
       return;
@@ -235,7 +264,8 @@
 
     var allSatirlar = tablo.satirlar || [];
     if (!allSatirlar.length) {
-      _cfpToast('İndirilecek satır yok.', 'warn');
+      /* V193 EDIT 7.1 — Boş veri uyarısı (talimat metni) */
+      _cfpToast('PDF oluşturulamadı: raporda veri bulunamadı.', 'warn');
       return;
     }
 
@@ -256,16 +286,20 @@
     allSatirlar.forEach(function(s, i) { originalIndex[s.id] = i + 1; });
 
     if (!filtered.length) {
-      _cfpToast('Filtreyle eşleşen satır yok. PDF için filtreyi temizle.', 'warn');
+      /* V193 EDIT 7.1 — Filtreli liste boş (uygun mesaj) */
+      _cfpToast('PDF oluşturulamadı: raporda veri bulunamadı (filtreyle eşleşen kayıt yok).', 'warn');
       return;
     }
 
-    /* Off-screen render container — mevcut paneli etkilemeden html2pdf'in
-     * kullanacağı geçici DOM. position:fixed top:-99999px → kullanıcıya görünmez. */
+    /* V193 EDIT 7.1 — KRİTİK FIX: html2canvas viewport DIŞINA atılan node'u render edemez,
+     * boş PDF üretilirdi. Çözüm: container GÖRÜNÜR alanda (left:0 top:0) ama
+     * opacity:0 ve pointer-events:none ile kullanıcıya invisible.
+     *   YASAK: display:none, left:-99999px, transform:scale(0), visibility:hidden
+     *   Hepsi html2canvas tarafında boş canvas üretir. */
     _cfpRemoveTemp();
     var container = document.createElement('div');
     container.id = TEMP_ID;
-    container.style.cssText = 'position:fixed;left:-99999px;top:0;width:1100px;background:#FFF;color:#222;font-family:-apple-system,BlinkMacSystemFont,system-ui,Helvetica,Arial,sans-serif;padding:24px;box-sizing:border-box';
+    container.style.cssText = 'position:absolute;left:0;top:0;width:1100px;opacity:0;pointer-events:none;z-index:-1;background:#FFF;color:#222;font-family:-apple-system,BlinkMacSystemFont,system-ui,Helvetica,Arial,sans-serif;padding:24px;box-sizing:border-box';
 
     /* Satırları sırala (compute ile tutarlı) — tarih ASC + createdAt ASC.
      * Görsel olarak da bu sırayla görünür ki kasa mevcudu monoton ilerlesin. */
@@ -319,7 +353,18 @@
     document.body.appendChild(container);
 
     var fileName = 'nakit-akis-' + _cfpSlug(tablo.ad) + '-' + _cfpDateStr() + '.pdf';
-    _cfpToast('PDF hazırlanıyor...', 'ok');
+
+    /* V193 EDIT 7.1 — Busy flag + loading overlay (PDF üretilirken görünür spinner).
+     * then() / catch() / init-error → her durumda flag temizlenir + overlay gizlenir +
+     * temp DOM kaldırılır. Memory leak yok. */
+    _cfpBusy = true;
+    _cfpShowOverlay();
+
+    var cleanup = function() {
+      _cfpBusy = false;
+      _cfpHideOverlay();
+      _cfpRemoveTemp();
+    };
 
     /* html2pdf — A4 landscape (12 kolon → portrait taşar).
      * margin 8mm, scale 1.5 (Türkçe karakter düzgün), pagebreak avoid (zebra row koru). */
@@ -336,7 +381,7 @@
         .from(container)
         .save()
         .then(function() {
-          _cfpRemoveTemp();
+          cleanup();
           _cfpToast('PDF indirildi: ' + fileName, 'ok');
           try {
             if (typeof window._auditLog === 'function') {
@@ -347,12 +392,12 @@
         })
         .catch(function(e) {
           console.error('[CF-PDF] generation error:', e);
-          _cfpRemoveTemp();
+          cleanup();
           _cfpToast('PDF oluşturulamadı: ' + (e && e.message ? e.message : 'bilinmeyen hata'), 'err');
         });
     } catch (e) {
       console.error('[CF-PDF] init error:', e);
-      _cfpRemoveTemp();
+      cleanup();
       _cfpToast('PDF başlatılamadı: ' + (e && e.message ? e.message : 'bilinmeyen hata'), 'err');
     }
   }
