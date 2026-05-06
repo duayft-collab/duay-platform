@@ -896,7 +896,19 @@
     try { return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]') || []; } catch(e) { return []; }
   };
   window._edPendingActionsStore = function(list) {
-    try { localStorage.setItem(PENDING_KEY, JSON.stringify(list || [])); } catch(e) {}
+    try {
+      localStorage.setItem(PENDING_KEY, JSON.stringify(list || []));
+      /* V192c — TAHKİM: Firestore sync (KX10 reuse, V192b ile aynı pattern).
+       * Cross-device admin onay akışı — talep oluşturulduğunda/onaylandığında/reddedildiğinde
+       * tüm cihazlara yansır. Echo guard mevcut (_writingNow[edPending] 30sn).
+       * Failure-mode: try/catch — sync hatası LS write'ı bozmaz. */
+      try {
+        if (typeof window._syncFirestore === 'function' && typeof window._fsPath === 'function') {
+          var _fp = window._fsPath('edPending');
+          if (_fp) window._syncFirestore(_fp, list || []);
+        }
+      } catch(e) {}
+    } catch(e) {}
   };
   window._edIsAdmin = function() {
     if (typeof window.isAdmin === 'function') return !!window.isAdmin();
