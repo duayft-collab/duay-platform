@@ -160,6 +160,8 @@
         tutar: Number(formData.tutar) || 0,
         paraBirimi: PARA_BIRIMLERI.indexOf(formData.paraBirimi) !== -1 ? formData.paraBirimi : 'TRY',
         kategori: KATEGORILER.indexOf(formData.kategori) !== -1 ? formData.kategori : 'gelir',
+        /* V193 EDIT 2 — Kaynak/Banka alanı (opsiyonel, boş string default) */
+        kaynak: String(formData.kaynak || '').trim(),
         kurSnapshot: { TRY: rates.TRY, USD: rates.USD, EUR: rates.EUR, GBP: rates.GBP },
         status: 'confirmed',
         source: 'manual',
@@ -177,9 +179,13 @@
   }
 
   function _cfSatirSil(satirId) {
-    const fn = window.confirmModal || function(opts) {
-      if (window.confirm(opts.message)) opts.onConfirm && opts.onConfirm();
-    };
+    /* V193 EDIT 2 — confirmModal yoksa native confirm yerine toast + iptal (Belge 3 §6).
+     * Eski fallback `window.confirm()` kullanıyordu — anayasal uyumsuz. */
+    var fn = window.confirmModal;
+    if (typeof fn !== 'function') {
+      if (window.toast) window.toast('Onay penceresi yüklenemedi. Sayfayı yenileyip tekrar dene.', 'err');
+      return;
+    }
     fn({
       title: 'Satır Sil',
       message: 'Bu satırı silmek istediğinizden emin misiniz?',
@@ -189,6 +195,10 @@
         if (!tablo) return;
         tablo.satirlar = (tablo.satirlar || []).filter(s => s.id !== satirId);
         _cfSaveImmediate(state);
+        /* Dirty mark — kayıt henüz Firestore'a flush edilmedi */
+        if (window.CashFlowWorks && typeof window.CashFlowWorks.markDirty === 'function') {
+          window.CashFlowWorks.markDirty();
+        }
         _cfRenderPanel();
       }
     });
@@ -215,6 +225,23 @@
     }
   }
 
+  /* V193 EDIT 2 — Kaynak/Banka badge render (Apple-sade, kenarlık yok).
+   * Banka isimleri (Ziraat/Vakıf/Kuveyt/İş) → açık mavi
+   * "Kasa" → açık gri
+   * "Wise/Western Union/Diğer" → açık yeşil
+   * Boş → "—" şeffaf */
+  function _cfBadge(kaynak) {
+    var k = String(kaynak || '').trim();
+    if (!k) return '<span style="color:#bbb;font-size:12px">—</span>';
+    var kLow = k.toLowerCase();
+    var bg = '#F2F2F2', fg = '#666';   // varsayılan gri
+    if (/banka|ziraat|vak[ıi]f|kuveyt|i[şs]\s*bankas/i.test(kLow)) { bg = '#EEF3F8'; fg = '#1F4F84'; }
+    else if (/^kasa\b/.test(kLow))                                  { bg = '#F2F2F2'; fg = '#555'; }
+    else if (/wise|western|wallet|payoneer|di[ğg]er/i.test(kLow))   { bg = '#ECF3EE'; fg = '#1A6F4F'; }
+    return '<span style="display:inline-block;padding:2px 8px;background:' + bg
+      + ';color:' + fg + ';border-radius:10px;font-size:11px;font-weight:500">' + _esc(k) + '</span>';
+  }
+
   function _cfRenderTablo(tablo) {
     const satirlar = tablo.satirlar || [];
     if (!satirlar.length) {
@@ -229,7 +256,9 @@
         + '<td style="padding:10px 12px;text-align:right;font-variant-numeric:tabular-nums;color:' + renk + ';font-weight:500">' + isaret + ' ' + _fmtTutar(s.tutar) + '</td>'
         + '<td style="padding:10px 12px;text-align:center;color:#666;font-size:12px">' + _esc(s.paraBirimi) + '</td>'
         + '<td style="padding:10px 12px;text-align:center;color:' + renk + ';font-size:12px;text-transform:capitalize">' + _esc(s.kategori) + '</td>'
-        + '<td style="padding:10px 12px;text-align:center"><button onclick="window.CashFlow.satirSil(\'' + _esc(s.id) + '\')" style="background:transparent;border:0;cursor:pointer;color:#bbb;font-size:14px" title="Sil">×</button></td>'
+        /* V193 EDIT 2 — Kaynak/Banka kolonu */
+        + '<td style="padding:10px 12px;text-align:center">' + _cfBadge(s.kaynak) + '</td>'
+        + '<td style="padding:10px 12px;text-align:center"><button data-cf-action="row-delete" data-cf-row-id="' + _esc(s.id) + '" style="background:transparent;border:0;cursor:pointer;color:#bbb;font-size:14px" title="Sil">×</button></td>'
         + '</tr>';
     }).join('');
     return '<table style="width:100%;border-collapse:collapse;font-size:13px">'
@@ -239,6 +268,8 @@
       + '<th style="padding:10px 12px;text-align:right;font-weight:500">Tutar</th>'
       + '<th style="padding:10px 12px;text-align:center;font-weight:500">Döviz</th>'
       + '<th style="padding:10px 12px;text-align:center;font-weight:500">Kategori</th>'
+      /* V193 EDIT 2 — Kaynak başlığı */
+      + '<th style="padding:10px 12px;text-align:center;font-weight:500">Kaynak</th>'
       + '<th style="padding:10px 12px;text-align:center;font-weight:500;width:32px"></th>'
       + '</tr></thead><tbody>' + rows + '</tbody></table>';
   }
@@ -261,31 +292,47 @@
   }
 
   function _cfRenderSatirEkleForm() {
+    /* V193 EDIT 2 — Kaynak/Banka önerileri: cash_flow_works.js KAYNAK_ONERILER reuse (KX10 disiplin).
+     * window.CashFlowWorks yüklenmemişse fallback boş array — datalist boş kalır, input serbest yazıma açık. */
+    var kaynakOptions = (window.CashFlowWorks && window.CashFlowWorks.KAYNAK_ONERILER) || [];
+    var datalistOpts = kaynakOptions.map(function(k) {
+      return '<option value="' + _esc(k) + '"></option>';
+    }).join('');
     return '<div id="cf-add-form" style="display:none;margin-top:14px;padding:16px;background:#fafafa;border-radius:8px;border:0.5px solid #e8e8e8">'
-      + '<div style="display:grid;grid-template-columns:120px 1fr 140px 80px 110px;gap:10px;align-items:end">'
+      + '<datalist id="cf-kaynak-list">' + datalistOpts + '</datalist>'
+      + '<div style="display:grid;grid-template-columns:120px 1fr 140px 80px 110px 140px;gap:10px;align-items:end">'
       + '<label style="font-size:11px;color:#666">Tarih<input id="cf-i-tarih" type="date" value="' + new Date().toISOString().slice(0,10) + '" style="width:100%;padding:8px;border:0.5px solid #ddd;border-radius:6px;font-size:13px;margin-top:4px"></label>'
       + '<label style="font-size:11px;color:#666">Açıklama<input id="cf-i-aciklama" type="text" placeholder="Açıklama..." style="width:100%;padding:8px;border:0.5px solid #ddd;border-radius:6px;font-size:13px;margin-top:4px"></label>'
       + '<label style="font-size:11px;color:#666">Tutar<input id="cf-i-tutar" type="number" step="0.01" placeholder="0.00" style="width:100%;padding:8px;border:0.5px solid #ddd;border-radius:6px;font-size:13px;margin-top:4px;font-variant-numeric:tabular-nums"></label>'
       + '<label style="font-size:11px;color:#666">Döviz<select id="cf-i-doviz" style="width:100%;padding:8px;border:0.5px solid #ddd;border-radius:6px;font-size:13px;margin-top:4px">' + PARA_BIRIMLERI.map(function(c){ return '<option value="' + c + '">' + c + '</option>'; }).join('') + '</select></label>'
       + '<label style="font-size:11px;color:#666">Kategori<select id="cf-i-kategori" style="width:100%;padding:8px;border:0.5px solid #ddd;border-radius:6px;font-size:13px;margin-top:4px"><option value="gelir">Gelir</option><option value="gider">Gider</option><option value="transfer">Transfer</option></select></label>'
+      /* V193 EDIT 2 — Kaynak/Banka serbest yazımlı + listeden seçim (datalist) */
+      + '<label style="font-size:11px;color:#666">Kaynak<input id="cf-i-kaynak" type="text" list="cf-kaynak-list" placeholder="Banka veya kaynak..." style="width:100%;padding:8px;border:0.5px solid #ddd;border-radius:6px;font-size:13px;margin-top:4px"></label>'
       + '</div>'
       + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">'
-      + '<button onclick="document.getElementById(\'cf-add-form\').style.display=\'none\'" style="padding:8px 14px;background:transparent;border:0.5px solid #ddd;border-radius:6px;cursor:pointer;font-size:12px;color:#666">Vazgeç</button>'
-      + '<button onclick="window._cfFormSubmit()" style="padding:8px 14px;background:#1A8D6F;border:0;border-radius:6px;cursor:pointer;font-size:12px;color:#fff;font-weight:500">Ekle</button>'
+      + '<button data-cf-action="form-cancel" style="padding:8px 14px;background:transparent;border:0.5px solid #ddd;border-radius:6px;cursor:pointer;font-size:12px;color:#666">Vazgeç</button>'
+      + '<button data-cf-action="form-submit" style="padding:8px 14px;background:#1A8D6F;border:0;border-radius:6px;cursor:pointer;font-size:12px;color:#fff;font-weight:500">Ekle</button>'
       + '</div></div>';
   }
 
   window._cfFormSubmit = function() {
+    /* V193 EDIT 2 — kaynak field eklendi (opsiyonel, boş kabul edilir) + dirty mark */
+    var kaynakEl = document.getElementById('cf-i-kaynak');
     const data = {
       tarih: document.getElementById('cf-i-tarih').value,
       aciklama: document.getElementById('cf-i-aciklama').value,
       tutar: document.getElementById('cf-i-tutar').value,
       paraBirimi: document.getElementById('cf-i-doviz').value,
-      kategori: document.getElementById('cf-i-kategori').value
+      kategori: document.getElementById('cf-i-kategori').value,
+      kaynak: kaynakEl ? String(kaynakEl.value || '').trim() : ''
     };
     if (!data.aciklama.trim() || !Number(data.tutar)) {
       if (window.toast) window.toast('Açıklama ve tutar zorunlu', 'warn');
       return;
+    }
+    /* Dirty mark — CashFlowWorks varsa kaydedilmemiş değişiklik durumunu bildir */
+    if (window.CashFlowWorks && typeof window.CashFlowWorks.markDirty === 'function') {
+      window.CashFlowWorks.markDirty();
     }
     _cfSatirEkle(data);
   };
@@ -297,23 +344,85 @@
     const tablo = state.tablolar.find(t => t.id === state.aktifTabloId);
     const calc = window.calculateCashFlow(tablo);
 
+    /* V193 EDIT 2 — Toolbar entegrasyonu:
+     * Çalışma adı CashFlowWorks.getActiveWork()'tan gelir (varsa). Yüklü değilse fallback tablo.ad.
+     * Dirty işareti CashFlowWorks.isDirty() — true ise başlık yanında kırmızı '*'.
+     * UI sade: ekstra border/shadow yok, sade text-only.
+     * V193 EDIT 3 — CashFlowWorksUI varsa toolbar'ı oraya delege et;
+     * yoksa workTitle + dirty mark fallback (data layer açık ama UI yüklenmemişse). */
+    var workTitle = (tablo && tablo.ad) || 'Manuel Kasa';
+    var isDirty = !!(window.CashFlowWorks && typeof window.CashFlowWorks.isDirty === 'function' && window.CashFlowWorks.isDirty());
+    var dirtyMark = isDirty ? '<span style="color:#E0574F;margin-left:4px" title="Kaydedilmemiş değişiklik">*</span>' : '';
+    var hasUI = !!(window.CashFlowWorksUI && typeof window.CashFlowWorksUI.renderToolbar === 'function');
+    /* hasUI=true → workTitle metni gizli, toolbar buton dolgusu var; aktif çalışma adı kart modal'da görünür.
+     * hasUI=false → eski fallback gösterimi (geri uyumlu). */
+    var toolbarHtml = hasUI
+      ? '<div id="cf-toolbar"></div>'
+      : '<span style="font-size:13px;color:#666">' + _esc(workTitle) + dirtyMark + '</span>';
+
     panel.innerHTML = '<div style="max-width:1200px;margin:0 auto;padding:24px;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif">'
       + '<div style="margin-bottom:18px">'
       + '<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#999;margin-bottom:4px">Finans › Nakit Akışı Manuel</div>'
       + '<div style="display:flex;justify-content:space-between;align-items:baseline">'
       + '<h2 style="margin:0;font-size:18px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#222">Nakit Akışı — Manuel</h2>'
-      + '<span style="font-size:13px;color:#666">' + _esc(tablo.ad) + '</span>'
+      + toolbarHtml
       + '</div></div>'
       + '<div style="background:#fff;border-radius:10px;border:0.5px solid #e8e8e8;box-shadow:0 1px 2px rgba(0,0,0,0.04);overflow:hidden">'
       + _cfRenderTablo(tablo)
       + '</div>'
-      + '<button onclick="document.getElementById(\'cf-add-form\').style.display=document.getElementById(\'cf-add-form\').style.display===\'none\'?\'block\':\'none\'" style="margin-top:14px;padding:12px;width:100%;background:transparent;border:1px dashed #bbb;border-radius:8px;cursor:pointer;font-size:13px;color:#666">+ Satır Ekle</button>'
+      /* V193 EDIT 2 — Add Row buton: inline onclick yerine data-cf-action (event delegation) */
+      + '<button data-cf-action="add-row-toggle" style="margin-top:14px;padding:12px;width:100%;background:transparent;border:1px dashed #bbb;border-radius:8px;cursor:pointer;font-size:13px;color:#666">+ Satır Ekle</button>'
       + _cfRenderSatirEkleForm()
       + _cfRenderToplam(calc)
-      + '<div style="margin-top:18px;display:flex;justify-content:flex-end">'
-      + '<button onclick="window.CashFlow.exportJson()" style="padding:9px 16px;background:#fff;border:0.5px solid #ddd;border-radius:6px;cursor:pointer;font-size:12px;color:#444">JSON İndir</button>'
+      + '<div style="margin-top:18px;display:flex;justify-content:flex-end;gap:8px">'
+      /* V193 EDIT 4 — Excel İndir butonu (CashFlowExcel modülü). Sade, JSON ile aynı stil. */
+      + '<button data-cf-action="export-xlsx" style="padding:9px 16px;background:#fff;border:0.5px solid #ddd;border-radius:6px;cursor:pointer;font-size:12px;color:#444">Excel İndir</button>'
+      + '<button data-cf-action="export-json" style="padding:9px 16px;background:#fff;border:0.5px solid #ddd;border-radius:6px;cursor:pointer;font-size:12px;color:#444">JSON İndir</button>'
       + '</div>'
       + '</div>';
+
+    /* V193 EDIT 2 — Event delegation: panel root'a tek listener, data-cf-action ile dispatch.
+     * Yeni inline onclick YOK. Mevcut 5 inline onclick (V19x temizlik borç) bu cycle'da dokunulmadı. */
+    _cfBindEvents(panel);
+
+    /* V193 EDIT 3 — Toolbar render: CashFlowWorksUI varsa çalışma yönetimi butonlarını
+     * #cf-toolbar div'ine enjekte eder. UI yüklenmemişse fallback span zaten gösterilmiştir. */
+    if (window.CashFlowWorksUI && typeof window.CashFlowWorksUI.renderToolbar === 'function') {
+      try { window.CashFlowWorksUI.renderToolbar('#cf-toolbar'); }
+      catch (e) { console.warn('[CF] CashFlowWorksUI.renderToolbar error:', e && e.message); }
+    }
+  }
+
+  /* V193 EDIT 2 — Event delegation bind (idempotent — panel her render'da yeniden bağlanır,
+   * eski listener panel.innerHTML rewrite ile otomatik temizlenir). */
+  function _cfBindEvents(panel) {
+    if (!panel) return;
+    panel.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-cf-action]');
+      if (!btn) return;
+      var action = btn.getAttribute('data-cf-action');
+      if (action === 'add-row-toggle') {
+        var f = document.getElementById('cf-add-form');
+        if (f) f.style.display = (f.style.display === 'none' ? 'block' : 'none');
+      } else if (action === 'form-cancel') {
+        var f2 = document.getElementById('cf-add-form');
+        if (f2) f2.style.display = 'none';
+      } else if (action === 'form-submit') {
+        window._cfFormSubmit();
+      } else if (action === 'export-json') {
+        _cfExportJson();
+      } else if (action === 'export-xlsx') {
+        /* V193 EDIT 4 — Excel İndir: CashFlowExcel modülü. Yüklenmemişse toast uyarısı. */
+        if (window.CashFlowExcel && typeof window.CashFlowExcel.exportXlsx === 'function') {
+          window.CashFlowExcel.exportXlsx();
+        } else if (window.toast) {
+          window.toast('Excel modülü yüklenemedi. Sayfayı yenileyip tekrar dene.', 'err');
+        }
+      } else if (action === 'row-delete') {
+        var rid = btn.getAttribute('data-cf-row-id');
+        if (rid) _cfSatirSil(rid);
+      }
+    });
   }
 
   window._cfRenderPanel = _cfRenderPanel;
