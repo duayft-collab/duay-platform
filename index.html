@@ -1601,25 +1601,67 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 
   <script>
     // Service Worker kaydı + otomatik güncelleme
+    /* V193 EDIT 7.1.6 — SW-AUTOUPDATE-001
+     * Eski davranış: reg.update() sadece sayfa load'unda 1 kez çağrılıyordu →
+     * Safari'nin default 1-saatlik update interval'i nedeniyle yeni sürüm geç fark
+     * edilirdi. Yeni davranış:
+     *   1. Sayfa load'unda update kontrolü
+     *   2. Her 60 saniyede bir update kontrolü (setInterval)
+     *   3. Sekme görünür olduğunda update kontrolü (visibilitychange)
+     *   4. Yeni SW 'installed' state'e geçince → postMessage SKIP_WAITING →
+     *      sw.js skipWaiting() → controllerchange → otomatik reload
+     * Sonuç: kullanıcı hiçbir şey yapmasa bile en geç 60 saniye içinde yeni
+     *        sürüm aktive olur, sayfa kendi kendine yenilenir. */
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').then(reg => {
           console.info('[SW] Kayıtlı:', reg.scope);
-          reg.update();
-          reg.addEventListener('updatefound', () => {
-            var nw = reg.installing;
+
+          /* Yeni SW algılama — installing state takibi */
+          var handleNewWorker = function(nw) {
             if (!nw) return;
             nw.addEventListener('statechange', () => {
-              if (nw.state === 'activated' && navigator.serviceWorker.controller) {
-                console.info('[SW] Yeni versiyon aktif — sayfa yenileniyor');
-                window.location.reload();
+              /* 'installed' = yeni SW indirildi, mevcut SW hâlâ aktif → waiting state.
+               * postMessage ile waiting SW'e SKIP_WAITING gönder → activate olur →
+               * controllerchange tetiklenir → reload. */
+              if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                console.info('[SW] Yeni sürüm install oldu — SKIP_WAITING tetikleniyor');
+                nw.postMessage({ type: 'SKIP_WAITING' });
               }
             });
+          };
+          reg.addEventListener('updatefound', () => handleNewWorker(reg.installing));
+
+          /* Sayfa load'unda zaten waiting SW varsa (kullanıcı sayfayı eski sekmede
+           * tutuyordu, yeni sürüm install olmuş ama activate olmamış): hemen tetikle. */
+          if (reg.waiting && navigator.serviceWorker.controller) {
+            console.info('[SW] Hazır waiting SW bulundu — SKIP_WAITING tetikleniyor');
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+
+          /* İlk update — sayfa load'unda */
+          reg.update().catch(() => {});
+
+          /* Periodik update kontrolü — 60 saniyede bir.
+           * Safari'nin 1 saatlik default'unu 1 dakikaya indirir. */
+          setInterval(() => { reg.update().catch(() => {}); }, 60000);
+
+          /* Sekme tekrar görünür olduğunda update kontrolü.
+           * Kullanıcı başka sekmedeyse arka planda güncelleme inmez bazı tarayıcılarda;
+           * sekmeye dönünce hemen kontrol et. */
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              reg.update().catch(() => {});
+            }
           });
         }).catch(err => console.warn('[SW] Kayıt hatası:', err));
+
+        /* controllerchange = yeni SW kontrolü ele aldı → eski cache invalid →
+         * reload zorunlu. _swReloading guard double-reload'u engeller. */
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           if (window._swReloading) return;
           window._swReloading = true;
+          console.info('[SW] Controller değişti — sayfa yenileniyor');
           window.location.reload();
         });
       });
