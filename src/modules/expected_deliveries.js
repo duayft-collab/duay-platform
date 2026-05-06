@@ -149,6 +149,13 @@
 
   /* ─── CREATE / UPDATE / DELETE WRAPPERS ───────────────────── */
   window._edCreate = function(ed) {
+    /* V192a — TAHKİM: function-level RBAC defensive guard.
+     * Console bypass kapanır — non-admin/manager yeni kayıt yapamaz.
+     * UI'daki "Yeni Teslimat" butonu non-admin için toast verir; UI gizleme V192f'de. */
+    if (typeof window._edCanManage === 'function' && !window._edCanManage()) {
+      if (typeof window.toast === 'function') window.toast(t('ed.toast.permissionDenied'), 'warn');
+      return { success: false, error: 'permission_denied' };
+    }
     if (!window._edCanManualCreate()) {
       window.toast && window.toast(t('ed.toast.autoMode'), 'err');
       return { success: false, error: 'mode_restricted' };
@@ -190,7 +197,16 @@
   };
 
   window._edUpdate = function(edId, patch) {
+    /* V192a — TAHKİM: function-level RBAC defensive guard.
+     * Console bypass kapanır. UI tarafında zaten _edEditModal non-admin için
+     * pending action akışı var (line 587: _edRequestApproval('update', ...));
+     * bu guard onun arkasındaki son savunma — _edUpdate doğrudan çağrılırsa engeller.
+     * _edApprovePending → _edUpdate çağrısı admin tarafından yapılır, geçer. */
     if (!edId) return { success: false, error: 'id_missing' };
+    if (typeof window._edCanManage === 'function' && !window._edCanManage()) {
+      if (typeof window.toast === 'function') window.toast(t('ed.toast.permissionDenied'), 'warn');
+      return { success: false, error: 'permission_denied' };
+    }
     var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
     var idx = -1;
     for (var i = 0; i < list.length; i++) { if (list[i].id === edId) { idx = i; break; } }
@@ -698,6 +714,15 @@
 
   /* LOJ-1B-C4: PDF eki Storage upload + kaldırma */
   window._edUploadBelge = async function(fileInput) {
+    /* V192a — TAHKİM: function-level RBAC defensive guard.
+     * Non-admin/manager belge yükleyemez. Bu fix önemli — guard olmasa
+     * non-admin "Kaydet" basana kadar Firebase storage'a yüklenmiş olurdu
+     * (sonra _edUpdate guard durdurur ama dosya zaten upload edilmiş gereksiz).
+     * UI tarafında V184a3 modal'ın `disabled` attribute'u var ama console bypass kapanır. */
+    if (typeof window._edCanManage === 'function' && !window._edCanManage()) {
+      if (typeof window.toast === 'function') window.toast(t('ed.toast.permissionDenied'), 'warn');
+      return;
+    }
     if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
     var file = fileInput.files[0];
     if (file['size'] > 20 * 1024 * 1024) { window.toast?.(t('ed.toast.fileTooLarge'), 'err'); return; }
