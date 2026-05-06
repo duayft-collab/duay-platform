@@ -2342,7 +2342,10 @@ function loadExpectedDeliveries(opts) {
    *   default            → silinmemiş + arşivlenmemiş (aktif liste, eski default'tan
    *                        DAHA KISITLAYICI: arşivli kayıtlar varsayılan listeden kalkar)
    *   { raw: true }      → her şey (silinmiş + arşivli dahil) — DOKUNULMADI,
-   *                        38 yerdeki çağrılar etkilenmez. */
+   *                        38 yerdeki çağrılar etkilenmez.
+   * V192e — Restore feature:
+   *   { deleted: true }  → silinmiş kayıtlar (geri alma için admin/manager görünümü). */
+  if (opts && opts.deleted) return arr.filter(function(ed) { return ed.isDeleted; });
   if (opts && opts.archived) return arr.filter(function(ed) { return !ed.isDeleted && ed.isArchived; });
   return arr.filter(function(ed) { return !ed.isDeleted && !ed.isArchived; });
 }

@@ -402,6 +402,60 @@
     });
   };
 
+  /* V192e — TAHKİM: silinmiş kaydı geri alma (restore). isDeleted=false set, fiziksel
+   * delete yok. RBAC: sadece admin/manager. _edUnarchive (V191c2) kalıbının kopyası. */
+  window._edRestore = function(edId) {
+    if (!edId) return false;
+    if (typeof window._edCanManage === 'function' && !window._edCanManage()) {
+      if (typeof window.toast === 'function') window.toast(t('ed.toast.permissionDenied'), 'warn');
+      return false;
+    }
+    var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+    var idx = -1;
+    for (var i = 0; i < list.length; i++) { if (list[i].id === edId) { idx = i; break; } }
+    if (idx === -1) return false;
+    list[idx].isDeleted = false;
+    list[idx].updatedAt = new Date().toISOString();
+    if (typeof window.storeExpectedDeliveries === 'function') window.storeExpectedDeliveries(list);
+    return true;
+  };
+
+  /* V192e — TAHKİM: Geri Al confirmModal + audit log (ed_restore). */
+  window._edRestoreConfirm = function(edId) {
+    if (!edId) return;
+    if (typeof window.confirmModal !== 'function') {
+      window.toast?.(t('ed.toast.confirmModalMissing'), 'err');
+      return;
+    }
+    if (typeof window._edCanManage === 'function' && !window._edCanManage()) {
+      window.toast?.(t('ed.toast.permissionDenied'), 'warn');
+      return;
+    }
+    var __all = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
+    var __ed = __all.find(function(e){ return e.id === edId; }) || {};
+    window.confirmModal(t('ed.confirm.restore.body'), {
+      title: t('ed.confirm.restore.title'),
+      danger: false,
+      confirmText: t('ed.actionMenu.restore'),
+      cancelText: 'İptal',
+      onConfirm: function() {
+        if (window._edRestore(edId)) {
+          try {
+            if (typeof window._auditLog === 'function') {
+              window._auditLog('ed_restore', edId, 'edId=' + edId
+                + ' yon=' + (__ed.yon || '?')
+                + ' productName=' + (__ed.productName || '?'));
+            }
+          } catch(e) {}
+          window.toast?.(t('ed.toast.restored'), 'ok');
+          window._edRefresh?.();
+        } else {
+          window.toast?.(t('ed.toast.restoreFailed'), 'err');
+        }
+      }
+    });
+  };
+
   /* LOJ-1B-A: Düzenle butonu — modal + submit handler */
   window._edEditModal = function(edId) {
     var list = (typeof window.loadExpectedDeliveries === 'function' ? window.loadExpectedDeliveries({ raw: true }) : []) || [];
@@ -811,8 +865,12 @@
 
   /* LOJ-1B-D: Filter state update + re-render */
   window._edFilter = function(field, value) {
-    if (!window._edFilterState) window._edFilterState = { yon: '', status: '', search: '', viewArchived: false };
+    if (!window._edFilterState) window._edFilterState = { yon: '', status: '', search: '', viewArchived: false, viewDeleted: false };
     window._edFilterState[field] = value;
+    /* V192e — TAHKİM: viewArchived ve viewDeleted mutual exclusive.
+     * Birini açarken diğerini otomatik kapat — aynı anda hem arşiv hem silinmiş görünüm olmaz. */
+    if (field === 'viewArchived' && value === true) window._edFilterState.viewDeleted = false;
+    if (field === 'viewDeleted' && value === true) window._edFilterState.viewArchived = false;
     var container = document.getElementById('ed-list-container');
     if (container && typeof window.renderEdList === 'function') {
       /* V191a — Focus bug fix: search input render edilince DOM'dan silindiği için
@@ -842,7 +900,7 @@
    * V189b — arama: _edBuildSearchHaystack + _edTurkishLower (Türkçe + 16 alan). */
   window._edApplyFilterState = function (list) {
     if (!Array.isArray(list)) return [];
-    if (!window._edFilterState) window._edFilterState = { yon: '', status: '', search: '', viewArchived: false };
+    if (!window._edFilterState) window._edFilterState = { yon: '', status: '', search: '', viewArchived: false, viewDeleted: false };
     var fs = window._edFilterState;
     var cariMap = {};
     try {
@@ -2512,8 +2570,11 @@
             ? '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edUnarchiveConfirm && window._edUnarchiveConfirm(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">' + (typeof window.t === 'function' ? window.t('ed.actionMenu.unarchive') : '📤 Aktif Listeye Al') + '</button>'
             : '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edArchiveConfirm && window._edArchiveConfirm(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">' + (typeof window.t === 'function' ? window.t('ed.actionMenu.archive') : '📦 Arşivle') + '</button>')
           : '')
-      /* V191c1 — 🗑️ Sil sadece admin/manager görür. user/staff/lead/asistan görmez. */
-      + ((typeof window._edCanManage === 'function' && window._edCanManage()) ? '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edDeleteConfirm && window._edDeleteConfirm(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px;color:#E0574F" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">🗑️ Sil</button>' : '')
+      /* V191c1 — 🗑️ Sil sadece admin/manager görür. user/staff/lead/asistan görmez.
+       * V192e — Sil koşullu: zaten silinmiş kayıt için anlamsız, sadece !ed.isDeleted ise görünür. */
+      + ((typeof window._edCanManage === 'function' && window._edCanManage() && !ed.isDeleted) ? '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edDeleteConfirm && window._edDeleteConfirm(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px;color:#E0574F" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">🗑️ Sil</button>' : '')
+      /* V192e — TAHKİM: 🔄 Geri Al — sadece silinmiş kayıt için (admin/manager). isDeleted=false set, audit log ed_restore. */
+      + ((typeof window._edCanManage === 'function' && window._edCanManage() && ed.isDeleted) ? '<button onclick="document.getElementById(\'ed-aksiyon-menu\').remove();window._edRestoreConfirm && window._edRestoreConfirm(\'' + _uiEsc(edId) + '\')" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px;color:#1D9E75" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">' + (typeof window.t === 'function' ? window.t('ed.actionMenu.restore') : '🔄 Geri Al') + '</button>' : '')
     + '</div>';
     document.body.appendChild(mo);
   };
@@ -2522,11 +2583,14 @@
   window.renderEdList = function(){
     /* V191c2 — Filter state'e göre aktif/arşiv liste seç:
      *   viewArchived true → loadExpectedDeliveries({archived:true})  (silinmemiş + arşivli)
-     *   viewArchived false → loadExpectedDeliveries()                 (silinmemiş + arşivlenmemiş) */
-    var __fs = window._edFilterState || { yon: '', status: '', search: '', viewArchived: false };
+     *   viewArchived false → loadExpectedDeliveries()                 (silinmemiş + arşivlenmemiş)
+     * V192e — viewDeleted true → loadExpectedDeliveries({deleted:true}) (silinmiş kayıtlar) */
+    var __fs = window._edFilterState || { yon: '', status: '', search: '', viewArchived: false, viewDeleted: false };
     var __viewArchived = !!__fs.viewArchived;
+    var __viewDeleted  = !!__fs.viewDeleted;
+    var __loadOpts = __viewDeleted ? { deleted: true } : (__viewArchived ? { archived: true } : undefined);
     var all = (typeof window.loadExpectedDeliveries === 'function'
-      ? window.loadExpectedDeliveries(__viewArchived ? { archived: true } : undefined)
+      ? window.loadExpectedDeliveries(__loadOpts)
       : []) || [];
     var cu = typeof window.CU === 'function' ? window.CU() : null;
     var list = all;
@@ -2591,7 +2655,7 @@
     try { (typeof window.loadCari === 'function' ? window.loadCari() : []).forEach(function(c){ cariMap[String(c.id)] = c.name || c.unvan || c.ad || c.firmaAdi || ''; }); } catch(e){}
 
     /* LOJ-1B-D: Filter state + apply + filterBar */
-    if (!window._edFilterState) window._edFilterState = { yon: '', status: '', search: '', viewArchived: false };
+    if (!window._edFilterState) window._edFilterState = { yon: '', status: '', search: '', viewArchived: false, viewDeleted: false };
     var __fs = window._edFilterState;
     /* V187j — total (filtre öncesi RBAC-filtreli görünür kayıt sayısı) */
     var __totalBeforeFilter = list.length;
@@ -2725,7 +2789,7 @@
 
     return '<div id="ed-list-container" style="'+card+'">'
       + '<div style="'+hdr+'">'
-      + '<span style="font-size:13px;font-weight:500">' + (__viewArchived ? (typeof window.t === 'function' ? window.t('ed.title.archived') : 'Arşivlenmiş Teslimatlar') : 'Beklenen Teslimatlar') + ' <span style="font-weight:400;color:var(--t3);font-size:11px;margin-left:6px">' + (__totalBeforeFilter !== list.length ? (__totalBeforeFilter + ' kayıt (' + list.length + ' görünür)') : (list.length + ' kayıt')) + '</span></span>'
+      + '<span style="font-size:13px;font-weight:500">' + (__viewDeleted ? (typeof window.t === 'function' ? window.t('ed.title.deleted') : 'Silinmiş Kayıtlar') : (__viewArchived ? (typeof window.t === 'function' ? window.t('ed.title.archived') : 'Arşivlenmiş Teslimatlar') : 'Beklenen Teslimatlar')) + ' <span style="font-weight:400;color:var(--t3);font-size:11px;margin-left:6px">' + (__totalBeforeFilter !== list.length ? (__totalBeforeFilter + ' kayıt (' + list.length + ' görünür)') : (list.length + ' kayıt')) + '</span></span>'
       /* V191b — V190e geri alındı: ⋮ menü yerine 3 ayrı export buton (keşfedilebilirlik).
        * _edExportPdf/Xlsx/Json fonksiyonları korundu (V187g/h/i tanımlı).
        * Liste boşsa 3 buton hiç görünmez (export anlamsız). */
@@ -2747,6 +2811,22 @@
               var __label = (typeof window.t === 'function' ? window.t('ed.toolbar.viewArchive') : '📦 Arşiv ({n})');
               return '<button onclick="window._edFilter && window._edFilter(\'viewArchived\', true)" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px">'
                 + __label.replace('{n}', __archivedCount) + '</button>';
+            })()
+          : '')
+      /* V192e — TAHKİM: 🗑️ Silinmiş (N) toggle — admin/manager only, mutual exclusive ile Arşiv.
+       * Silinmiş görünümde "📥 Aktif Liste" → toggle off. _edFilter fn mutual exclusive sağlar. */
+      + ((typeof window._edCanManage === 'function' && window._edCanManage())
+          ? (function(){
+              if (__viewDeleted) {
+                return '<button onclick="window._edFilter && window._edFilter(\'viewDeleted\', false)" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--orb);cursor:pointer;font-size:11px;color:var(--or);font-family:inherit;margin-right:6px;font-weight:500">'
+                  + (typeof window.t === 'function' ? window.t('ed.toolbar.viewActive') : '📥 Aktif Liste') + '</button>';
+              }
+              var __deletedCount = (typeof window.loadExpectedDeliveries === 'function'
+                ? (window.loadExpectedDeliveries({ deleted: true }) || []).length : 0);
+              if (__deletedCount === 0) return '';
+              var __label = (typeof window.t === 'function' ? window.t('ed.toolbar.viewDeleted') : '🗑️ Silinmiş ({n})');
+              return '<button onclick="window._edFilter && window._edFilter(\'viewDeleted\', true)" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px">'
+                + __label.replace('{n}', __deletedCount) + '</button>';
             })()
           : '')
       + '<button onclick="window._edWizardAc && window._edWizardAc()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit">+ Yeni</button>'
