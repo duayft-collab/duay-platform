@@ -664,7 +664,25 @@
     window._edFilterState[field] = value;
     var container = document.getElementById('ed-list-container');
     if (container && typeof window.renderEdList === 'function') {
+      /* V191a — Focus bug fix: search input render edilince DOM'dan silindiği için
+       * focus kayboluyordu (oninput re-render ile her harfte). Caret pozisyonunu da
+       * koruyarak input'u re-focus ediyoruz — kullanıcı yazmaya kesintisiz devam eder. */
+      var wasSearch = field === 'search';
+      var caretPos = -1;
+      if (wasSearch) {
+        var oldInput = container.querySelector('input[type="search"]');
+        if (oldInput && document.activeElement === oldInput) {
+          try { caretPos = oldInput.selectionStart; } catch(e) { caretPos = -1; }
+        }
+      }
       container.outerHTML = window.renderEdList();
+      if (wasSearch && caretPos >= 0) {
+        var newInput = document.querySelector('#ed-list-container input[type="search"]');
+        if (newInput) {
+          newInput.focus();
+          try { newInput.setSelectionRange(caretPos, caretPos); } catch(e) {}
+        }
+      }
     }
   };
 
@@ -2522,11 +2540,13 @@
     return '<div id="ed-list-container" style="'+card+'">'
       + '<div style="'+hdr+'">'
       + '<span style="font-size:13px;font-weight:500">Beklenen Teslimatlar <span style="font-weight:400;color:var(--t3);font-size:11px;margin-left:6px">' + (__totalBeforeFilter !== list.length ? (__totalBeforeFilter + ' kayıt (' + list.length + ' görünür)') : (list.length + ' kayıt')) + '</span></span>'
-      /* V190e — Apple style: 3 export buton (V187g/h/i) → 1 ⋮ Daha fazla menü.
-       * _edExportPdf/Xlsx/Json fonksiyonları korundu, sadece UI giriş noktası değişti.
-       * Liste boşsa ⋮ gizlenir (export anlamsız). */
-      + '<button onclick="window._edWizardAc && window._edWizardAc()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px">+ Yeni</button>'
-      + (list.length > 0 ? '<button onclick="window._edExportMenuAc && window._edExportMenuAc()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px" title="' + (typeof window.t === 'function' ? window.t('ed.toolbar.more') : 'Daha fazla') + '">⋮</button>' : '')
+      /* V191b — V190e geri alındı: ⋮ menü yerine 3 ayrı export buton (keşfedilebilirlik).
+       * _edExportPdf/Xlsx/Json fonksiyonları korundu (V187g/h/i tanımlı).
+       * Liste boşsa 3 buton hiç görünmez (export anlamsız). */
+      + (list.length > 0 ? '<button onclick="window._edExportJson && window._edExportJson()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px" title="' + (typeof window.t === 'function' ? window.t('ed.toolbar.json') : '📋 JSON') + '">' + (typeof window.t === 'function' ? window.t('ed.toolbar.json') : '📋 JSON') + '</button>' : '')
+      + (list.length > 0 ? '<button onclick="window._edExportXlsx && window._edExportXlsx()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px" title="' + (typeof window.t === 'function' ? window.t('ed.toolbar.xlsx') : '📊 Excel') + '">' + (typeof window.t === 'function' ? window.t('ed.toolbar.xlsx') : '📊 Excel') + '</button>' : '')
+      + (list.length > 0 ? '<button onclick="window._edExportPdf && window._edExportPdf()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit;margin-right:6px" title="' + (typeof window.t === 'function' ? window.t('ed.toolbar.pdf') : '📄 PDF') + '">' + (typeof window.t === 'function' ? window.t('ed.toolbar.pdf') : '📄 PDF') + '</button>' : '')
+      + '<button onclick="window._edWizardAc && window._edWizardAc()" style="padding:5px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--t2);font-family:inherit">+ Yeni</button>'
       + (window._edPendingBtnHTML ? window._edPendingBtnHTML() : '')
       + '</div>'
       + filterBar
@@ -2569,28 +2589,6 @@
       if (expand) expand.style.display = '';
       if (chevron) chevron.textContent = '▼';
     });
-  };
-
-  /* ────────────────────────────────────────────────────────────────
-   * V190e — EXPORT MENU (⋮ Daha fazla dropdown)
-   * 3 export butonu (V187g/h/i) tek ⋮ menü altında toplandı.
-   * _edAksiyonMenu pattern'i reuse — fixed modal, dış-tıklamada kapan.
-   * ──────────────────────────────────────────────────────────────── */
-  window._edExportMenuAc = function () {
-    var t = (typeof window.t === 'function') ? window.t : function (k) { return k; };
-    var ex = document.getElementById('ed-export-menu'); if (ex) ex.remove();
-    var mo = document.createElement('div');
-    mo.id = 'ed-export-menu';
-    mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:10000;display:flex;align-items:center;justify-content:center';
-    mo.onclick = function (e) { if (e.target === mo) mo.remove(); };
-    var btnStyle = 'display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;cursor:pointer;font-size:12px;font-family:inherit;border-radius:8px';
-    mo.innerHTML = '<div style="background:var(--sf,#fff);color:var(--t);min-width:240px;max-width:92vw;border-radius:12px;padding:8px;box-shadow:0 20px 60px rgba(0,0,0,.15);font-family:inherit" onclick="event.stopPropagation()">'
-      + '<div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;padding:10px 12px 6px">' + t('ed.toolbar.exportTitle') + '</div>'
-      + '<button onclick="document.getElementById(\'ed-export-menu\').remove();window._edExportJson && window._edExportJson()" style="' + btnStyle + '" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">' + t('ed.toolbar.json') + '</button>'
-      + '<button onclick="document.getElementById(\'ed-export-menu\').remove();window._edExportXlsx && window._edExportXlsx()" style="' + btnStyle + '" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">' + t('ed.toolbar.xlsx') + '</button>'
-      + '<button onclick="document.getElementById(\'ed-export-menu\').remove();window._edExportPdf && window._edExportPdf()" style="' + btnStyle + '" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'transparent\'">' + t('ed.toolbar.pdf') + '</button>'
-      + '</div>';
-    document.body.appendChild(mo);
   };
 
   /* ─── V187g — Export Center: PDF export (html2pdf wrapper) ───────

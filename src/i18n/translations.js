@@ -421,26 +421,22 @@ let TRANSLATIONS = {
     'loj.card.oncelikliBekleyen.sub':     'Zorunlu, henüz yüklenmedi',
 
     // ── Export Center (V187g) ────────────────────────────────────
-    'ed.toolbar.pdf':                     '📄 PDF olarak indir',
+    'ed.toolbar.pdf':                     '📄 PDF',
     'ed.toast.pdfGenerating':             'PDF oluşturuluyor…',
     'ed.toast.pdfMissing':                'PDF kütüphanesi yüklenemedi',
     'ed.export.pdf.filename':             'Beklenen-Teslimatlar',
 
     // ── Export Center — Excel (V187h) ────────────────────────────
-    'ed.toolbar.xlsx':                    '📊 Excel olarak indir',
+    'ed.toolbar.xlsx':                    '📊 Excel',
     'ed.toast.xlsxGenerating':            'Excel oluşturuluyor…',
     'ed.toast.xlsxMissing':               'Excel kütüphanesi yüklenemedi',
     'ed.export.xlsx.filename':            'Beklenen-Teslimatlar',
     'ed.export.xlsx.sheetName':           'Teslimatlar',
 
     // ── Export Center — JSON (V187i) ─────────────────────────────
-    'ed.toolbar.json':                    '📋 JSON olarak indir',
+    'ed.toolbar.json':                    '📋 JSON',
     'ed.toast.jsonGenerating':            'JSON indiriliyor…',
     'ed.export.json.filename':            'Beklenen-Teslimatlar',
-
-    // ── V190e — Export Menu (⋮ Daha fazla dropdown) ──────────────
-    'ed.toolbar.more':                    'Daha fazla',
-    'ed.toolbar.exportTitle':             'Dışa aktar',
 
     // ── Toolbar Sayım (V187j) ────────────────────────────────────
     'ed.toolbar.records.filtered':        '{total} kayıt ({filtered} görünür)',
@@ -861,26 +857,22 @@ let TRANSLATIONS = {
     'loj.card.oncelikliBekleyen.sub':     'Required, not yet loaded',
 
     // ── Export Center (V187g) ────────────────────────────────────
-    'ed.toolbar.pdf':                     '📄 Download as PDF',
+    'ed.toolbar.pdf':                     '📄 PDF',
     'ed.toast.pdfGenerating':             'Generating PDF…',
     'ed.toast.pdfMissing':                'PDF library not loaded',
     'ed.export.pdf.filename':             'Expected-Deliveries',
 
     // ── Export Center — Excel (V187h) ────────────────────────────
-    'ed.toolbar.xlsx':                    '📊 Download as Excel',
+    'ed.toolbar.xlsx':                    '📊 Excel',
     'ed.toast.xlsxGenerating':            'Generating Excel…',
     'ed.toast.xlsxMissing':               'Excel library not loaded',
     'ed.export.xlsx.filename':            'Expected-Deliveries',
     'ed.export.xlsx.sheetName':           'Deliveries',
 
     // ── Export Center — JSON (V187i) ─────────────────────────────
-    'ed.toolbar.json':                    '📋 Download as JSON',
+    'ed.toolbar.json':                    '📋 JSON',
     'ed.toast.jsonGenerating':            'Downloading JSON…',
     'ed.export.json.filename':            'Expected-Deliveries',
-
-    // ── V190e — Export Menu (⋮ More dropdown) ────────────────────
-    'ed.toolbar.more':                    'More',
-    'ed.toolbar.exportTitle':             'Export',
 
     // ── Toolbar Records Count (V187j) ────────────────────────────
     'ed.toolbar.records.filtered':        '{total} records ({filtered} visible)',
