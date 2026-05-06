@@ -2415,17 +2415,20 @@
       var rd = typeof ed.remainingDays === 'number' ? ed.remainingDays : null;
       var daysHtml = '';
       if (rd !== null) {
-        if (rd < 0) daysHtml = '<span style="color:#DC2626;font-weight:500">'+Math.abs(rd)+' gün geç</span>';
-        else if (rd === 0) daysHtml = '<span style="color:#EA580C;font-weight:500">Bugün</span>';
-        else if (rd < 7) daysHtml = '<span style="color:#CA8A04">'+rd+' gün</span>';
+        /* V190c2 — ETA renk standardizasyonu: kırmızı = var(--rd), turuncu+sarı = var(--or) */
+        if (rd < 0) daysHtml = '<span style="color:var(--rd);font-weight:500">'+Math.abs(rd)+' gün geç</span>';
+        else if (rd === 0) daysHtml = '<span style="color:var(--or);font-weight:500">Bugün</span>';
+        else if (rd < 7) daysHtml = '<span style="color:var(--or)">'+rd+' gün</span>';
         else daysHtml = '<span style="color:var(--t3)">'+rd+' gün</span>';
       }
       var qd = ed.quantityDelivered || 0, qt = ed.quantityTotal || 0;
       var pct = qt > 0 ? Math.round(qd/qt*100) : 0;
       var __yon = ed.yon || 'GIDEN';
       /* SHIPMENT-LIST-COLUMNS-002: TIR grup tint — konteynerNo varsa #E3F2FD override (V133.1) */
-      var __rowBg = ed.konteynerNo ? '#E3F2FD' : (__yon === 'GELEN' ? 'rgba(59,130,246,0.06)' : 'rgba(249,115,22,0.06)');
-      var __yonBadge = __yon === 'GELEN' ? '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#DBEAFE;color:#1E40AF;font-weight:500">📥 Gelen</span>' : '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:#FED7AA;color:#9A3412;font-weight:500">📤 Giden</span>';
+      /* V190c2 — Row bg tint: konteyner var ise mavi vurgu, yön tinti kaldırıldı (yön badge'de var) */
+      var __rowBg = ed.konteynerNo ? 'var(--blb)' : 'transparent';
+      /* V190c2 — Yön badge: GELEN mavi (var--blb/blt), GIDEN amber (var--orb/or) */
+      var __yonBadge = __yon === 'GELEN' ? '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:var(--blb);color:var(--blt);font-weight:500">📥 Gelen</span>' : '<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:var(--orb);color:var(--or);font-weight:500">📤 Giden</span>';
       var __sorumluAd = ed.responsibleUserId ? _edUserAd(ed.responsibleUserId) : '';
       var __sorumluInitials = __sorumluAd && __sorumluAd !== '—' ? __sorumluAd.split(' ').map(function(__p){return (__p[0]||'').toUpperCase();}).slice(0,2).join('') : '—';
       var __ikonlar = '';
@@ -2454,7 +2457,7 @@
             var __seqDisp = ed.containerSequenceNo != null ? '#' + ed.containerSequenceNo : '';
             var __priBadge = '';
             if (ed.loadingPriority === 'REQUIRED') {
-              __priBadge = '<span style="background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px;margin-left:4px;font-size:9px;font-weight:500">⭐</span>';
+              __priBadge = '<span style="background:var(--orb);color:var(--or);padding:1px 5px;border-radius:3px;margin-left:4px;font-size:9px;font-weight:500">⭐</span>';
             } else if (ed.loadingPriority === 'OPTIONAL') {
               __priBadge = '<span style="background:var(--s2);color:var(--t3);padding:1px 5px;border-radius:3px;margin-left:4px;font-size:9px">○</span>';
             }
@@ -2480,8 +2483,8 @@
                      + (__emojiBar ? '<div style="margin-top:2px;font-size:12px;letter-spacing:1px">' + __emojiBar + '</div>' : '')))
               + '</div>';
           })()
-        /* Kolon 6: Tahmini ETA (renk dokunulmadı, V190c2) */
-        + '<div style="font-variant-numeric:tabular-nums;font-weight:' + (rd !== null && rd < 7 ? '600' : '400') + ';color:' + (rd !== null && rd < 0 ? '#DC2626' : (rd !== null && rd === 0 ? '#EA580C' : (rd !== null && rd < 7 ? '#CA8A04' : 'var(--t2)'))) + '">' + esc(eta) + (rd !== null && rd < 0 ? ' <span style="font-size:9px;font-weight:500">(' + Math.abs(rd) + ' gün geç)</span>' : (rd !== null && rd >= 0 && rd < 7 ? ' <span style="font-size:9px;font-weight:500">(' + (rd === 0 ? 'bugün' : rd + ' gün') + ')</span>' : '')) + '</div>'
+        /* Kolon 6: Tahmini ETA (V190c2 — kırmızı/amber CSS variable) */
+        + '<div style="font-variant-numeric:tabular-nums;font-weight:' + (rd !== null && rd < 7 ? '600' : '400') + ';color:' + (rd !== null && rd < 0 ? 'var(--rd)' : (rd !== null && rd === 0 ? 'var(--or)' : (rd !== null && rd < 7 ? 'var(--or)' : 'var(--t2)'))) + '">' + esc(eta) + (rd !== null && rd < 0 ? ' <span style="font-size:9px;font-weight:500">(' + Math.abs(rd) + ' gün geç)</span>' : (rd !== null && rd >= 0 && rd < 7 ? ' <span style="font-size:9px;font-weight:500">(' + (rd === 0 ? 'bugün' : rd + ' gün') + ')</span>' : '')) + '</div>'
         /* Kolon 7: Sorumlu (V188b sub-line korundu) */
         + '<div style="text-align:center"><div style="font-size:11px;font-weight:600;color:var(--t2)" title="' + esc(__sorumluAd || 'Atanmamış') + '">' + esc(__sorumluInitials) + '</div>' + (function(){var __short = (typeof window._teslimatYapanShort === 'function') ? window._teslimatYapanShort(ed.teslimTipi) : ''; return __short ? '<div style="font-size:9px;color:var(--t3);margin-top:1px;white-space:nowrap" title="' + esc(__short) + '">' + esc(__short) + '</div>' : '';})() + '</div>'
         /* Kolon 8: Aksiyon (V190e ⋮ menu — dokunulmadı) */

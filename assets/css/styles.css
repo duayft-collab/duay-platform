@@ -17,6 +17,8 @@
   --bl: #185FA5; --blb: #E6F1FB; --blt: #0C447C;
   --am: #0C447C; --amb: #E6F1FB; --amt: #185FA5;
   --rd: #A32D2D; --rdb: #FCEBEB; --rdt: #711F1F;
+  /* V190c2 — Amber/orange (sarı+turuncu birleşik); ED tablo: yön badge GIDEN, ETA bugün/<7gün, __priBadge */
+  --or: #92400E; --orb: #FEF3C7;
   --r: 8px; --rs: 5px;
   --sh: 0 1px 2px rgba(0,0,0,.05), 0 1px 3px rgba(0,0,0,.04);
   --shm: 0 8px 24px rgba(0,0,0,.10);
@@ -36,6 +38,8 @@
   --bl: #4B9FE8; --blb: #0D2442; --blt: #93C8F5;
   --am: #E8A83A; --amb: #2E2006; --amt: #F5C97A;
   --rd: #E05555; --rdb: #2E0C0C; --rdt: #F08080;
+  /* V190c2 — Amber/orange dark variant */
+  --or: #FBBF24; --orb: #2A1F0A;
   --sh: 0 1px 4px rgba(0,0,0,.3); --shm: 0 4px 20px rgba(0,0,0,.45);
   --color-background-primary: #161614;
   --color-border-tertiary: rgba(255,255,255,.05);
