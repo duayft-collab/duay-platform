@@ -4,6 +4,25 @@
  */
 'use strict';
 
+/* V190a — KX10 helper: Geciken kayıt sayısı tek kaynak.
+ * V189d algoritması (TEDARIK/URETIM/YOLDA/GUMRUKTE/... + GECIKTI dahil,
+ * KONTEYNIRA_YUKLENDI/TESLIM_ALINDI/MUSTERI_TESLIM_ALDI hariç).
+ * Hem 3 KPI bloğu hem Kart 7 bu helper'dan okur — duplicate logic yok. */
+function _lojGecikenSay(edActive) {
+  if (!Array.isArray(edActive)) return 0;
+  const now = new Date();
+  const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const COMPLETED = ['KONTEYNIRA_YUKLENDI', 'TESLIM_ALINDI', 'MUSTERI_TESLIM_ALDI'];
+  return edActive.filter(function(d) {
+    if (!d) return false;
+    if (COMPLETED.indexOf(d.status) >= 0) return false;
+    if (d.status === 'GECIKTI') return true;
+    if (!d.estimatedDeliveryDate) return false;
+    return new Date(d.estimatedDeliveryDate) < today0;
+  }).length;
+}
+if (typeof window !== 'undefined' && !window._lojGecikenSay) window._lojGecikenSay = _lojGecikenSay;
+
 function renderLojistik() {
   const panel = document.getElementById('panel-lojistik');
   if (!panel) return;
@@ -106,7 +125,7 @@ function renderLojistik() {
     `<div class="ph" style="${Bh};margin-bottom:0">
       <div>
         <div class="pht">Lojistik Komuta Merkezi</div>
-        <div class="phs">10 metric · 4 mini özet · canlı operasyon görünümü</div>
+        <div class="phs">${edActive.length} aktif teslimat</div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <!-- V189c — Üst Excel + PDF butonları kaldırıldı:
@@ -118,131 +137,111 @@ function renderLojistik() {
       </div>
     </div>`,
 
-    /* LOJISTIK-KOMUTA-UI-001: 10 metric şeridi (pastel renk paleti + hover) */
+    /* V190a — Apple style: 10 metric şeridi → 3 büyük KPI + disclosure (7 alt-metric).
+     * Hiçbir veri kaybı: tüm metrikler ya 3 KPI'da ya disclosure içinde.
+     * 3 KPI: Toplam · Yolda · Geciken (kullanıcı kararı). */
     `<div style="background:var(--sf);${B};border-top:none;border-radius:0 0 8px 8px;margin-bottom:16px;overflow:hidden">
-      <div style="display:grid;grid-template-columns:repeat(10,1fr)">
-        ${metrics.map((m,i)=>`<div style="padding:14px 12px;background:${metricColors[i].bg};${i<9?Br:''};transition:background .12s" onmouseenter="this.style.filter='brightness(.97)'" onmouseleave="this.style.filter='none'">
-          <div style="font-size:20px;font-weight:600;color:${metricColors[i].fg};line-height:1">${m.v}</div>
-          <div style="font-size:10px;color:${metricColors[i].fg};opacity:.75;margin-top:3px;letter-spacing:.02em">${m.l}</div>
-        </div>`).join('')}
+      <!-- 3 BÜYÜK KPI -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:0.5px solid var(--b)">
+        ${(() => {
+          const kpiToplam   = edActive.length;
+          const kpiYolda    = edByStatus('YOLDA');
+          /* V190a — KX10: helper'dan al (renderLojistik üstünde tanımlı) */
+          const kpiGeciken  = _lojGecikenSay(edActive);
+          const gecikenColor = kpiGeciken > 0 ? '#A32D2D' : 'var(--t)';
+          const kpis = [
+            { v: kpiToplam,   l: 'Toplam',   c: 'var(--t)' },
+            { v: kpiYolda,    l: 'Yolda',    c: 'var(--t)' },
+            { v: kpiGeciken,  l: 'Geciken',  c: gecikenColor }
+          ];
+          return kpis.map((k,i)=>`<div style="padding:24px 16px;text-align:center;${i<2?Br:''}">
+            <div style="font-size:36px;font-weight:600;color:${k.c};line-height:1;letter-spacing:-0.02em">${k.v}</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:6px;text-transform:uppercase;letter-spacing:.06em;font-weight:500">${k.l}</div>
+          </div>`).join('');
+        })()}
       </div>
+      <!-- DISCLOSURE: 7 alt-metric (default kapalı) -->
+      <details style="border-top:0.5px solid transparent">
+        <summary style="padding:10px 16px;font-size:11px;color:var(--t3);cursor:pointer;list-style:none;user-select:none;display:flex;align-items:center;gap:6px" onmouseenter="this.style.background='var(--s2)'" onmouseleave="this.style.background='transparent'">
+          <span style="font-size:9px">▾</span> Tüm metriklere bak
+        </summary>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:0 0 4px;border-top:0.5px solid var(--b)">
+          ${(() => {
+            const sub = [
+              { v: edByStatus('TEDARIK_ASAMASINDA'), l: 'Tedarik' },
+              { v: edByStatus('URETIMDE'),           l: 'Üretim'  },
+              { v: edByStatus('DEPODA'),             l: 'Depoda'  },
+              { v: edByStatus('YUKLEME_BEKLIYOR'),   l: 'Sırada'  },
+              { v: edByStatus('TESLIM_ALINDI'),      l: 'Yüklü'   },
+              { v: konts.filter(k => k && !k.isDeleted && !k.kapanmis && !k.closed).length, l: 'Konteynır' },
+              { v: yoldakiCount > 0 ? yoldakiCount : '—', l: 'Yolda+Gümrük' }
+            ];
+            return sub.map((m,i)=>`<div style="padding:12px 8px;text-align:center;${i<6?Br:''}">
+              <div style="font-size:18px;font-weight:600;color:var(--t);line-height:1">${m.v}</div>
+              <div style="font-size:10px;color:var(--t3);margin-top:3px;letter-spacing:.02em">${m.l}</div>
+            </div>`).join('');
+          })()}
+        </div>
+      </details>
     </div>`,
 
     /* Demuraj banner — korundu */
     (typeof renderDemurajBanner === 'function' ? (() => { renderDemurajBanner('konteyn-demuraj-bar'); return ''; })() : ''),
 
-    /* LOJISTIK-KOMUTA-UI-001: 4 mini özet kart */
-    `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px">
-      <div style="${card};padding:14px">
-        <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">Aktif Konteynır</div>
-        ${aktifKonteynirHTML}
-      </div>
-      <div style="${card};padding:14px">
-        <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">Bu Hafta</div>
-        ${buHaftaHTML}
-      </div>
-      <div style="${card};padding:14px">
-        <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">Eksik / Hasar</div>
-        ${eksikHasarHTML}
-      </div>
-      <div style="${card};padding:14px">
-        <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">Foto Bu Ay</div>
-        ${fotoHTML}
-      </div>
-    </div>`,
-
-    /* V184d / LOJ-METRICS-001: 4 toplam özet kart bloğu (Toplam KG, m³, Sorumlu/Satıcı, Konteyner Doluluk) */
-    `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px">
+    /* V190a — Apple style: 12 mini kart (3 sıra × 4) → tek satır özet.
+     * Bilgi kaybı sıfır:
+     *   Satır 1 (her zaman): kg · m³ · konteyner öneri · sorumlu/satıcı
+     *   Satır 2 (koşullu):   bu hafta · eksik-hasar · zorunlu bekleyen · taşıma işareti
+     * KALDIRILDI: Aktif Konteynır (V190d'de grup başlığında) + Foto Bu Ay (dead promise) */
+    `<div style="background:var(--sf);${B};border-radius:8px;padding:14px 18px;margin-bottom:16px">
       ${(() => {
         const totalKg = edActive.reduce((s, d) => s + (parseFloat(d.weightKg) || 0), 0);
         const totalM3 = edActive.reduce((s, d) => s + (parseFloat(d.volumeM3) || 0), 0);
         const sorumluCount = new Set(edActive.map(d => d.responsibleUserId).filter(Boolean)).size;
         const tedarikciCount = new Set(edActive.map(d => d.supplierId).filter(Boolean)).size;
-        /* V184a4: ortak helper kullan (40ft/40HC tercih, 2×20ft varsayılan değil) */
         const calc = (typeof window._edCalculateContainers === 'function')
           ? window._edCalculateContainers({ weightKg: totalKg, volumeM3: totalM3 })
           : null;
-
-        /* ─── V187f — 4 yeni kart hesapları (Standartizasyon paketi verisi + operasyonel) ─── */
-        const _t = (k, fb) => (typeof window.t === 'function') ? window.t(k) : fb;
-
-        /* Kart 5: Yükleme Önceliği (V187b verisi) */
-        const priReq = edActive.filter(d => d.loadingPriority === 'REQUIRED').length;
-        const priOpt = edActive.filter(d => d.loadingPriority === 'OPTIONAL').length;
-        const priEmpty = edActive.length - priReq - priOpt;
-
-        /* Kart 6: Taşıma Uyarıları (V187c verisi) — top 3 enum frequency */
+        const oncelikliBekleyen = edActive.filter(d =>
+          d.loadingPriority === 'REQUIRED' && d.status !== 'TESLIM_ALINDI'
+        ).length;
         const flagCount = {};
         edActive.forEach(d => {
           (Array.isArray(d.handlingFlags) ? d.handlingFlags : []).forEach(f => {
             flagCount[f] = (flagCount[f] || 0) + 1;
           });
         });
+        const flagsTotal = Object.values(flagCount).reduce((s, n) => s + n, 0);
         const top3 = Object.keys(flagCount).map(k => [k, flagCount[k]]).sort((a, b) => b[1] - a[1]).slice(0, 3);
         const emojiMap = window.HANDLING_FLAGS_EMOJI || {};
-        const flagsTotal = Object.values(flagCount).reduce((s, n) => s + n, 0);
-        const flagsDisplay = top3.length
-          ? top3.map(([f, c]) => `${emojiMap[f] || '?'} <strong>${c}</strong>`).join(' · ')
-          : `<span style="${t3}">—</span>`;
+        const top3Emoji = top3.length ? top3.map(arr => emojiMap[arr[0]] || '').filter(Boolean).join('') : '';
 
-        /* Kart 7: Geciken (V189d — algoritma genişletildi: P0-3 fix)
-         * Tamamlanmamış tüm aktif statuslarda ETA geçmişse geciken.
-         * Önceden sadece YOLDA + GUMRUKTE sayılıyordu — TEDARIK / URETIM /
-         * YUKLEME_BEKLIYOR'da ETA geçen kayıtlar gizleniyordu (operasyonel hata). */
-        const today0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const COMPLETED_STATUSES_FOR_OVERDUE = ['KONTEYNIRA_YUKLENDI', 'TESLIM_ALINDI', 'MUSTERI_TESLIM_ALDI'];
-        const geciken = edActive.filter(d => {
-          if (COMPLETED_STATUSES_FOR_OVERDUE.indexOf(d.status) >= 0) return false;
-          if (d.status === 'GECIKTI') return true;
-          if (!d.estimatedDeliveryDate) return false;
-          return new Date(d.estimatedDeliveryDate) < today0;
-        }).length;
+        /* Satır 1 — her zaman görünür */
+        const line1Parts = [];
+        if (totalKg > 0) line1Parts.push('<strong style="color:var(--t);font-weight:600">' + Math.round(totalKg).toLocaleString('tr-TR') + '</strong> kg');
+        if (totalM3 > 0) line1Parts.push('<strong style="color:var(--t);font-weight:600">' + totalM3.toFixed(1) + '</strong> m³');
+        if (calc) line1Parts.push('<strong style="color:' + calc.color + ';font-weight:600">' + calc.count + '×' + calc.type + '</strong> öneri');
+        if (sorumluCount > 0) line1Parts.push('<strong style="color:var(--t);font-weight:600">' + sorumluCount + '</strong> sorumlu');
+        if (tedarikciCount > 0) line1Parts.push('<strong style="color:var(--t);font-weight:600">' + tedarikciCount + '</strong> satıcı');
+        const line1 = line1Parts.length
+          ? line1Parts.join(' <span style="color:var(--t3);margin:0 4px">·</span> ')
+          : '<span style="color:var(--t3)">Henüz veri yok</span>';
 
-        /* Kart 8: Öncelikli Bekleyen (REQUIRED + henüz teslim alınmamış) — operasyonel */
-        const oncelikliBekleyen = edActive.filter(d =>
-          d.loadingPriority === 'REQUIRED' && d.status !== 'TESLIM_ALINDI'
-        ).length;
+        /* Satır 2 — koşullu (en az 1 öğe varsa görünür) */
+        const line2Parts = [];
+        if (acikEksikHasar.length > 0) line2Parts.push('<span style="color:#A32D2D">⚠ ' + acikEksikHasar.length + ' açık eksik/hasar</span>');
+        if (buHaftaED.length > 0) line2Parts.push('📅 ' + buHaftaED.length + ' bu hafta');
+        if (oncelikliBekleyen > 0) line2Parts.push('<span style="color:#854F0B">⭐ ' + oncelikliBekleyen + ' zorunlu bekleyen</span>');
+        if (top3Emoji && flagsTotal > 0) line2Parts.push(top3Emoji + ' ' + flagsTotal + ' taşıma işareti');
+        const line2 = line2Parts.length
+          ? line2Parts.join(' <span style="color:var(--t3);margin:0 4px">·</span> ')
+          : '';
 
-        return `<div style="${card};padding:14px">
-          <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">Toplam KG</div>
-          <div style="font-size:20px;font-weight:600;color:var(--t);line-height:1">${Math.round(totalKg).toLocaleString('tr-TR')} <span style="font-size:11px;${t3};font-weight:400">kg</span></div>
-        </div>
-        <div style="${card};padding:14px">
-          <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">Toplam m³</div>
-          <div style="font-size:20px;font-weight:600;color:var(--t);line-height:1">${totalM3.toFixed(1)} <span style="font-size:11px;${t3};font-weight:400">m³</span></div>
-        </div>
-        <div style="${card};padding:14px">
-          <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">Sorumlu / Satıcı</div>
-          <div style="font-size:13px;color:var(--t);line-height:1.4"><strong style="font-size:18px">${sorumluCount}</strong> sorumlu · <strong style="font-size:18px">${tedarikciCount}</strong> satıcı</div>
-          <div style="font-size:10px;${t3};margin-top:4px">${edActive.length} aktif kayıt</div>
-        </div>
-        <div style="${card};padding:14px">
-          <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">Konteyner Doluluk</div>
-          ${calc ? `<div style="font-size:11px;${t3};line-height:1.4">Toplam: ${totalM3.toFixed(1)} m³ / ${Math.round(totalKg).toLocaleString('tr-TR')} kg</div><div style="font-size:13px;font-weight:500;color:${calc.color};margin-top:4px">→ ${calc.count} × ${calc.type} yeter</div>` : `<div style="font-size:12px;${t3};text-align:center;padding:6px 0">Veri yok</div>`}
-        </div>
-        <!-- ─── V187f: 4 yeni kart (sıra 2: Standartizasyon + operasyonel) ─── -->
-        <div style="${card};padding:14px" title="${_t('loj.card.loadingPriority.sub','Zorunlu / Opsiyonel')}">
-          <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">⭐ ${_t('loj.card.loadingPriority','Yükleme Önceliği')}</div>
-          <div style="font-size:18px;font-weight:600;color:var(--t);line-height:1">${priReq} <span style="font-size:11px;${t3};font-weight:400">zorunlu</span></div>
-          <div style="font-size:10px;${t3};margin-top:4px">${priOpt} opsiyonel · ${priEmpty} boş</div>
-        </div>
-        <div style="${card};padding:14px" title="${_t('loj.card.handlingFlags.sub','En çok kullanılan')}">
-          <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">🔥 ${_t('loj.card.handlingFlags','Taşıma Uyarıları')}</div>
-          <div style="font-size:14px;color:var(--t);line-height:1.3;letter-spacing:1px">${flagsDisplay}</div>
-          <div style="font-size:10px;${t3};margin-top:4px">${flagsTotal > 0 ? flagsTotal + ' toplam işaret' : 'işaretsiz'}</div>
-        </div>
-        <div style="${card};padding:14px" title="${_t('loj.card.geciken.sub','Yolda + ETA geçti')}">
-          <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">⏰ ${_t('loj.card.geciken','Geciken')}</div>
-          <div style="font-size:20px;font-weight:600;color:${geciken > 0 ? '#A32D2D' : 'var(--t)'};line-height:1">${geciken} <span style="font-size:11px;${t3};font-weight:400">kayıt</span></div>
-          <div style="font-size:10px;${t3};margin-top:4px">ETA geçen aktif kayıt</div>
-        </div>
-        <div style="${card};padding:14px" title="${_t('loj.card.oncelikliBekleyen.sub','Zorunlu, henüz yüklenmedi')}">
-          <div style="font-size:10px;${t3};text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:8px">⭐ ${_t('loj.card.oncelikliBekleyen','Öncelikli Bekleyen')}</div>
-          <div style="font-size:20px;font-weight:600;color:${oncelikliBekleyen > 0 ? '#854F0B' : 'var(--t)'};line-height:1">${oncelikliBekleyen} <span style="font-size:11px;${t3};font-weight:400">bekliyor</span></div>
-          <div style="font-size:10px;${t3};margin-top:4px">zorunlu öncelik</div>
-        </div>`;
+        return '<div style="font-size:13px;color:var(--t);line-height:1.5;letter-spacing:-0.005em">' + line1 + '</div>'
+             + (line2 ? '<div style="font-size:12px;color:var(--t2);margin-top:6px;line-height:1.5">' + line2 + '</div>' : '');
       })()}
     </div>`,
+
 
     /* LOJISTIK-KOMUTA-UI-001: Alarm bloğu geri eklendi (eski koddan korundu) */
     alarms.length ? `<div style="border:1px solid rgba(163,45,45,.2);border-left:3px solid #A32D2D;border-radius:0 6px 6px 0;padding:11px 14px;margin-bottom:16px;background:rgba(163,45,45,.03)">
