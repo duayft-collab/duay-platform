@@ -1612,9 +1612,14 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
      *      sw.js skipWaiting() → controllerchange → otomatik reload
      * Sonuç: kullanıcı hiçbir şey yapmasa bile en geç 60 saniye içinde yeni
      *        sürüm aktive olur, sayfa kendi kendine yenilenir. */
+    /* V193 EDIT 7.1.8 — NÜKLEER FIX: SW URL ./sw.js → ./sw-v2.js
+     * Safari /sw.js dosyasını HTTP disk cache'le sıkıca tutuyordu — kill-switch
+     * yayınlansa bile aynı URL'in yeni içeriğini indirmiyor. Çözüm: yepyeni URL.
+     * Eski /sw.js kill-switch olarak kalmaya devam eder (eski tarayıcılar onu
+     * indirir, kendilerini unregister eder). Yeni kayıtlar /sw-v2.js'den olur. */
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').then(reg => {
+        navigator.serviceWorker.register('./sw-v2.js').then(reg => {
           console.info('[SW] Kayıtlı:', reg.scope);
 
           /* Yeni SW algılama — installing state takibi */
