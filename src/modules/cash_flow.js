@@ -180,15 +180,18 @@
 
   function _cfSatirSil(satirId) {
     /* V193 EDIT 2 — confirmModal yoksa native confirm yerine toast + iptal (Belge 3 §6).
-     * Eski fallback `window.confirm()` kullanıyordu — anayasal uyumsuz. */
+     * V193 PATCH 1 — confirmModal SIGNATURE FIX: window.confirmModal(message, opts) — 2 argüman.
+     * Eski yanlış kullanım: fn({title, message, onConfirm}) → message bir obje oluyordu, çalışmıyordu. */
     var fn = window.confirmModal;
     if (typeof fn !== 'function') {
       if (window.toast) window.toast('Onay penceresi yüklenemedi. Sayfayı yenileyip tekrar dene.', 'err');
       return;
     }
-    fn({
+    fn('Bu satırı silmek istediğinizden emin misiniz?', {
       title: 'Satır Sil',
-      message: 'Bu satırı silmek istediğinizden emin misiniz?',
+      danger: true,
+      confirmText: 'Sil',
+      cancelText: 'Vazgeç',
       onConfirm: function() {
         const state = _cfLoad();
         const tablo = state.tablolar.find(t => t.id === state.aktifTabloId);
@@ -394,16 +397,28 @@
   }
 
   /* V193 EDIT 2 — Event delegation bind (idempotent — panel her render'da yeniden bağlanır,
-   * eski listener panel.innerHTML rewrite ile otomatik temizlenir). */
+   * eski listener panel.innerHTML rewrite ile otomatik temizlenir).
+   * V193 PATCH 1 — Listener accumulation FIX: panel aynı DOM node, innerHTML sadece
+   * child'ları siler, panel'in kendi listener'ları kalır. Çözüm: named handler +
+   * removeEventListener, panel.__cfHandler ile tek instance garantisi. */
   function _cfBindEvents(panel) {
     if (!panel) return;
-    panel.addEventListener('click', function(e) {
+    /* Eski listener varsa kaldır (idempotent) */
+    if (panel.__cfHandler) {
+      panel.removeEventListener('click', panel.__cfHandler);
+    }
+    var handler = function(e) {
       var btn = e.target.closest('[data-cf-action]');
       if (!btn) return;
       var action = btn.getAttribute('data-cf-action');
       if (action === 'add-row-toggle') {
         var f = document.getElementById('cf-add-form');
-        if (f) f.style.display = (f.style.display === 'none' ? 'block' : 'none');
+        if (!f) return;
+        /* V193 PATCH 1 — getComputedStyle ile gerçek display değeri.
+         * Inline style.display ilk render'da boş string '' olabilir → eski mantık
+         * '' === 'none' false → 'none' atadığı için form HİÇ AÇILMIYORDU. */
+        var cur = f.style.display || window.getComputedStyle(f).display;
+        f.style.display = (cur === 'none' || cur === '') ? 'block' : 'none';
       } else if (action === 'form-cancel') {
         var f2 = document.getElementById('cf-add-form');
         if (f2) f2.style.display = 'none';
@@ -422,7 +437,9 @@
         var rid = btn.getAttribute('data-cf-row-id');
         if (rid) _cfSatirSil(rid);
       }
-    });
+    };
+    panel.__cfHandler = handler;
+    panel.addEventListener('click', handler);
   }
 
   window._cfRenderPanel = _cfRenderPanel;
