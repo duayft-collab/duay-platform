@@ -1551,7 +1551,10 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <script src="src/core/draft_manager.js?v=20260428EP"></script>
 <script src="src/core/app.js?v=20260428EP"></script>
 <!-- LOJ-IHRACAT-ID-RBAC-001 (V184a): expected_deliveries.js sonrası, app_patch öncesi yüklenmeli (sıra kritik) -->
-<script src="src/modules/expected_deliveries_v184a.js?v=20260505V184a"></script>
+<!-- V189f — expected_deliveries_v184a.js script tag KALDIRILDI:
+     dosya artık mevcut değil (eski refactor sırasında silinmiş, tag temizlenmemişti).
+     Hiçbir yerde window._v184a* çağrısı yok; v184a3 ve v184a5 modülleri bağımsız çalışır.
+     → 404 console error giderildi. -->
 <script src="src/modules/expected_deliveries_v184a3.js?v=20260505V187c"></script>
 <script src="src/modules/expected_deliveries_v184a5.js?v=20260505V187c"></script>
 <script src="src/modules/expected_deliveries_v186_wizard.js?v=20260505V188b"></script>
