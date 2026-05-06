@@ -2435,17 +2435,21 @@
       if (window._shipmentDocCardBadgeHtml) __ikonlar += window._shipmentDocCardBadgeHtml(ed);
       if (!__ikonlar) __ikonlar = '<span style="color:var(--t3);font-size:10px">—</span>';
       /* V187c — 14-kolon grid (Sevkiyat hücresi KG/m³ sonrası) */
-      return '<div data-ed-id="' + esc(String(ed.id || '')) + '" data-ihracat-id="' + esc(String(ed.ihracatId || '')) + '" style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 0.8fr 0.9fr 1.1fr 0.8fr 0.7fr 1fr 0.7fr 1.4fr 0.7fr auto;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--b);align-items:center;font-size:12px;background:' + __rowBg + '">'
+      /* V190c1 — Row HTML: wrapper + iç-grid 8 hücre + expand div (peer, default kapalı).
+       * Wrapper data-ed-id'yi taşır → V184a3/a5 brace counting uyumu korunur.
+       * Sevkiyat multi-line ve Sorumlu sub-line korundu. Renkler dokunulmadı (V190c2). */
+      return '<div data-ed-id="' + esc(String(ed.id || '')) + '" data-ihracat-id="' + esc(String(ed.ihracatId || '')) + '" style="border-bottom:0.5px solid var(--b);background:' + __rowBg + '">'
+        + '<div style="display:grid;grid-template-columns:0.4fr 0.5fr 2.5fr 1.2fr 1.1fr 1fr 0.8fr auto;gap:10px;padding:10px 16px;align-items:center;font-size:12px">'
+        /* Kolon 1: Expand toggle (V190c1 — Set'ten render time state oku) */
+        + '<button data-ed-chevron="' + esc(String(ed.id || '')) + '" onclick="event.stopPropagation();window._edToggleExpand && window._edToggleExpand(\'' + esc(ed.id) + '\')" style="padding:2px 8px;border:0.5px solid var(--b);border-radius:4px;background:transparent;cursor:pointer;color:var(--t3);font-size:10px;font-family:inherit;line-height:1" title="Detay">' + ((window._edExpandedSet && window._edExpandedSet.has(String(ed.id || ''))) ? '▼' : '▶') + '</button>'
+        /* Kolon 2: Yön (renk dokunulmadı, V190c2) */
         + '<div>' + __yonBadge + '</div>'
-        + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ed.ihracatId ? esc(String(ed.ihracatId).slice(0,15)) : '<span style="color:var(--t3)">—</span>') + '</div>'
+        /* Kolon 3: Ürün / Tedarikçi */
         + '<div><div style="font-weight:500;color:var(--t)">'+esc(ed.productName||'—')+'</div>'
         + '<div style="font-size:10px;color:var(--t3);margin-top:2px">'+esc(tedAd)+'</div></div>'
-        /* V184a5: Konteyner kolonu kaldırıldı (grup başlığında) */
+        /* Kolon 4: Durum (V190b STATUS renk korundu) */
         + '<div onclick="event.stopPropagation()"><select onchange="window._edStatusChange && window._edStatusChange(\'' + esc(ed.id) + '\', this.value)" style="padding:3px 8px;border-radius:10px;font-size:10px;font-weight:500;color:' + st['c'] + ';background:' + st['bg'] + ';border:0.5px solid ' + st['c'] + '33;cursor:pointer;font-family:inherit">' + STATUSES.map(function(__sk){var __s = STATUS[__sk];return '<option value="' + __sk + '"' + (ed.status === __sk ? ' selected' : '') + '>' + esc(__s ? __s['t'] : __sk) + '</option>';}).join('') + '</select></div>'
-        + '<div style="font-variant-numeric:tabular-nums;color:var(--t2)">'+qd+'/'+qt+' <span style="color:var(--t3);font-size:10px">(%'+pct+')</span></div>'
-        /* SHIPMENT-LIST-COLUMNS-002: KG/m³ + konteyner uyarı (V133.1) */
-        + '<div style="font-size:10px;line-height:1.3">' + ((ed.weightKg || ed.volumeM3) ? '<div style="font-family:ui-monospace,monospace;color:var(--t2);font-weight:500">' + (ed.weightKg ? Math.round(ed.weightKg).toLocaleString('tr-TR') + ' kg' : '—') + (ed.volumeM3 ? ' / ' + ed.volumeM3.toLocaleString('tr-TR') + ' m³' : '') + '</div>' : '<span style="color:var(--t3)">—</span>') + '</div>'
-        /* V187c — Sevkiyat kompakt hücresi (Line 1: #SıraNo + Önc badge / Line 2: handlingFlags emoji) + multi-line tooltip */
+        /* Kolon 5: Sevkiyat (V187c — multi-line korundu, kullanıcı zorunlu istedi) */
         + (function(){
             var __seqDisp = ed.containerSequenceNo != null ? '#' + ed.containerSequenceNo : '';
             var __priBadge = '';
@@ -2459,7 +2463,6 @@
             var __labelKeyMap = window.HANDLING_FLAGS_LABEL_KEY || {};
             var __tFn = (typeof window.t === 'function') ? window.t : function(k){return k;};
             var __emojiBar = __flags.map(function(f){return __emojiMap[f] || '';}).filter(Boolean).join(' ');
-            /* Multi-line tooltip — her alan kendi label'ı ile */
             var __tip = [];
             if (__seqDisp) __tip.push('Yükleme Sırası: ' + __seqDisp);
             if (ed.loadingPriority === 'REQUIRED') __tip.push('Öncelik: ⭐ Zorunlu');
@@ -2477,21 +2480,41 @@
                      + (__emojiBar ? '<div style="margin-top:2px;font-size:12px;letter-spacing:1px">' + __emojiBar + '</div>' : '')))
               + '</div>';
           })()
+        /* Kolon 6: Tahmini ETA (renk dokunulmadı, V190c2) */
         + '<div style="font-variant-numeric:tabular-nums;font-weight:' + (rd !== null && rd < 7 ? '600' : '400') + ';color:' + (rd !== null && rd < 0 ? '#DC2626' : (rd !== null && rd === 0 ? '#EA580C' : (rd !== null && rd < 7 ? '#CA8A04' : 'var(--t2)'))) + '">' + esc(eta) + (rd !== null && rd < 0 ? ' <span style="font-size:9px;font-weight:500">(' + Math.abs(rd) + ' gün geç)</span>' : (rd !== null && rd >= 0 && rd < 7 ? ' <span style="font-size:9px;font-weight:500">(' + (rd === 0 ? 'bugün' : rd + ' gün') + ')</span>' : '')) + '</div>'
+        /* Kolon 7: Sorumlu (V188b sub-line korundu) */
         + '<div style="text-align:center"><div style="font-size:11px;font-weight:600;color:var(--t2)" title="' + esc(__sorumluAd || 'Atanmamış') + '">' + esc(__sorumluInitials) + '</div>' + (function(){var __short = (typeof window._teslimatYapanShort === 'function') ? window._teslimatYapanShort(ed.teslimTipi) : ''; return __short ? '<div style="font-size:9px;color:var(--t3);margin-top:1px;white-space:nowrap" title="' + esc(__short) + '">' + esc(__short) + '</div>' : '';})() + '</div>'
-        /* LOJISTIK-RENK-001: Sipariş Kodu + Renk hücreleri */
-        + '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (ed.siparisKodu ? esc(String(ed.siparisKodu)) : '<span style="color:var(--t3)">—</span>') + '</div>'
-        + '<div style="text-align:center">' + _lojRenkBadge(ed.koliRenk, ed.koliEmoji) + '</div>'
-        /* V184a2 / LOJ-ROTA-INFO-001: Rota hücresi (dikey 4-line: üst ilçe, alt şehir) */
-        + '<div style="font-size:10px;line-height:1.25;overflow:hidden">' + ((ed.originCity || ed.originDistrict || ed.destinationCity || ed.destinationDistrict) ? ('<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t2);font-weight:500">' + esc(ed.originDistrict || '?') + '</div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t3);font-size:9px">' + esc(ed.originCity || '?') + '</div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t2);font-weight:500;margin-top:2px">→ ' + esc(ed.destinationDistrict || '?') + '</div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t3);font-size:9px">' + esc(ed.destinationCity || '?') + '</div>') : '<span style="color:var(--t3)">—</span>') + '</div>'
-        + '<div style="font-size:13px;text-align:center">' + __ikonlar + '</div>'
+        /* Kolon 8: Aksiyon (V190e ⋮ menu — dokunulmadı) */
         + '<button onclick="event.stopPropagation();window._edAksiyonMenu && window._edAksiyonMenu(\''+esc(ed.id)+'\')" style="padding:4px 10px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;color:var(--t3);font-size:14px;font-family:inherit;line-height:1">⋮</button>'
+        + '</div>'
+        /* V190c1 — Expand row: gizlenen 7 öğe (in-memory state — render time'da Set'ten oku).
+         * window._edToggleExpand ile aç/kapat (DOM-based, scroll korunur).
+         * renderEdList yeniden çağrıldığında Set'ten okunduğu için açık satırlar açık kalır. */
+        + '<div data-ed-expand="' + esc(String(ed.id || '')) + '" style="display:' + ((window._edExpandedSet && window._edExpandedSet.has(String(ed.id || ''))) ? 'block' : 'none') + ';padding:14px 16px 14px 38px;background:var(--s2);border-top:0.5px solid var(--b);font-size:11px;line-height:1.7">'
+        + '<div style="display:grid;grid-template-columns:130px 1fr;gap:6px 14px;color:var(--t2)">'
+        + '<div style="color:var(--t3);text-transform:uppercase;font-size:10px;letter-spacing:.05em;font-weight:500">İhracat ID</div>'
+        + '<div style="font-family:\'DM Mono\',monospace">' + (ed.ihracatId ? esc(String(ed.ihracatId)) : '<span style="color:var(--t3)">—</span>') + '</div>'
+        + '<div style="color:var(--t3);text-transform:uppercase;font-size:10px;letter-spacing:.05em;font-weight:500">Miktar</div>'
+        + '<div style="font-variant-numeric:tabular-nums">' + qd + '/' + qt + ' <span style="color:var(--t3);font-size:10px">(%' + pct + ')</span></div>'
+        + '<div style="color:var(--t3);text-transform:uppercase;font-size:10px;letter-spacing:.05em;font-weight:500">KG / m³</div>'
+        + '<div style="font-family:ui-monospace,monospace">' + ((ed.weightKg || ed.volumeM3) ? ((ed.weightKg ? Math.round(ed.weightKg).toLocaleString('tr-TR') + ' kg' : '—') + (ed.volumeM3 ? ' / ' + ed.volumeM3.toLocaleString('tr-TR') + ' m³' : '')) : '<span style="color:var(--t3)">—</span>') + '</div>'
+        + '<div style="color:var(--t3);text-transform:uppercase;font-size:10px;letter-spacing:.05em;font-weight:500">Sipariş Kodu</div>'
+        + '<div style="font-family:\'DM Mono\',monospace">' + (ed.siparisKodu ? esc(String(ed.siparisKodu)) : '<span style="color:var(--t3)">—</span>') + '</div>'
+        + '<div style="color:var(--t3);text-transform:uppercase;font-size:10px;letter-spacing:.05em;font-weight:500">Renk</div>'
+        + '<div>' + _lojRenkBadge(ed.koliRenk, ed.koliEmoji) + '</div>'
+        + '<div style="color:var(--t3);text-transform:uppercase;font-size:10px;letter-spacing:.05em;font-weight:500">Rota</div>'
+        + '<div>' + ((ed.originCity || ed.originDistrict || ed.destinationCity || ed.destinationDistrict) ? (esc(ed.originDistrict || '?') + ', ' + esc(ed.originCity || '?') + ' → ' + esc(ed.destinationDistrict || '?') + ', ' + esc(ed.destinationCity || '?')) : '<span style="color:var(--t3)">—</span>') + '</div>'
+        + '<div style="color:var(--t3);text-transform:uppercase;font-size:10px;letter-spacing:.05em;font-weight:500">İkonlar</div>'
+        + '<div style="font-size:14px">' + __ikonlar + '</div>'
+        + '</div>'
+        + '</div>'
         + '</div>';
     }).join('');
 
-    /* V187c — 14-kolon header (Yön | İhrID | Ürün/Ted | Durum | Miktar | KG/m³ | Sevkiyat | Tahmini | Sorumlu | SipKod | Renk | Rota | İkon | Aksiyon) */
-    var hdrRow = '<div style="display:grid;grid-template-columns:0.5fr 1.2fr 2fr 1fr 0.8fr 0.9fr 1.1fr 0.8fr 0.7fr 1fr 0.7fr 1.4fr 0.7fr auto;gap:10px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
-      + '<div>Yön</div><div>İhracat ID</div><div>Ürün / Tedarikçi</div><div>Durum</div><div>Miktar</div><div style="background:#E8F5E9;border-radius:4px 4px 0 0;padding:4px 6px;margin:-4px -6px">KG / m³</div><div title="Sıra No · Yükleme Önc · Taşıma Uyarıları">Sevkiyat</div><div>Tahmini</div><div>Sorumlu</div><div>Sipariş Kodu</div><div>Renk</div><div>Rota</div><div>İkon</div><div></div></div>';
+    /* V190c1 — 8-kolon header (Expand toggle | Yön | Ürün/Tedarikçi | Durum | Sevkiyat | Tahmini | Sorumlu | Aksiyon).
+     * Kaldırılan 6 başlık (İhracat ID, Miktar, KG/m³, SipKod, Renk, Rota, İkon) expand row'da. */
+    var hdrRow = '<div style="display:grid;grid-template-columns:0.4fr 0.5fr 2.5fr 1.2fr 1.1fr 1fr 0.8fr auto;gap:10px;padding:8px 16px;background:var(--s2);font-size:9px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">'
+      + '<div></div><div>Yön</div><div>Ürün / Tedarikçi</div><div>Durum</div><div title="Sıra No · Yükleme Önc · Taşıma Uyarıları">Sevkiyat</div><div>Tahmini</div><div>Sorumlu</div><div></div></div>';
 
     return '<div id="ed-list-container" style="'+card+'">'
       + '<div style="'+hdr+'">'
@@ -2507,6 +2530,42 @@
       + hdrRow + rows
       + (list.length > 20 ? '<div style="padding:8px 16px;text-align:center;font-size:10px;color:var(--t3)">+'+(list.length-20)+' kayıt daha</div>' : '')
       + '</div>';
+  };
+
+  /* ────────────────────────────────────────────────────────────────
+   * V190c1 — EXPAND ROW TOGGLE
+   * In-memory state (Set) + DOM-based toggle (scroll korunur, hızlı).
+   * Expand row her zaman render edilir (display:none); toggle CSS değişimi.
+   * ──────────────────────────────────────────────────────────────── */
+  if (typeof window._edExpandedSet === 'undefined' || !window._edExpandedSet) {
+    window._edExpandedSet = new Set();
+  }
+  window._edToggleExpand = function (edId) {
+    if (!edId) return;
+    var idStr = String(edId);
+    var expand = document.querySelector('[data-ed-expand="' + idStr.replace(/"/g, '\\"') + '"]');
+    var chevron = document.querySelector('[data-ed-chevron="' + idStr.replace(/"/g, '\\"') + '"]');
+    if (!expand) return;
+    if (window._edExpandedSet.has(idStr)) {
+      window._edExpandedSet.delete(idStr);
+      expand.style.display = 'none';
+      if (chevron) chevron.textContent = '▶';
+    } else {
+      window._edExpandedSet.add(idStr);
+      expand.style.display = '';
+      if (chevron) chevron.textContent = '▼';
+    }
+  };
+  /* renderEdList yeniden çağrıldığında — Set'ten DOM'a re-apply.
+   * V184a3/a5 grup yeniden render'ında expand state korunur. */
+  window._edExpandedReapply = function () {
+    if (!window._edExpandedSet || window._edExpandedSet.size === 0) return;
+    window._edExpandedSet.forEach(function (idStr) {
+      var expand = document.querySelector('[data-ed-expand="' + idStr.replace(/"/g, '\\"') + '"]');
+      var chevron = document.querySelector('[data-ed-chevron="' + idStr.replace(/"/g, '\\"') + '"]');
+      if (expand) expand.style.display = '';
+      if (chevron) chevron.textContent = '▼';
+    });
   };
 
   /* ────────────────────────────────────────────────────────────────
