@@ -2793,7 +2793,20 @@ window._delDept = function(name) {
 
 const AUDIT_KEY = 'ak_audit_log';
 function _loadAudit() { try { return JSON.parse(localStorage.getItem(AUDIT_KEY)||'[]'); } catch { return []; } }
-function _storeAudit(d) { localStorage.setItem(AUDIT_KEY, JSON.stringify(d.slice(0,2000))); }
+function _storeAudit(d) {
+  /* V192d — TAHKİM: Firestore sync (KX10 reuse, V192b/c ile aynı pattern).
+   * AUDIT_KEY const dokunulmaz, slice(0,2000) davranışı korunur.
+   * _fsPath('audit') → users/{tid}/audit path. activity ('ak_act1') ile çakışmaz.
+   * Failure-mode: try/catch — sync hatası LS write'ı bozmaz. */
+  const sliced = d.slice(0, 2000);
+  localStorage.setItem(AUDIT_KEY, JSON.stringify(sliced));
+  try {
+    if (typeof window._syncFirestore === 'function' && typeof window._fsPath === 'function') {
+      const _fp = window._fsPath('audit');
+      if (_fp) window._syncFirestore(_fp, sliced);
+    }
+  } catch(e) {}
+}
 
 function _auditLog(action, targetUid, detail) {
   const cu = _getCU();

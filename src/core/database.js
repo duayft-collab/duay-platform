@@ -264,6 +264,7 @@ const KEYS = {
   expectedDeliveries: 'ak_expected_deliveries1',  /* EXPECTED-DELIVERIES-FLOW-002 PARÇA 1 */
   lojDetay      : 'loj_ihracat_detay_v1',          /* V192b — TAHKİM: ihracat detay (V184a5+V191d) cross-device sync. LS key bozulmaz, Firestore'a yansır. */
   edPending     : 'ak_ed_pending_v1',               /* V192c — TAHKİM: pending actions cross-device sync. Admin başka cihazdan onay/red akışı. */
+  audit         : 'ak_audit_log',                   /* V192d — TAHKİM: audit log cross-device sync. AUDIT_KEY admin.js'de aynı string, çakışma yok. activity ('ak_act1') ayrı sistem. */
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -1229,7 +1230,9 @@ var _ALL_SYNC_COLS = [
   /* V192b — TAHKİM: ihracat detay cross-device sync */
   'lojDetay',
   /* V192c — TAHKİM: pending actions cross-device sync */
-  'edPending'
+  'edPending',
+  /* V192d — TAHKİM: audit log cross-device sync */
+  'audit'
 ];
 
 /**
@@ -3269,7 +3272,7 @@ function startRealtimeSync() {
     'numune-arsivi':        ['numune','arsivBelgeler'],
     'links':                ['links'],
     'trash':                ['trash'],
-    'admin':                ['users'],
+    'admin':                ['users','audit'],     /* V192d — TAHKİM: audit cross-device sync, admin paneli açılınca dinlenir (LAZY). */
     'settings':             [],
     'ceo':                  ['hedefler','kpi','activity','kararlar'],
     'temizlik':             ['temizlik']
@@ -3395,6 +3398,11 @@ function startRealtimeSync() {
      * Talep güncellendiğinde toolbar 🔔 badge sayısı yenilenir; admin başka
      * cihazdan onay/red verebilir. */
     ['edPending', KEYS.edPending, () => { window._edRenderPanel?.(); }],
+    /* V192d — TAHKİM: audit log cross-device sync.
+     * Silent callback — render loop oluşturulmaz. Audit modal mevcut LS okuma
+     * davranışını korur (kullanıcı modal açtığında LS'ten okur, listener LS'i
+     * Firestore'dan günceller). _silentCols pattern (activity/notifications/trash). */
+    ['audit', KEYS.audit, () => {}],
     /* SYNC-GAP-CLOSE-001: kalan 6 tek-yön kırık koleksiyon — lazy mode */
     ['ihracatListesi',  KEYS.ihracatListesi,  () => window.renderIhracatListesi?.()],
     ['kargoChecks',     KEYS.kargoChecks,     () => window.renderKargo?.()],
