@@ -334,6 +334,11 @@ let TRANSLATIONS = {
     'ed.handling.nonStackable':       '🚫📦 İstiflenemez',
     'ed.handling.topLoadOnly':        '⬆️📦 En üste konmalı',
     'ed.handling.doNotStackOnTop':    '⛔⬆️ Üstüne ürün konamaz',
+    /* V191f — Step 4 redesign: sade özet + Tüm Bilgiler modal */
+    'ed.summary.openButton':          '📋 Tüm Bilgileri Gör',
+    'ed.summary.modal.title':         'Tüm Bilgiler',
+    'ed.summary.allReady':            '✓ Tüm bilgiler hazır',
+    'ed.summary.close':               'Kapat',
     'ed.sect.cikis':                  'Çıkış Lokasyonu',
     'ed.sect.varis':                  'Varış Lokasyonu',
     'ed.sect.trIci':                  'Türkiye içi',
@@ -798,6 +803,11 @@ let TRANSLATIONS = {
     'ed.handling.nonStackable':       '🚫📦 Non-stackable',
     'ed.handling.topLoadOnly':        '⬆️📦 Top load only',
     'ed.handling.doNotStackOnTop':    '⛔⬆️ Do not stack on top',
+    /* V191f — Step 4 redesign: simple summary + All Details modal */
+    'ed.summary.openButton':          '📋 View All Details',
+    'ed.summary.modal.title':         'All Details',
+    'ed.summary.allReady':            '✓ All information ready',
+    'ed.summary.close':               'Close',
     'ed.sect.cikis':                  'Origin Location',
     'ed.sect.varis':                  'Destination Location',
     'ed.sect.trIci':                  'Within Turkey',

@@ -473,17 +473,21 @@
     var canGeneral = canEditGeneral();
     var dis = function (allow) { return allow ? '' : ' disabled style="opacity:.6;cursor:not-allowed"'; };
 
-    /* ÖZET — tüm alanların görüntülenmesi */
+    /* V191f — Sade özet: kullanıcı kaydetmeden önce kritik bilgileri tek bakışta görür.
+     * Tüm 18 alan görüntüleme isterse "📋 Tüm Bilgileri Gör" → modal (_v186SummaryModal). */
     var sup = (typeof window.loadSuppliers === 'function') ? (window.loadSuppliers() || []).find(function (s) { return String(s.id) === String(d.supplierId); }) : null;
     var supName = sup ? (sup.name || sup.unvan || '—') : (d.supplierId ? '#' + d.supplierId : '—');
-    var statusLabel = (_statuses().find(function (s) { return s[0] === d.status; }) || [d.status, d.status || '—'])[1];
-    var renkLabel = d.renk ? _renkAd(d.renk) : '—';
-    var priLabel  = (V186_PRIORITY.find(function (p) { return p[0] === d.priority; }) || ['', d.priority || _t('ed.priority.normal')])[1];
-    function row(k, v) {
-      return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px dashed var(--b)"><span style="color:var(--t3);font-size:11px">' + k + '</span><span style="color:var(--t);font-size:12px;font-weight:500;text-align:right;max-width:60%">' + (v == null || v === '' ? '<span style="color:var(--t3);font-style:italic">—</span>' : esc(v)) + '</span></div>';
-    }
-    var rotaCikis = (d.originCity || '?') + (d.originDistrict ? ', ' + d.originDistrict : '');
-    var rotaVaris = (d.destinationCity || '?') + (d.destinationDistrict ? ', ' + d.destinationDistrict : '');
+    var sade1Parts = [];
+    if (d.productName) sade1Parts.push(d.productName);
+    if (supName && supName !== '—') sade1Parts.push(supName);
+    if (d.weightKg) sade1Parts.push(d.weightKg + ' kg');
+    if (d.volumeM3) sade1Parts.push(d.volumeM3 + ' m³');
+    var sade1 = sade1Parts.join(' · ') || '—';
+    var sade2Parts = [];
+    if (d.estimatedDeliveryDate) sade2Parts.push('ETA: ' + d.estimatedDeliveryDate);
+    if (d.yon) sade2Parts.push(d.yon === 'GELEN' ? '📥 Gelen' : '📤 Giden');
+    if (d.loadingPriority === 'REQUIRED') sade2Parts.push('⭐ ' + _t('ed.loadingPri.required'));
+    var sade2 = sade2Parts.join(' · ');
 
     return '<div style="padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px">'
       + sect('📄', _t('ed.sect.belge'))
@@ -498,8 +502,43 @@
         + '</div>'
         + '</div>'
       + '</div>'
-      + sect('📋', _t('ed.sect.ozet'))
-      + '<div style="grid-column:span 2;background:var(--s2,#F5F5F7);border-radius:10px;padding:16px;font-size:12px">'
+      /* V191f — Sade özet bloğu */
+      + '<div style="grid-column:span 2;background:var(--s2,#F5F5F7);border-radius:10px;padding:16px">'
+        + '<div style="color:var(--gr,#1D9E75);font-size:12px;font-weight:500;margin-bottom:10px">' + (typeof window.t === 'function' ? window.t('ed.summary.allReady') : '✓ Tüm bilgiler hazır') + '</div>'
+        + '<div style="color:var(--t);font-size:13px;font-weight:500;margin-bottom:4px">' + esc(sade1) + '</div>'
+        + (sade2 ? '<div style="color:var(--t2);font-size:12px;margin-bottom:14px">' + esc(sade2) + '</div>' : '<div style="margin-bottom:14px"></div>')
+        + '<button type="button" onclick="window._v186SummaryModal && window._v186SummaryModal()" style="padding:7px 14px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);cursor:pointer;font-size:11px;color:var(--t);font-family:inherit;font-weight:500">' + (typeof window.t === 'function' ? window.t('ed.summary.openButton') : '📋 Tüm Bilgileri Gör') + '</button>'
+      + '</div>'
+      + '</div>';
+  }
+
+  /* V191f — Tüm Bilgiler modal: Step 4 sade özetinden açılır.
+   * Mevcut row helper mantığı reuse — kategorize: 📦 Temel · 🚛 Rota · 🌐 İhracat. */
+  window._v186SummaryModal = function() {
+    var d = state.formData;
+    var sup = (typeof window.loadSuppliers === 'function') ? (window.loadSuppliers() || []).find(function (s) { return String(s.id) === String(d.supplierId); }) : null;
+    var supName = sup ? (sup.name || sup.unvan || '—') : (d.supplierId ? '#' + d.supplierId : '—');
+    var statusLabel = (_statuses().find(function (s) { return s[0] === d.status; }) || [d.status, d.status || '—'])[1];
+    var renkLabel = d.renk ? _renkAd(d.renk) : '—';
+    var priLabel  = (V186_PRIORITY.find(function (p) { return p[0] === d.priority; }) || ['', d.priority || _t('ed.priority.normal')])[1];
+    function row(k, v) {
+      return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:0.5px dashed var(--b)"><span style="color:var(--t3);font-size:11px">' + k + '</span><span style="color:var(--t);font-size:12px;font-weight:500;text-align:right;max-width:60%">' + (v == null || v === '' ? '<span style="color:var(--t3);font-style:italic">—</span>' : esc(v)) + '</span></div>';
+    }
+    var rotaCikis = (d.originCity || '?') + (d.originDistrict ? ', ' + d.originDistrict : '');
+    var rotaVaris = (d.destinationCity || '?') + (d.destinationDistrict ? ', ' + d.destinationDistrict : '');
+
+    var ex = document.getElementById('v186-summary-modal'); if (ex) ex.remove();
+    var mo = document.createElement('div');
+    mo.id = 'v186-summary-modal';
+    mo.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:10001;display:flex;align-items:center;justify-content:center';
+    mo.onclick = function(e) { if (e.target === mo) mo.remove(); };
+
+    mo.innerHTML = '<div style="background:var(--sf,#fff);color:var(--t);width:520px;max-width:92vw;max-height:90vh;display:flex;flex-direction:column;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.15);font-family:inherit" onclick="event.stopPropagation()">'
+      + '<div style="padding:14px 20px;border-bottom:0.5px solid var(--b);display:flex;justify-content:space-between;align-items:center;flex-shrink:0">'
+        + '<div style="font-size:14px;font-weight:600">' + (typeof window.t === 'function' ? window.t('ed.summary.modal.title') : 'Tüm Bilgiler') + '</div>'
+        + '<button type="button" onclick="document.getElementById(\'v186-summary-modal\').remove()" style="border:none;background:transparent;cursor:pointer;font-size:18px;color:var(--t3);padding:0;line-height:1">✕</button>'
+      + '</div>'
+      + '<div style="padding:18px 20px;overflow-y:auto;flex:1;font-size:12px">'
         + '<div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">📦 ' + _t('ed.sect.temel') + '</div>'
         + row('Ürün Adı', d.productName)
         + row('Tedarikçi', supName)
@@ -517,7 +556,6 @@
               d.loadingPriority === 'REQUIRED' ? _t('ed.loadingPri.required')
             : d.loadingPriority === 'OPTIONAL' ? _t('ed.loadingPri.optional')
             : '')
-        /* V187c — handlingFlags emoji konkatenasyon (boşsa empty row) */
         + row(_t('ed.label.handlingFlags'),
               (Array.isArray(d.handlingFlags) && d.handlingFlags.length
                 ? d.handlingFlags.map(function (f) { return HANDLING_FLAGS_EMOJI[f] || ''; }).filter(Boolean).join(' ')
@@ -530,8 +568,13 @@
         + row('Öncelik', priLabel)
         + row('Durum', statusLabel)
       + '</div>'
+      + '<div style="padding:12px 20px;border-top:0.5px solid var(--b);display:flex;justify-content:flex-end;background:var(--s2,#F5F5F7);flex-shrink:0">'
+        + '<button type="button" onclick="document.getElementById(\'v186-summary-modal\').remove()" style="padding:8px 18px;border:0.5px solid var(--b);border-radius:6px;background:var(--sf);cursor:pointer;font-size:12px;color:var(--t);font-family:inherit;font-weight:500">' + (typeof window.t === 'function' ? window.t('ed.summary.close') : 'Kapat') + '</button>'
+      + '</div>'
       + '</div>';
-  }
+    document.body.appendChild(mo);
+  };
+
   function renderBody() {
     switch (state.currentStep) {
       case 1: return renderStep1();
