@@ -138,11 +138,13 @@
   function computeAggregates(edList) {
     var totalKg = 0, totalM3 = 0;
     var firmaSet = {}, etaList = [], geciktiCount = 0, yakinCount = 0;
+    var requiredCount = 0; /* V190d — zorunlu öncelik sayısı */
     var today = new Date(); today.setHours(0,0,0,0);
     edList.forEach(function(ed) {
       totalKg += parseFloat(ed.weightKg) || 0;
       totalM3 += parseFloat(ed.volumeM3) || 0;
       if (ed.supplierId) firmaSet[ed.supplierId] = true;
+      if (ed.loadingPriority === 'REQUIRED') requiredCount++;
       if (ed.estimatedDeliveryDate) {
         var t = new Date(ed.estimatedDeliveryDate).getTime();
         if (!isNaN(t)) {
@@ -161,7 +163,8 @@
       : null;
     return {
       count: edList.length, totalKg: totalKg, totalM3: totalM3, firmaCount: firmaCount,
-      minEta: minEta, maxEta: maxEta, geciktiCount: geciktiCount, yakinCount: yakinCount, calc: calc
+      minEta: minEta, maxEta: maxEta, geciktiCount: geciktiCount, yakinCount: yakinCount, calc: calc,
+      requiredCount: requiredCount
     };
   }
 
@@ -196,7 +199,20 @@
       else if (agg.yakinCount > 0) etaStr += ' <span style="color:#CA8A04;font-weight:500">(' + agg.yakinCount + ' yakın)</span>';
     }
 
-    var calcStr = agg.calc ? '<span style="color:' + agg.calc.color + ';font-weight:500">→ ' + agg.calc.count + ' × ' + agg.calc.type + ' yeter</span>' : '';
+    /* V190d — calc.text reuse: '1 × 40HC yeter (%41 hacim)' formatında doluluk dahil
+     * + zorunlu öncelik inline badge (varsa) */
+    var calcStr = '';
+    if (agg.calc) {
+      var calcText = agg.calc.text || ('→ ' + agg.calc.count + ' × ' + agg.calc.type + ' yeter');
+      /* calc.text "✅" / "🔴" prefix ile geliyor — '→' prefix uyumu için kaldır */
+      calcText = calcText.replace(/^[✅🔴]\s*/, '→ ');
+      calcStr = '<span style="color:' + agg.calc.color + ';font-weight:500">' + calcText + '</span>';
+      if (agg.requiredCount > 0) {
+        calcStr += ' <span style="color:#854F0B;font-weight:500">· ⭐ ' + agg.requiredCount + ' zorunlu</span>';
+      }
+    } else if (agg.requiredCount > 0) {
+      calcStr = '<span style="color:#854F0B;font-weight:500">⭐ ' + agg.requiredCount + ' zorunlu</span>';
+    }
 
     /* Manuel detay strip — kayıt varsa */
     var detayStrip = '';
