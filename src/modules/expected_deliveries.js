@@ -2347,22 +2347,28 @@
       return at - bt;
     });
 
+    /* V190b — 15 status hardcoded renk → 4 renk grubu (mevcut CSS variable sistemi).
+     * NEUTRAL (8): Açık/Bekliyor   → var(--t2) / var(--s2)
+     * ACCENT  (3): Aktif/Yolda     → var(--blt) / var(--blb)
+     * SUCCESS (3): Tamamlandı       → var(--grt) / var(--grb)
+     * DANGER  (1): Sorun            → var(--rdt) / var(--rdb)
+     * Dark mode otomatik (theme dosyasında dark variant'ları tanımlı). */
     var STATUS = {
-      'SIPARIS_ASAMASINDA':{t:'Sipariş Aşamasında',c:'#6B7280',bg:'#F9FAFB'},
-      'TEDARIK_ASAMASINDA':{t:'Tedarik',c:'#6B7280',bg:'#F3F4F6'},
-      'URETIMDE':{t:'Üretimde',c:'#2563EB',bg:'#EFF6FF'},
-      'SATICIDA_HAZIR':{t:'Satıcıda Hazır',c:'#0EA5E9',bg:'#E0F2FE'},
-      'YUKLEME_NOKTASINDA':{t:'Yükleme Noktasında',c:'#A16207',bg:'#FEF3C7'},
-      'YUKLEME_PLANLANDI':{t:'Yükleme Planlandı',c:'#B45309',bg:'#FEF3C7'},
-      'YUKLEME_BEKLIYOR':{t:'Yükleme Bekliyor',c:'#CA8A04',bg:'#FEF9C3'},
-      'SEVK_EDILDI':{t:'Sevk Edildi',c:'#0891B2',bg:'#CFFAFE'},
-      'YOLDA':{t:'Yolda',c:'#EA580C',bg:'#FFEDD5'},
-      'GUMRUKTE':{t:'Gümrükte',c:'#7C3AED',bg:'#F3E8FF'},
-      'DEPODA':{t:'Depoda',c:'#7C3AED',bg:'#EDE9FE'},
-      'TESLIM_ALINDI':{t:'Teslim Edildi',c:'#0F6E56',bg:'#D1FAE5'},
-      'KONTEYNIRA_YUKLENDI':{t:'Konteynıra Yüklendi',c:'#1D4ED8',bg:'#DBEAFE'},
-      'MUSTERI_TESLIM_ALDI':{t:'Müşteri Teslim Aldı',c:'#15803D',bg:'#DCFCE7'},
-      'GECIKTI':{t:'Gecikmiş',c:'#DC2626',bg:'#FEE2E2'}
+      'SIPARIS_ASAMASINDA':{t:'Sipariş Aşamasında',c:'var(--t2)',bg:'var(--s2)'},
+      'TEDARIK_ASAMASINDA':{t:'Tedarik',c:'var(--t2)',bg:'var(--s2)'},
+      'URETIMDE':{t:'Üretimde',c:'var(--t2)',bg:'var(--s2)'},
+      'SATICIDA_HAZIR':{t:'Satıcıda Hazır',c:'var(--t2)',bg:'var(--s2)'},
+      'YUKLEME_NOKTASINDA':{t:'Yükleme Noktasında',c:'var(--t2)',bg:'var(--s2)'},
+      'YUKLEME_PLANLANDI':{t:'Yükleme Planlandı',c:'var(--t2)',bg:'var(--s2)'},
+      'YUKLEME_BEKLIYOR':{t:'Yükleme Bekliyor',c:'var(--t2)',bg:'var(--s2)'},
+      'SEVK_EDILDI':{t:'Sevk Edildi',c:'var(--t2)',bg:'var(--s2)'},
+      'YOLDA':{t:'Yolda',c:'var(--blt)',bg:'var(--blb)'},
+      'GUMRUKTE':{t:'Gümrükte',c:'var(--blt)',bg:'var(--blb)'},
+      'DEPODA':{t:'Depoda',c:'var(--blt)',bg:'var(--blb)'},
+      'TESLIM_ALINDI':{t:'Teslim Edildi',c:'var(--grt)',bg:'var(--grb)'},
+      'KONTEYNIRA_YUKLENDI':{t:'Konteynıra Yüklendi',c:'var(--grt)',bg:'var(--grb)'},
+      'MUSTERI_TESLIM_ALDI':{t:'Müşteri Teslim Aldı',c:'var(--grt)',bg:'var(--grb)'},
+      'GECIKTI':{t:'Gecikmiş',c:'var(--rdt)',bg:'var(--rdb)'}
     };
     var card = 'background:var(--sf);border-radius:12px;border:0.5px solid var(--b);overflow:hidden;margin-top:12px';
     var hdr = 'padding:11px 16px;border-bottom:0.5px solid var(--b);display:flex;align-items:center;justify-content:space-between';

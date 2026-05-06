@@ -149,7 +149,8 @@ function renderLojistik() {
           const kpiYolda    = edByStatus('YOLDA');
           /* V190a — KX10: helper'dan al (renderLojistik üstünde tanımlı) */
           const kpiGeciken  = _lojGecikenSay(edActive);
-          const gecikenColor = kpiGeciken > 0 ? '#A32D2D' : 'var(--t)';
+          /* V190b — Hardcoded #A32D2D → var(--rd) (mevcut tema sistemi, dark mode adaptasyon) */
+          const gecikenColor = kpiGeciken > 0 ? 'var(--rd)' : 'var(--t)';
           const kpis = [
             { v: kpiToplam,   l: 'Toplam',   c: 'var(--t)' },
             { v: kpiYolda,    l: 'Yolda',    c: 'var(--t)' },
