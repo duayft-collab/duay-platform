@@ -262,6 +262,7 @@ const KEYS = {
   pusula        : 'ak_pusula_pro_v1',
   ppMesaj       : 'ak_pp_mesaj_v1',     /* KUYRUK-PP-MESAJ-DB-001: pusula mesajları */
   expectedDeliveries: 'ak_expected_deliveries1',  /* EXPECTED-DELIVERIES-FLOW-002 PARÇA 1 */
+  lojDetay      : 'loj_ihracat_detay_v1',          /* V192b — TAHKİM: ihracat detay (V184a5+V191d) cross-device sync. LS key bozulmaz, Firestore'a yansır. */
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -1223,7 +1224,9 @@ var _ALL_SYNC_COLS = [
   'ihracatDosyalar','ihracatEvraklar','ihracatUrunler',
   'ihracatGcb','ihracatBl','ihracatTemplate',
   'gumrukculer','forwarderlar','evrakWorkflow',
-  'pusula'
+  'pusula',
+  /* V192b — TAHKİM: ihracat detay cross-device sync */
+  'lojDetay'
 ];
 
 /**
@@ -3225,8 +3228,9 @@ function startRealtimeSync() {
   const MODULE_COLLECTIONS = {
     /* LS-SYNC-009-FIX-001: GERÇEK nav ID'leri (Chrome'dan tespit edildi) */
     'dashboard':            ['odemeler','tahsilat','calendar','hedefler','sozler'],
-    /* SYNC-MODULE-MAPPING-FIX-001: Lojistik hub — sevkiyat + kargo extras */
-    'lojistik':             ['expectedDeliveries','kargo','konteyner','navlun','kargoChecks','kargoHistory','navlunSatis'],
+    /* SYNC-MODULE-MAPPING-FIX-001: Lojistik hub — sevkiyat + kargo extras
+     * V192b — TAHKİM: lojDetay eklendi (ihracat detay cross-device sync) */
+    'lojistik':             ['expectedDeliveries','kargo','konteyner','navlun','kargoChecks','kargoHistory','navlunSatis','lojDetay'],
     'satin-alma':           ['alisTeklifleri','urunler','kargo','navlun','cari'],
     'satinalma':            ['alisTeklifleri','urunler','kargo','navlun','cari'],
     'alis-teklifleri':      ['alisTeklifleri','urunler','cari'],
@@ -3379,6 +3383,10 @@ function startRealtimeSync() {
     ['pusula', KEYS.pusula, () => { window._ppModRender?.(); }],
     /* SYNC-EXPECTED-DELIVERIES-001: Sevkiyat Merkezi multi-cihaz canlı sync */
     ['expectedDeliveries', KEYS.expectedDeliveries, () => { window._edRenderPanel?.(); }],
+    /* V192b — TAHKİM: ihracat detay (V184a5+V191d evrak/kargo + manuel alanlar)
+     * cross-device sync. Detay map güncellendiğinde ED listesi yeniden render olur
+     * (alarm satırı + grup başlığı). */
+    ['lojDetay', KEYS.lojDetay, () => { window._edRenderPanel?.(); }],
     /* SYNC-GAP-CLOSE-001: kalan 6 tek-yön kırık koleksiyon — lazy mode */
     ['ihracatListesi',  KEYS.ihracatListesi,  () => window.renderIhracatListesi?.()],
     ['kargoChecks',     KEYS.kargoChecks,     () => window.renderKargo?.()],

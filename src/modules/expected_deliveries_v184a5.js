@@ -99,7 +99,21 @@
   };
 
   window.storeIhracatDetay = function(map) {
-    try { localStorage.setItem(DETAY_KEY, JSON.stringify(map || {})); return true; } catch(e) { return false; }
+    try {
+      localStorage.setItem(DETAY_KEY, JSON.stringify(map || {}));
+      /* V192b — TAHKİM: Firestore sync (KX10 reuse, yeni altyapı yok).
+       * Mevcut window._syncFirestore + window._fsPath kalıbı (satis_teklif.js:100-102 deseni).
+       * Path: users/{workspaceId}/lojDetay/data — _fsPath('lojDetay') tarafından üretilir.
+       * Echo guard: _writingNow[lojDetay] 30sn expiry (database.js mevcut altyapı).
+       * Failure-mode: try/catch — sync hatası LS write'ı bozmaz. */
+      try {
+        if (typeof window._syncFirestore === 'function' && typeof window._fsPath === 'function') {
+          var _fp = window._fsPath('lojDetay');
+          if (_fp) window._syncFirestore(_fp, map || {});
+        }
+      } catch(e) {}
+      return true;
+    } catch(e) { return false; }
   };
 
   function getDetay(ihracatId) {
