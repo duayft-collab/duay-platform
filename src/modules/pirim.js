@@ -2255,7 +2255,7 @@ function printPirimSlip(userId) {
   h2{color:#1e1b4b}table{width:100%;border-collapse:collapse}td,th{padding:8px;border:1px solid #eee;font-size:13px}
   th{background:#f5f5ff;font-weight:600}.green{color:#10B981}.ac{color:#6366F1}</style></head><body>
   <h2>⭐ Prim Özet Raporu</h2>
-  <p style="color:#6b7280">Duay Global LLC · ${new Date().toLocaleDateString('tr-TR')}</p>
+  <p style="color:#6b7280">${((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC')} · ${new Date().toLocaleDateString('tr-TR')}</p>
   <table style="margin-bottom:20px">
     <tr><td><b>Personel</b></td><td>${window._esc(u.name||'—')}</td></tr>
     <tr><td><b>Bu Ay</b></td><td class="ac">${monthAmt.toLocaleString('tr-TR')} ₺</td></tr>

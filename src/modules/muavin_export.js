@@ -910,7 +910,7 @@ window._mvMutabakatMektubu = function(firmaAdi) {
   h += '.imza-alan{text-align:center}.imza-cizgi{border-top:1px solid #111;margin-top:40px;padding-top:6px;font-size:9pt}';
   h += '</style></head><body>';
   h += '<h1>CAR\u0130 HESAP MUTABAKAT MEKTUBU</h1>';
-  h += '<h2>Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.</h2>';
+  h += '<h2>' + ((window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || 'Duay Uluslararası Ticaret Ltd. Şti.') + '</h2>';
   h += '<div class="bilgi">';
   h += '<div><strong>Cari Hesap Sahibi:</strong> ' + esc(firmaAdi) + '</div>';
   h += '<div><strong>D\u00fczenleme Tarihi:</strong> ' + bugun + '</div>';
@@ -937,7 +937,7 @@ window._mvMutabakatMektubu = function(firmaAdi) {
   h += '\u015eirket toplam: <strong>' + toplamSir.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong> \u00b7 ';
   h += 'Net fark: <strong style="color:' + (netFark < 1 ? '#0F6E56' : '#A32D2D') + '">' + netFark.toLocaleString('tr-TR', { maximumFractionDigits: 2 }) + ' TL</strong></div>';
   h += '<div class="imza">';
-  h += '<div class="imza-alan"><div class="imza-cizgi">Duay Uluslararas\u0131 Ticaret Ltd. \u015eti.<br>Ka\u015fe / \u0130mza</div></div>';
+  h += '<div class="imza-alan"><div class="imza-cizgi">' + ((window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || 'Duay Uluslararası Ticaret Ltd. Şti.') + '<br>Ka\u015fe / \u0130mza</div></div>';
   h += '<div class="imza-alan"><div class="imza-cizgi">' + esc(firmaAdi) + '<br>Ka\u015fe / \u0130mza</div></div>';
   h += '</div></body></html>';
   var win = window.open('', '_blank');

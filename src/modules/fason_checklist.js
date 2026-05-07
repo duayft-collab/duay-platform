@@ -286,7 +286,7 @@ window._fasonKaliteRaporu = function(emirId) {
     + '.imza-alan{text-align:center;border-top:1px solid #111;padding-top:6px;margin-top:40px}'
     + '</style></head><body>'
     + '<h1>KALİTE KONTROL RAPORU</h1>'
-    + '<h2>Duay Uluslararası Ticaret Ltd. Şti. — Fason Üretim Kontrolü</h2>'
+    + '<h2>' + ((window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || 'Duay Uluslararası Ticaret Ltd. Şti.') + ' — Fason Üretim Kontrolü</h2>'
     + '<div class="kpi">'
     + '<div><strong>Ürün:</strong> ' + esc(emir.urunAdi || '—') + '</div>'
     + '<div><strong>Fason Firma:</strong> ' + esc(emir.fasonFirma || '—') + '</div>'

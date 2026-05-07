@@ -114,7 +114,7 @@ function makePackingList(dosya, urunler, bl) {
     headerTbl('Packing List',plNo+'\nDate: '+tarih+'  ·  Ref: '+invNo,'Uluslararasi Ticaret  ·  '+pol+'  ·  brn.simsek@gmail.com'),
     blank(200),
     tbl([new D.TableRow({children:[
-      new D.TableCell({children:[p([label('Shipper / Exporter')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg(pol,17)],'left',40),p([muted('brn.simsek@gmail.com',16)],'left',0)],width:{size:6000,type:'dxa'},borders:allNone,margins:cellMargS}),
+      new D.TableCell({children:[p([label('Shipper / Exporter')],'left',80),p([bold(((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC'),18)],'left',40),p([reg(pol,17)],'left',40),p([muted('brn.simsek@gmail.com',16)],'left',0)],width:{size:6000,type:'dxa'},borders:allNone,margins:cellMargS}),
       new D.TableCell({children:[p([label('Consignee / Buyer')],'left',80),p([bold(konsigne,18)],'left',40),p([reg(pod,17)],'left',0)],width:{size:8838,type:'dxa'},borders:allNone,margins:cellMargS}),
     ]})],[6000,8838]),
     blank(200),
@@ -193,7 +193,7 @@ function makePackingListMulti(dosya, urunler, bl) {
       headerTbl('Packing List', sayfaBaslik+'\nDate: '+tarih+'  \u00b7  Ref: '+invNo, 'Uluslararasi Ticaret  \u00b7  '+pol+'  \u00b7  brn.simsek@gmail.com'),
       blank(200),
       tbl([new D.TableRow({children:[
-        new D.TableCell({children:[p([label('Shipper / Exporter')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg(pol,17)],'left',0)],width:{size:6000,type:'dxa'},borders:allNone,margins:cellMargS}),
+        new D.TableCell({children:[p([label('Shipper / Exporter')],'left',80),p([bold(((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC'),18)],'left',40),p([reg(pol,17)],'left',0)],width:{size:6000,type:'dxa'},borders:allNone,margins:cellMargS}),
         new D.TableCell({children:[p([label('Consignee / Buyer')],'left',80),p([bold(konsigne,18)],'left',0)],width:{size:8838,type:'dxa'},borders:allNone,margins:cellMargS}),
       ]})],[6000,8838]),
       blank(200),
@@ -263,7 +263,7 @@ function makeCommercialInvoice(dosya, urunler) {
     blank(200),
     // Sadece Seller + Buyer (Shipment ve Payment bloklari kaldirildi)
     tbl([new D.TableRow({children:[
-      new D.TableCell({children:[p([label('Seller')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg('Istanbul, Turkey',17)],'left',40),p([muted('brn.simsek@gmail.com',16)],'left',0)],width:{size:7000,type:'dxa'},borders:allNone,margins:cellMargS}),
+      new D.TableCell({children:[p([label('Seller')],'left',80),p([bold(((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC'),18)],'left',40),p([reg('Istanbul, Turkey',17)],'left',40),p([muted('brn.simsek@gmail.com',16)],'left',0)],width:{size:7000,type:'dxa'},borders:allNone,margins:cellMargS}),
       new D.TableCell({children:[p([label('Buyer & Consignee')],'left',80),p([bold(alici,18)],'left',40),p([reg(pod,17)],'left',0)],width:{size:7838,type:'dxa'},borders:allNone,margins:cellMargS}),
     ]})],[7000,7838]),
     blank(200),
@@ -303,7 +303,7 @@ function makeProformaInvoice(dosya, urunler) {
     headerTbl('Proforma Invoice',piNo+'\nDate: '+tarih,'Duay Global LLC  ·  brn.simsek@gmail.com'),
     blank(200),
     tbl([new D.TableRow({children:[
-      new D.TableCell({children:[p([label('Seller')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg('Istanbul, Turkey',17)],'left',0)],width:{size:7000,type:'dxa'},borders:allNone,margins:cellMargS}),
+      new D.TableCell({children:[p([label('Seller')],'left',80),p([bold(((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC'),18)],'left',40),p([reg('Istanbul, Turkey',17)],'left',0)],width:{size:7000,type:'dxa'},borders:allNone,margins:cellMargS}),
       new D.TableCell({children:[p([label('Buyer')],'left',80),p([bold(alici,18)],'left',40),p([reg(pod,17)],'left',0)],width:{size:7838,type:'dxa'},borders:allNone,margins:cellMargS}),
     ]})],[7000,7838]),
     blank(200),
@@ -332,7 +332,7 @@ function makeShippingInstruction(dosya, urunler) {
     headerTbl('Shipping Instruction',no+'\n'+_todayFmt(),'Sevk Emri — Duay Global LLC'),
     blank(200),
     tbl([new D.TableRow({children:[
-      new D.TableCell({children:[p([label('Shipper')],'left',80),p([bold('Duay Global LLC',18)],'left',40),p([reg(pol,17)],'left',0)],width:{size:5000,type:'dxa'},borders:allNone,margins:cellMargS}),
+      new D.TableCell({children:[p([label('Shipper')],'left',80),p([bold(((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC'),18)],'left',40),p([reg(pol,17)],'left',0)],width:{size:5000,type:'dxa'},borders:allNone,margins:cellMargS}),
       new D.TableCell({children:[p([label('Forwarder')],'left',80),p([reg(dosya.forwarder_adi||'___________________',17)],'left',0)],width:{size:5000,type:'dxa'},borders:allNone,margins:cellMargS}),
       new D.TableCell({children:[p([label('Route')],'left',80),p([reg('POL: '+pol,17)],'left',40),p([reg('POD: '+pod,17)],'left',40),p([reg('ETD: '+_fmtDate(dosya.bitis_tarihi),17)],'left',0)],width:{size:4838,type:'dxa'},borders:allNone,margins:cellMargS}),
     ]})],[5000,5000,4838]),
@@ -407,7 +407,7 @@ function makeFreightRequest(dosya, urunler) {
     headerTbl('Freight Rate Request',frqNo+'  ·  '+tarih,'Freight Rate Request Form'),
     blank(200),
     tbl([new D.TableRow({children:[
-      new D.TableCell({children:[new D.Table({width:{size:6000,type:'dxa'},columnWidths:[2400,3600],borders:allNone,rows:[infoRow('Talep Eden','Duay Global LLC',2400,3600),infoRow('Email','brn.simsek@gmail.com',2400,3600)]})],width:{size:6000,type:'dxa'},borders:allNone,margins:{top:0,bottom:0,left:0,right:200}}),
+      new D.TableCell({children:[new D.Table({width:{size:6000,type:'dxa'},columnWidths:[2400,3600],borders:allNone,rows:[infoRow('Talep Eden',((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC'),2400,3600),infoRow('Email','brn.simsek@gmail.com',2400,3600)]})],width:{size:6000,type:'dxa'},borders:allNone,margins:{top:0,bottom:0,left:0,right:200}}),
       new D.TableCell({children:[new D.Table({width:{size:6000,type:'dxa'},columnWidths:[2400,3600],borders:allNone,rows:[infoRow('Forwarder','___________________',2400,3600),infoRow('Son Teklif','___/___/2026',2400,3600)]})],width:{size:8838,type:'dxa'},borders:allNone,margins:{top:0,bottom:0,left:200,right:0}}),
     ]})],[6000,8838]),
     blank(160),
@@ -461,7 +461,7 @@ function makeInsuranceRequest(dosya, urunler) {
     headerTbl('Insurance Quote Request',irqNo+'  ·  '+tarih,'Marine / Cargo Insurance Quote Request'),
     blank(200),
     tbl([new D.TableRow({children:[
-      new D.TableCell({children:[new D.Table({width:{size:6000,type:'dxa'},columnWidths:[2600,3400],borders:allNone,rows:[infoRow('Sigorta Ettiren','Duay Global LLC',2600,3400),infoRow('Invoice No',invNo,2600,3400)]})],width:{size:6000,type:'dxa'},borders:allNone,margins:{top:0,bottom:0,left:0,right:200}}),
+      new D.TableCell({children:[new D.Table({width:{size:6000,type:'dxa'},columnWidths:[2600,3400],borders:allNone,rows:[infoRow('Sigorta Ettiren',((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC'),2600,3400),infoRow('Invoice No',invNo,2600,3400)]})],width:{size:6000,type:'dxa'},borders:allNone,margins:{top:0,bottom:0,left:0,right:200}}),
       new D.TableCell({children:[new D.Table({width:{size:6000,type:'dxa'},columnWidths:[2600,3400],borders:allNone,rows:[infoRow('Guzergah',pol+' -> '+pod,2600,3400),infoRow('ETD',_fmtDate(dosya.bitis_tarihi),2600,3400)]})],width:{size:8838,type:'dxa'},borders:allNone,margins:{top:0,bottom:0,left:200,right:0}}),
     ]})],[6000,8838]),
     blank(160),
@@ -492,7 +492,7 @@ function makeYuklemeKontrolListesi(dosya, urunler) {
   var rows=[]; _sortU(urunler).forEach(function(u,i){rows.push(new D.TableRow({children:[dataCellC([reg(String(i+1),17)],400),dataCell([reg(u.standart_urun_adi||u.aciklama||'[Urun]',17)],5000),dataCellC([reg(String(parseFloat(u.miktar)||'—'),17)],1200),dataCellC([reg(String(parseInt(u.koli_adet)||'—'),17)],1200),dataCellC([reg((parseFloat(u.brut_kg)||0).toFixed(2),17)],1500)]}));});
   var chkRows=kontrol.map(function(k){return new D.TableRow({children:[dataCell([reg('[ ]',17)],600),dataCell([reg(k,17)],14238)]});});
   return new D.Document({sections:[{properties:pageProps,children:[
-    headerTbl('Yukleme Kontrol Listesi',no+'\n'+_todayFmt(),'Duay Global LLC'),blank(200),
+    headerTbl('Yukleme Kontrol Listesi',no+'\n'+_todayFmt(),((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC')),blank(200),
     tbl([new D.TableRow({children:[new D.TableCell({children:[p([label('Dosya')],'left',40),p([reg((dosya.dosyaNo||'')+' · '+(dosya.musteriAd||''),17)],'left',0)],width:{size:7000,type:'dxa'},borders:allNone,margins:cellMargS}),new D.TableCell({children:[p([label('Konteyner')],'left',40),p([reg(dosya.konteyner_turu||'40HC',17)],'left',0)],width:{size:7838,type:'dxa'},borders:allNone,margins:cellMargS})]})],[7000,7838]),blank(200),
     new D.Table({width:{size:CW,type:'dxa'},columnWidths:[400,5000,1200,1200,1500],borders:allNone,rows:[new D.TableRow({children:[hdrCell('#',400),hdrCell('Urun',5000),hdrCell('Miktar',1200),hdrCell('Koli',1200),hdrCell('Brut KG',1500)]})].concat(rows)}),blank(200),
     new D.Paragraph({children:[label('Kontrol Maddeleri')],spacing:{before:0,after:60},border:{bottom:THIN}}),blank(80),
@@ -509,7 +509,7 @@ function makeKonteynerDizilimListesi(dosya, urunler) {
   var rows=[]; _sortU(urunler).forEach(function(u,i){rows.push(new D.TableRow({children:[dataCellC([reg(u.konteyner_sira?String(u.konteyner_sira):String(i+1),17)],500),dataCell([reg(u.standart_urun_adi||u.aciklama||'[Urun]',17)],4000),dataCellC([reg(String(parseInt(u.koli_adet)||'—'),17)],1200),dataCellC([reg((parseFloat(u.brut_kg)||0).toFixed(2),17)],1500),dataCellC([reg('—',17)],1200),dataCellC([reg('—',17)],1200),dataCellC([reg('—',17)],1200)]}));});
   rows.push(new D.TableRow({children:[totalCellR([bold('Toplam',17)],4500),totalCell([bold(String(totKoli),17)],1200),totalCell([bold(totBrut.toFixed(2)+' kg',17)],1500),totalCell([bold('—',17)],1200),totalCell([bold('—',17)],1200),totalCell([bold('—',17)],1200)]}));
   return new D.Document({sections:[{properties:pageProps,children:[
-    headerTbl('Konteyner Dizilim Listesi',no+'\n'+_todayFmt(),'Duay Global LLC'),blank(200),
+    headerTbl('Konteyner Dizilim Listesi',no+'\n'+_todayFmt(),((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC')),blank(200),
     new D.Table({width:{size:CW,type:'dxa'},columnWidths:[500,4000,1200,1500,1200,1200,1200],borders:allNone,rows:[new D.TableRow({children:[hdrCell('Sira',500),hdrCell('Urun',4000),hdrCell('Koli',1200),hdrCell('KG',1500),hdrCell('Boy cm',1200),hdrCell('En cm',1200),hdrCell('Yuk cm',1200)]})].concat(rows)}),blank(200),
     p([muted('Bkz. ek dizilim semasi',15)],'left',0),blank(200),signatureTbl(),
   ]}]});
@@ -522,7 +522,7 @@ function makeTeslimatKontrolListesi(dosya) {
   var kontrol=['BL orijinal alindi mi?','GCB kapatildi mi?','Sigorta policesi aktif mi?','Mense belgesi teslim edildi mi?','EUR.1 teslim edildi mi?','Kambiyo beyannamesi verildi mi? (90 gun)','Tahsilat gerceklesti mi?','KDV iade basvurusu yapildi mi?'];
   var chkRows=kontrol.map(function(k){return new D.TableRow({children:[dataCell([reg('[ ]',17)],600),dataCell([reg(k,17)],14238)]});});
   return new D.Document({sections:[{properties:pageProps,children:[
-    headerTbl('Teslimat Kontrol Listesi',no+'\n'+_todayFmt(),'Duay Global LLC'),blank(200),
+    headerTbl('Teslimat Kontrol Listesi',no+'\n'+_todayFmt(),((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC')),blank(200),
     tbl([new D.TableRow({children:[new D.TableCell({children:[p([label('Dosya')],'left',40),p([reg((dosya.dosyaNo||'')+' · '+(dosya.musteriAd||''),17)],'left',0)],width:{size:5000,type:'dxa'},borders:allNone,margins:cellMargS}),new D.TableCell({children:[p([label('Varis')],'left',40),p([reg(dosya.varis_limani||'[POD]',17)],'left',0)],width:{size:5000,type:'dxa'},borders:allNone,margins:cellMargS}),new D.TableCell({children:[p([label('ETA')],'left',40),p([reg(_fmtDate(dosya.bitis_tarihi),17)],'left',0)],width:{size:4838,type:'dxa'},borders:allNone,margins:cellMargS})]})],[5000,5000,4838]),blank(200),
     new D.Paragraph({children:[label('Kontrol Maddeleri')],spacing:{before:0,after:60},border:{bottom:THIN}}),blank(80),
     new D.Table({width:{size:CW,type:'dxa'},columnWidths:[600,14238],borders:allNone,rows:chkRows}),blank(200),
@@ -535,7 +535,7 @@ function makeSevkIzni(dosya) {
   dosya=dosya||{};
   var no=(dosya.dosyaNo||'______').replace('IHR-','SVK-');
   return new D.Document({sections:[{properties:pageProps,children:[
-    headerTbl('Muhurlu Konteyner Sevk Izni',no+'\n'+_todayFmt(),'Duay Global LLC'),blank(300),
+    headerTbl('Muhurlu Konteyner Sevk Izni',no+'\n'+_todayFmt(),((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC')),blank(300),
     tbl([new D.TableRow({children:[new D.TableCell({children:[
       new D.Table({width:{size:CW,type:'dxa'},columnWidths:[4000,10838],borders:allNone,rows:[
         infoRow('Ihracat Dosya No',dosya.dosyaNo||'______',4000,10838),

@@ -3499,7 +3499,7 @@ function exportOdmPaymentPDF(id) {
   const win = window.open('', '_blank');
   const html = '<html><body style="font-family:sans-serif;padding:40px;max-width:600px;margin:0 auto">'
     + '<h2 style="color:#1e1b4b;margin-bottom:4px">Ödeme Talimatı</h2>'
-    + '<p style="color:#6b7280;font-size:13px;margin-bottom:24px">Duay Global LLC</p>'
+    + '<p style="color:#6b7280;font-size:13px;margin-bottom:24px">' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') + '</p>'
     + '<table style="width:100%;border-collapse:collapse;font-size:14px">'
     + '<tr style="background:#f5f5ff"><td style="padding:10px;font-weight:600;width:40%">Ödeme Adı</td><td style="padding:10px">' + window._esc(o.name) + '</td></tr>'
     + '<tr><td style="padding:10px;font-weight:600">Tutar</td><td style="padding:10px;font-weight:700;color:#6366F1">₺' + parseFloat(o.amount || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + '</td></tr>'
@@ -5343,7 +5343,7 @@ function openOdmReminderModal(id) {
   if (!o) return;
   const users = window.loadUsers ? loadUsers() : [];
   const u = users.find(x => x.id === o.assignedTo);
-  const msg = `Sayın ${u?.name||'İlgili'},\n\n"${o.name}" ödemesi için son tarih: ${o.due||'—'}\nTutar: ${_odmFmtAmt(o.amount,o.currency||'TRY')} ${_odmTLKarsiligi(o.amount,o.currency||'TRY')}\n\nLütfen zamanında işlem yapınız.\n\nDuay Global LLC`;
+  const msg = `Sayın ${u?.name||'İlgili'},\n\n"${o.name}" ödemesi için son tarih: ${o.due||'—'}\nTutar: ${_odmFmtAmt(o.amount,o.currency||'TRY')} ${_odmTLKarsiligi(o.amount,o.currency||'TRY')}\n\nLütfen zamanında işlem yapınız.\n\n${((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC')}`;
 
   const mo = document.createElement('div');
   mo.className = 'mo'; ;
@@ -6146,7 +6146,7 @@ window._odmExportHesapOzetiPDF = function() {
     var w = window.open('', '_blank');
     if (!w) { window.toast?.('Pop-up engellendi', 'err'); return; }
     w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hesap Özeti — ' + label + '</title><style>body{font-family:Arial,sans-serif;max-width:780px;margin:32px auto;color:#111;font-size:12px}.hdr{display:flex;justify-content:space-between;margin-bottom:24px}.co{font-size:18px;font-weight:700}h2{font-size:14px;font-weight:600;border-bottom:2px solid #185FA5;padding-bottom:6px;margin:20px 0 10px}table{width:100%;border-collapse:collapse;margin-bottom:16px}th{background:#E6F1FB;padding:6px 10px;text-align:left;font-size:11px}td{padding:6px 10px;border-bottom:0.5px solid #eee;font-size:11px}.sign-row{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:48px}.sign-box{border-top:1px solid #999;padding-top:6px;font-size:11px;color:#666}@media print{button{display:none}}</style></head><body>'
-      + '<div class="hdr"><div><div class="co">Duay Global LLC</div><div style="font-size:11px;color:#666">Hesap Özeti: ' + label + '</div></div><div style="text-align:right;font-size:11px;color:#666">Oluşturma: ' + new Date().toLocaleString('tr-TR') + '</div></div>'
+      + '<div class="hdr"><div><div class="co">' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') + '</div><div style="font-size:11px;color:#666">Hesap Özeti: ' + label + '</div></div><div style="text-align:right;font-size:11px;color:#666">Oluşturma: ' + new Date().toLocaleString('tr-TR') + '</div></div>'
       + '<h2>Özet</h2><table><tr><th>Kalem</th><th style="text-align:right">TL Karşılığı</th></tr>'
       + '<tr><td>Toplam Tahsilat</td><td style="text-align:right;color:#16a34a">+₺' + Math.round(tahTRY).toLocaleString('tr-TR') + '</td></tr>'
       + '<tr><td>Toplam Ödeme</td><td style="text-align:right;color:#dc2626">-₺' + Math.round(odmTRY).toLocaleString('tr-TR') + '</td></tr>'
@@ -6228,7 +6228,7 @@ window._odmHatirlatmaTaslagi = function() {
   if (!odm.length) { window.toast?.('Gecikmiş kayıt yok', 'ok'); return; }
   var o = odm[0]; var diff = Math.ceil((new Date(today) - new Date(o.due)) / 86400000);
   var sym = (o.currency || 'TRY') === 'USD' ? '$' : (o.currency || 'TRY') === 'EUR' ? '€' : '₺';
-  var taslak = 'Sayın ' + (o.cariName || 'İlgili Taraf') + ',\n\n' + o.due + ' vade tarihli, ' + sym + (parseFloat(o.amount) || 0).toLocaleString('tr-TR') + ' tutarındaki "' + (o.name || 'ödeme') + '" kaydı ' + diff + ' gündür ödeme beklemektedir.\n\nEn kısa sürede ödeme yapmanızı rica ederiz.\n\nSaygılarımızla,\nDuay Global LLC';
+  var taslak = 'Sayın ' + (o.cariName || 'İlgili Taraf') + ',\n\n' + o.due + ' vade tarihli, ' + sym + (parseFloat(o.amount) || 0).toLocaleString('tr-TR') + ' tutarındaki "' + (o.name || 'ödeme') + '" kaydı ' + diff + ' gündür ödeme beklemektedir.\n\nEn kısa sürede ödeme yapmanızı rica ederiz.\n\nSaygılarımızla,\n' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC');
   var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-taslak';
   var html = '<div class="moc" style="max-width:520px;padding:0;border-radius:14px;overflow:hidden"><div style="background:#042C53;padding:14px 20px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600;color:#E6F1FB">Hatırlatma Taslağı</div><button onclick="document.getElementById(\'mo-taslak\')?.remove()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:16px">x</button></div><div style="padding:16px 20px"><textarea id="mo-taslak-ta" rows="8" style="width:100%;font-size:12px;padding:10px;border:0.5px solid var(--b);border-radius:6px;resize:none;font-family:inherit;background:var(--s2)">' + window._esc(taslak) + '</textarea></div><div style="padding:12px 20px;border-top:0.5px solid var(--b);display:flex;gap:8px;justify-content:flex-end"><button class="btn btns" onclick="navigator.clipboard?.writeText(document.getElementById(\'mo-taslak-ta\')?.value||\'\')\n.then(function(){window.toast?.(\'Kopyalandı ✓\',\'ok\')})">Kopyala</button><button class="btn btnp" onclick="document.getElementById(\'mo-taslak\')?.remove()">Kapat</button></div></div>';
   mo.innerHTML = html; document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
@@ -8153,7 +8153,7 @@ window._exportCariPDF = function() {
     + '.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:12px}'
     + '@media print{button{display:none!important}}</style></head><body>'
     + '<div style="border-bottom:3px solid #6366F1;padding-bottom:16px;margin-bottom:20px">'
-      + '<div style="font-size:20px;font-weight:700">Duay Global LLC</div>'
+      + '<div style="font-size:20px;font-weight:700">' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') + '</div>'
       + '<div style="font-size:12px;color:#6b7280">Cari Hesap Ekstresi · ' + new Date().toLocaleDateString('tr-TR') + '</div>'
     + '</div>'
     + '<div style="font-size:16px;font-weight:700;margin-bottom:12px">' + window._esc(c.name) + '</div>'
