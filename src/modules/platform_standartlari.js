@@ -5,19 +5,37 @@
 
 /* PI-BANKA-001: IBAN_DATA module-level — PDF helper'ları (utils.js) okuyabilsin */
 var IBAN_DATA = [
-  { banka:'Garanti Bankası', sube:'Yeşilpınar/1181',
+  { banka:'Garanti Bankası', sube:'Yeşilpınar/1181', swift:'TGBATRIS',
     TL:'TR24 0006 2001 1810 0006 2960 86',
     USD:'TR39 0006 2001 1810 0009 0812 68',
     EUR:'TR66 0006 2001 1810 0009 0812 67' },
-  { banka:'Albaraka Türk', sube:'Alibeyköy/117',
+  { banka:'Albaraka Türk', sube:'Alibeyköy/117', swift:'BTFHTRIS',
     TL:'TR54 0020 3000 0889 5310 0000 05',
     USD:'TR27 0020 3000 0889 5310 0000 06',
     EUR:'TR97 0020 3000 0889 5310 0000 07' },
-  { banka:'Kuveyt Türk', sube:'Yeşilpınar/267',
+  { banka:'Kuveyt Türk', sube:'Yeşilpınar/267', swift:'KTEFTRIS',
     TL:'TR06 0020 5000 0956 8147 5000 01',
     USD:'TR22 0020 5000 0956 8147 5000 01',
     EUR:'TR92 0020 5000 0956 8147 5000 02' },
 ];
+
+/* V194d-1b SIRKET_DATA — TEK MASTER (tüm modüller buradan okur) */
+var SIRKET_DATA = {
+  unvan_tr:      'DUAY ULUSLARARASI TICARET LTD. STI.',
+  unvan_en:      'DUAY GLOBAL LLC',
+  hesapSahibi:   'Duay Uluslararası Ticaret Ltd. Şti.',
+  adres_tr:      'Karadolap Mh. Neşeli Sk. 1/5 Eyüpsultan İstanbul',
+  adres_kisa:    'Istanbul, Turkey',
+  tel:           '+90 212 625 5 444',
+  whatsapp:      '+90 532 270 5 113',
+  web:           'www.duaycor.com',
+  email:         'brn.simsek@gmail.com',
+  vergi_dairesi: null,
+  vergi_no:      null,
+  mersis:        null,
+  ticaret_sicil: null
+};
+window.SIRKET_DATA = SIRKET_DATA;
 window.IBAN_DATA = IBAN_DATA;
 
 window.renderPlatformStandartlari = function() {

@@ -37,15 +37,40 @@
    * ════════════════════════════════════════════════════════════ */
   /* V194a: sirket alt-objesi Object.freeze + ust obje Object.freeze (K03 veri butunlugu).
      V194b+'da bu alanlara YAZAN bulunursa exception firlar — silent mutation engellenir. */
-  window.DUAY_META = Object.freeze({
-    sirket: Object.freeze({
+  /* V194d-1b: DUAY_META.sirket SIRKET_DATA'dan (platform_standartlari.js) okur — TEK MASTER */
+  function _readSirket() {
+    var s = window.SIRKET_DATA;
+    if (s && typeof s === 'object') {
+      return Object.freeze({
+        unvan_tr:      s.unvan_tr,
+        unvan_en:      s.unvan_en,
+        hesapSahibi:   s.hesapSahibi,
+        adres_tr:      s.adres_tr,
+        adres_kisa:    s.adres_kisa,
+        tel:           s.tel,
+        whatsapp:      s.whatsapp,
+        web:           s.web,
+        email:         s.email,
+        vergi_dairesi: s.vergi_dairesi,
+        vergi_no:      s.vergi_no,
+        mersis:        s.mersis,
+        ticaret_sicil: s.ticaret_sicil
+      });
+    }
+    /* Fallback (SIRKET_DATA yüklenmediyse) */
+    return Object.freeze({
       unvan_tr:    'DUAY ULUSLARARASI TICARET LTD. STI.',
       unvan_en:    'DUAY GLOBAL LLC',
+      hesapSahibi: 'Duay Uluslararası Ticaret Ltd. Şti.',
       adres_kisa:  'Istanbul, Turkey',
       web:         'www.duaycor.com',
       tel:         '+90 212 625 5 444',
-      whatsapp:    '+90 532 270 5 113'
-    }),
+      whatsapp:    '+90 532 270 5 113',
+      email:       'brn.simsek@gmail.com'
+    });
+  }
+  window.DUAY_META = Object.freeze({
+    sirket: _readSirket(),
     /* Versiyon — V194a master-data-foundation tamamlandi */
     _version: '194.0.0',
     _master_keys: Object.freeze({
@@ -79,8 +104,8 @@
             banka: bank0.banka,
             sube: bank0.sube,
             iban: bank0[ibanKey],
-            swift: 'TGBATRIS',
-            hesapSahibi: 'Duay Global Trade Company'
+            swift: bank0.swift || 'TGBATRIS',
+            hesapSahibi: (window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || (window.DUAY_META && window.DUAY_META.sirket && window.DUAY_META.sirket.hesapSahibi)
           });
         }
         if (!cur) {
