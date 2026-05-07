@@ -118,7 +118,7 @@
                 sube: bank0.sube,
                 iban: bank0[k],
                 swift: 'TGBATRIS',
-                hesapSahibi: 'Duay Global Trade Company'
+                hesapSahibi: (window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || 'Duay Uluslararası Ticaret Ltd. Şti.'
               });
             }
           });
