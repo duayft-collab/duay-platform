@@ -1031,9 +1031,9 @@ window._renderPlatformRules = function() {
   panel.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:24px">'
     + '<div style="font-size:18px;font-weight:500;color:var(--t);margin-bottom:4px">Platform Kuralları</div>'
     + '<div style="font-size:11px;color:var(--t3);margin-bottom:24px">Sistem geliştirme anayasası ve genel kurallar</div>'
-    + '<div style="display:flex;gap:2px;border-bottom:0.5px solid var(--b);margin-bottom:20px;overflow-x:auto">' + _tabBtn('gk', 'Genel Kurallar', true) + _tabBtn('anayasa', 'Anayasa', false) + _tabBtn('ozel', 'Özel Kurallar', false) + _tabBtn('yapilacak', 'Yapılacaklar', false) + _tabBtn('sorunlar', 'Sorunlar', false) + _tabBtn('gelistirmeler', 'Geliştirmeler', false) + _tabBtn('ai', 'AI Kuralları', false) + '</div>'
+    + '<div style="display:flex;gap:2px;border-bottom:0.5px solid var(--b);margin-bottom:20px;overflow-x:auto">' + _tabBtn('gk', 'Genel Kurallar', true) + _tabBtn('anayasa', 'Anayasa', false) + _tabBtn('ozel', 'Özel Kurallar', false) + _tabBtn('yapilacak', 'Yapılacaklar', false) + _tabBtn('sorunlar', 'Sorunlar', false) + _tabBtn('gelistirmeler', 'Geliştirmeler', false) + _tabBtn('ai', 'AI Kuralları', false) + _tabBtn('kx', 'KX Kuralları', false) + '</div>'
     + '<div id="pr-content-gk"><div style="display:flex;flex-direction:column;gap:4px">' + gkList.map(function(g) { var ok = g.durum === 'ok'; return '<div style="padding:8px 12px;background:var(--sf);border:0.5px solid var(--b);border-radius:7px"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-family:monospace;flex-shrink:0">' + g.id + '</span><span style="flex:1;font-size:11px;color:var(--t)">' + g.kural + '</span><span style="font-size:10px;font-weight:500;color:' + (ok ? '#16a34a' : '#D97706') + '">' + (ok ? '✓' : '⏳') + '</span></div>' + _sw(g.id) + '</div>'; }).join('') + '</div></div>'
-    + '<div id="pr-content-anayasa" style="display:none"><div style="display:flex;flex-direction:column;gap:6px">' + anayas.map(function(a) { return '<div style="padding:10px 14px;background:var(--sf);border:0.5px solid var(--b);border-left:3px solid #185FA5;border-radius:7px;display:flex;align-items:flex-start;gap:10px"><span style="font-size:9px;color:var(--t3);white-space:nowrap;margin-top:2px;font-family:monospace">' + a.tarih + '</span><span style="font-size:12px;color:var(--t);line-height:1.6">' + a.kural + '</span></div>'; }).join('') + '</div></div>'
+    + '<div id="pr-content-anayasa" style="display:none"><div style="display:flex;flex-direction:column;gap:6px">' + anayas.map(function(a) { return '<div style="padding:10px 14px;background:var(--sf);border:0.5px solid var(--b);border-left:3px solid #185FA5;border-radius:7px;display:flex;align-items:flex-start;gap:10px"><span style="font-size:9px;color:var(--t3);white-space:nowrap;margin-top:2px;font-family:monospace">' + a.tarih + '</span><span style="font-size:12px;color:var(--t);line-height:1.6">' + a.kural + '</span></div>'; }).join('') + (function(){ if(!window.ANAYASA_CONTENT) return ''; var blg = window.ANAYASA_CONTENT.belgeler||[]; if(!blg.length) return ''; return '<div style="margin-top:18px;padding-top:12px;border-top:0.5px solid var(--b)"><div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:8px">Anayasa Belgeleri</div><div style="display:flex;flex-direction:column;gap:6px">' + blg.map(function(b){ return '<div onclick="window._psShowBelge(\''+b.id+'\')" style="padding:10px 14px;background:var(--sf);border:0.5px solid var(--b);border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:space-between" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'var(--sf)\'"><div><div style="font-size:12px;font-weight:500;color:var(--t)">' + b.baslik + '</div><div style="font-size:9px;color:var(--t3);margin-top:2px">' + b.versiyon + ' · ' + b.tarih + '</div></div><span style="font-size:14px;color:var(--t3)">→</span></div>'; }).join('') + '</div></div>'; })() + '</div></div>' + '<div id="pr-content-kx" style="display:none">' + (function(){ if(!window.ANAYASA_CONTENT) return '<div style="padding:32px;text-align:center;color:var(--t3);font-size:12px">KX kuralları yüklenmedi.</div>'; var kx = window.ANAYASA_CONTENT.kx_kurallari||[]; return '<div style="display:flex;flex-direction:column;gap:6px">' + kx.map(function(k){ var renk = k.durum==='aktif'?'#16a34a':'#888780'; var bg = k.durum==='aktif'?'#EAF3DE':'#F3F4F6'; return '<div style="padding:12px 14px;background:var(--sf);border:0.5px solid var(--b);border-left:3px solid '+renk+';border-radius:8px"><div style="display:flex;align-items:flex-start;gap:10px"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-family:monospace;flex-shrink:0;margin-top:1px">' + k.id + '</span><div style="flex:1"><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="font-size:12px;font-weight:600;color:var(--t)">' + k.baslik + '</span><span style="font-size:8px;font-weight:700;padding:1px 6px;border-radius:3px;background:'+bg+';color:'+renk+'">' + k.durum.toUpperCase() + '</span></div><div style="font-size:11px;color:var(--t2);line-height:1.6">' + k.aciklama + '</div></div><span style="font-size:9px;color:var(--t3);font-family:monospace;white-space:nowrap">' + k.tarih + '</span></div></div>'; }).join('') + '</div>'; })() + '</div>'
     + '<div id="pr-content-ozel" style="display:none"><div style="padding:32px;text-align:center;color:var(--t3);font-size:12px">Projeye özel teknik kararlar buraya yazılır.</div></div>'
     + '<div id="pr-content-yapilacak" style="display:none">' + _renderItems(yapilacaklar) + '</div>'
     + '<div id="pr-content-sorunlar" style="display:none">' + _renderItems(sorunlar) + '</div>'
@@ -1053,12 +1053,81 @@ window._renderPlatformRules = function() {
     + '</div>';
 
   window._prTab = function(tab) {
-    ['gk', 'anayasa', 'ozel', 'yapilacak', 'sorunlar', 'gelistirmeler', 'ai'].forEach(function(t) {
+    ['gk', 'anayasa', 'ozel', 'yapilacak', 'sorunlar', 'gelistirmeler', 'ai', 'kx'].forEach(function(t) {
       var c = document.getElementById('pr-content-' + t); var tb = document.getElementById('pr-tab-' + t);
       if (c) c.style.display = t === tab ? '' : 'none';
       if (tb) { tb.style.borderBottomColor = t === tab ? 'var(--ac)' : 'transparent'; tb.style.color = t === tab ? 'var(--ac)' : 'var(--t3)'; tb.style.fontWeight = t === tab ? '500' : '400'; }
     });
   };
+};
+
+/* V194e-2: Basit markdown render + belge modal */
+window._psRenderMarkdown = function(md) {
+  if (!md) return '';
+  var esc = function(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  var lines = md.split(/\r?\n/);
+  var out = [];
+  var inList = false;
+  var inCode = false;
+  var codeBuf = [];
+  var inTable = false;
+  var tableRows = [];
+  var flushTable = function(){
+    if (tableRows.length < 2) { out.push(tableRows.join('\n')); tableRows = []; inTable = false; return; }
+    var html = '<table style="border-collapse:collapse;margin:8px 0;font-size:11px"><thead><tr>';
+    tableRows[0].split('|').slice(1,-1).forEach(function(c){ html += '<th style="border:0.5px solid var(--b);padding:4px 8px;background:var(--s2);text-align:left">' + esc(c.trim()) + '</th>'; });
+    html += '</tr></thead><tbody>';
+    for (var i=2; i<tableRows.length; i++) {
+      html += '<tr>';
+      tableRows[i].split('|').slice(1,-1).forEach(function(c){ html += '<td style="border:0.5px solid var(--b);padding:4px 8px">' + esc(c.trim()) + '</td>'; });
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+    out.push(html);
+    tableRows = [];
+    inTable = false;
+  };
+  lines.forEach(function(line) {
+    if (line.match(/^```/)) {
+      if (inCode) { out.push('<pre style="background:var(--s2);padding:8px 12px;border-radius:6px;font-size:11px;overflow-x:auto;font-family:monospace;color:var(--t)"><code>' + esc(codeBuf.join('\n')) + '</code></pre>'); codeBuf = []; inCode = false; }
+      else { inCode = true; }
+      return;
+    }
+    if (inCode) { codeBuf.push(line); return; }
+    if (line.match(/^\|.*\|$/)) { if(inList){out.push('</ul>');inList=false;} inTable = true; tableRows.push(line); return; }
+    if (inTable && !line.match(/^\|/)) { flushTable(); }
+    if (line.match(/^### (.+)$/))      { if(inList){out.push('</ul>');inList=false;} out.push('<h3 style="font-size:14px;margin-top:14px;margin-bottom:6px;color:var(--t)">' + esc(line.replace(/^### /,'')) + '</h3>'); return; }
+    if (line.match(/^## (.+)$/))       { if(inList){out.push('</ul>');inList=false;} out.push('<h2 style="font-size:16px;margin-top:18px;margin-bottom:8px;color:var(--t);font-weight:600">' + esc(line.replace(/^## /,'')) + '</h2>'); return; }
+    if (line.match(/^# (.+)$/))        { if(inList){out.push('</ul>');inList=false;} out.push('<h1 style="font-size:18px;margin-top:18px;margin-bottom:10px;color:var(--t);font-weight:700">' + esc(line.replace(/^# /,'')) + '</h1>'); return; }
+    if (line.match(/^> /))             { if(inList){out.push('</ul>');inList=false;} var content = line.replace(/^> /,''); content = esc(content).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code style="background:var(--s2);padding:1px 4px;border-radius:3px;font-family:monospace;font-size:10px">$1</code>'); out.push('<blockquote style="border-left:3px solid var(--ac);padding:6px 12px;margin:8px 0;color:var(--t2);font-style:italic;background:var(--s2);border-radius:0 6px 6px 0">' + content + '</blockquote>'); return; }
+    if (line.match(/^[-*] /))          { if(!inList){out.push('<ul style="margin:6px 0 6px 20px;padding-left:0">');inList=true;} var content = line.replace(/^[-*] /,''); content = esc(content).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code style="background:var(--s2);padding:1px 4px;border-radius:3px;font-family:monospace;font-size:10px">$1</code>'); out.push('<li style="margin:3px 0;color:var(--t)">' + content + '</li>'); return; }
+    if (line.match(/^---+$/))          { if(inList){out.push('</ul>');inList=false;} out.push('<hr style="border:none;border-top:0.5px solid var(--b);margin:12px 0">'); return; }
+    if (line.trim() === '')            { if(inList){out.push('</ul>');inList=false;} return; }
+    if(inList){out.push('</ul>');inList=false;}
+    var content = esc(line).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code style="background:var(--s2);padding:1px 4px;border-radius:3px;font-family:monospace;font-size:10px">$1</code>');
+    out.push('<p style="margin:6px 0;line-height:1.6;color:var(--t)">' + content + '</p>');
+  });
+  if (inList) out.push('</ul>');
+  if (inTable) flushTable();
+  if (inCode && codeBuf.length) out.push('<pre style="background:var(--s2);padding:8px 12px;border-radius:6px;font-size:11px;font-family:monospace">' + esc(codeBuf.join('\n')) + '</pre>');
+  return out.join('\n');
+};
+
+window._psShowBelge = function(belgeId) {
+  if (!window.ANAYASA_CONTENT) return;
+  var b = window.ANAYASA_CONTENT.belgeler.find(function(x){return x.id===belgeId;});
+  if (!b) return;
+  var modal = document.createElement('div');
+  modal.id = 'ps-belge-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = '<div style="background:var(--s);border-radius:12px;width:800px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column">'
+    + '<div style="padding:16px 20px;border-bottom:0.5px solid var(--b);display:flex;justify-content:space-between;align-items:center;flex-shrink:0">'
+    + '<div><div style="font-size:14px;font-weight:600;color:var(--t)">' + b.baslik + '</div><div style="font-size:10px;color:var(--t3);margin-top:2px">' + b.versiyon + ' · ' + b.tarih + ' · read-only</div></div>'
+    + '<button onclick="document.getElementById(\'ps-belge-modal\')?.remove()" style="font-size:13px;padding:6px 12px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;color:var(--t2)">Kapat</button>'
+    + '</div>'
+    + '<div style="padding:20px 28px;overflow-y:auto;flex:1">' + window._psRenderMarkdown(b.icerik) + '</div>'
+    + '</div>';
+  document.body.appendChild(modal);
 };
 
 
