@@ -2227,7 +2227,7 @@ window._sigMailGonder = function() {
   var tarih = (_g('sig-tarih') || {}).value || '';
   var yukl = (_g('sig-yukl') || {}).value || '';
   var konu = 'Sigorta Teklif Talebi — ' + varis + ' / ' + deger;
-  var body = 'Sayın İlgili,\n\nAşağıdaki sevkiyat için kargo sigortası teklifi talep etmekteyiz.\n\nSEVK BİLGİLERİ\nYükleme  : ' + yukl + '\nVarış    : ' + varis + '\nÜrün     : ' + urun + '\nBrüt KG  : ' + kg + ' kg | Hacim: ' + m3 + ' m³\nKonteyner: ' + kont + '\n\nSİGORTA TALEBİ\nSigorta Değeri : ' + deger + '\nSigorta Türü   : ' + tur + '\nYükleme Tarihi : ' + tarih + '\n\nTeklifinizi bekliyoruz.\nSaygılarımızla, Duay Uluslararası Ticaret Ltd. Şti.';
+  var body = window.DUAY_MAIL_GET('sigorta', 'tr', { yukl: yukl, varis: varis, urun: urun, kg: kg, m3: m3, kont: kont, deger: deger, tur: tur, tarih: tarih });
   window.open('mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(konu) + '&body=' + encodeURIComponent(body));
   window.toast?.('Mail uygulaması açıldı', 'ok'); _g('mo-sigorta-teklif')?.remove();
 };
@@ -2282,7 +2282,7 @@ window._fwMailGonder = function() {
   var son = (_g('fw-son-tarih') || {}).value || ''; var armator = (_g('fw-armator') || {}).value || '';
   var email = (_g('fw-email') || {}).value || '';
   var konu = 'Navlun Fiyat Talebi — ' + pol + ' / ' + pod;
-  var body = 'Sayın İlgili,\n\nAşağıdaki sevkiyat için navlun fiyatı talep etmekteyiz.\n\nSEVK BİLGİLERİ\nYükleme : ' + pol + '\nVarış   : ' + pod + '\nKonteyner: ' + adet + 'x ' + kont + '\nBrüt KG : ' + kg + ' kg\nHacim   : ' + m3 + ' m³\nÜrün    : ' + urun + '\nB/L     : ' + bl + '\nNavlun  : ' + odeme + '\nYükleme : ' + tarih + (armator ? '\nTercih  : ' + armator : '') + '\nSon Teklif: ' + son + '\n\nSaygılarımızla,\nDuay Uluslararası Ticaret Ltd. Şti.';
+  var body = window.DUAY_MAIL_GET('navlun', 'tr', { pol: pol, pod: pod, adet: adet, kont: kont, kg: kg, m3: m3, urun: urun, bl: bl, odeme: odeme, tarih: tarih, armator: armator, son: son });
   window.open('mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(konu) + '&body=' + encodeURIComponent(body));
   window.toast?.('Mail uygulaması açıldı', 'ok'); _g('mo-forwarder-teklif')?.remove();
 };
@@ -2330,7 +2330,7 @@ window._nakMailGonder = function(durakSayisi) {
   var durakMet = '';
   for (var i = 0; i < durakSayisi; i++) { var adr = (_g('nak-adr-' + i) || {}).value || '—'; var koli = (_g('nak-koli-' + i) || {}).value || '0'; var kg = (_g('nak-kg-' + i) || {}).value || '0'; durakMet += '\n  ' + (i + 1) + '. Durak: ' + adr + ' — ' + koli + ' koli / ' + kg + ' kg'; }
   var konu = 'İç Nakliye Teklif Talebi — ' + teslim;
-  var body = 'Sayın İlgili,\n\nAşağıdaki sevkiyat için iç nakliye teklifi talep etmekteyiz.\n\nYÜKLEME DURAKLARI:' + durakMet + '\n\nTESLİM BİLGİLERİ\nTeslim Yeri  : ' + teslim + '\nTeslim Tarihi: ' + tarih + '\nKonteyner    : ' + kont + '\nToplam KG    : ' + kgTop + ' kg\nToplam m³    : ' + m3Top + (not ? '\nÖzel Talimat : ' + not : '') + '\n\nSaygılarımızla,\nDuay Uluslararası Ticaret Ltd. Şti.';
+  var body = window.DUAY_MAIL_GET('ic_nakliye', 'tr', { durakMet: durakMet, teslim: teslim, tarih: tarih, kont: kont, kgTop: kgTop, m3Top: m3Top, not: not });
   window.open('mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(konu) + '&body=' + encodeURIComponent(body));
   window.toast?.('Mail uygulaması açıldı', 'ok'); _g('mo-ic-nakliye')?.remove();
 };
@@ -3367,9 +3367,7 @@ window._evrakGonderMail = function(evrakId, dosyaId, tur) {
   var notTxt = (_g('eg-not') || {}).value || '';
   var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
 
-  var body = notTxt
-    ? notTxt + '\n\n---\nDuay Uluslararası Ticaret Ltd. Şti.\nDosya: ' + (d ? d.dosyaNo : '')
-    : 'Sayın ilgili,\n\nEkte ' + tur + ' belgesi gönderilmiştir.\n\nSaygılarımızla,\nDuay Uluslararası Ticaret Ltd. Şti.\nDosya: ' + (d ? d.dosyaNo : '');
+  var body = window.DUAY_MAIL_GET('belge_gonder', 'tr', { notTxt: notTxt, tur: tur, dosyaNo: (d ? d.dosyaNo : '') });
 
   var mailtoUrl = 'mailto:' + encodeURIComponent(email)
     + '?subject=' + encodeURIComponent(konu)
