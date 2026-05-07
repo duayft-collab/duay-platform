@@ -6112,7 +6112,7 @@ window.renderPlatformKurallari = function() {
   var aktifKatTab = window._pkAktifTab||'genel';
   var h = '<div style="padding:20px;max-width:900px">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">';
-  h += '<div><div style="font-size:16px;font-weight:500;color:var(--t)">Platform Kuralları</div>';
+  h += '<div><div style="font-size:16px;font-weight:500;color:var(--t);display:flex;align-items:center;gap:10px">Platform Kuralları' + (typeof window._anayasaAdminButton === 'function' ? window._anayasaAdminButton() : '') + '</div>';
   h += '<div style="font-size:11px;color:var(--t3);margin-top:2px">ANAYASA v4.0 — Duay Platform temel kuralları</div></div>';
   h += '<div style="font-size:11px;color:var(--t3)">'+kurallar.filter(function(k){return k.durum==='aktif';}).length+' aktif · '+kurallar.filter(function(k){return k.durum!=='aktif';}).length+' diğer</div>';
   h += '</div>';

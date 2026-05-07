@@ -49,12 +49,12 @@ var DEFAULT_SARTLAR = [
 ];
 
 /* Org-scoped Firestore path — mevcut _fsPath user-scoped, bu ayri */
-function _fsPathOrg(masterKey) {
+window._fsPathOrg = function(masterKey) {
   return 'duay_company/master/' + masterKey;
 }
 
 /* Firestore tek-seferlik fetch */
-function _fsRead(path) {
+window._fsRead = function(path) {
   return new Promise(function(resolve, reject) {
     if (!window.firebase || !window.firebase.firestore) { resolve(null); return; }
     try {

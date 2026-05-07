@@ -1365,3 +1365,40 @@ window.DUAY_ANAYASA_GET = function() {
   return window.ANAYASA_CONTENT || null;
 };
 console.log('[DUAY_ANAYASA_MASTER] V194e-3b accessor hazır');
+
+/* ════════════════════════════════════════════════════════════
+   V194e-3c: Firestore initial fetch (B stratejisi — tek seferlik)
+   Sayfa yüklenince Firestore'da kayıt varsa onu, yoksa hardcoded
+   default'u kullan. Save sonrası reload zaten Firestore'dan okur.
+   ════════════════════════════════════════════════════════════ */
+(function() {
+  function _waitFB(cb, tries) {
+    tries = tries || 0;
+    if (window.FB_DB) { cb(); return; }
+    if (tries > 50) { console.warn('[ANAYASA_MASTER] FB_DB hazır değil, hardcoded kullanılıyor.'); return; }
+    setTimeout(function() { _waitFB(cb, tries + 1); }, 100);
+  }
+  _waitFB(function() {
+    try {
+      var orgPath = window._fsPathOrg ? window._fsPathOrg('anayasa_content') : 'duay_company/master/anayasa_content';
+      window.FB_DB.doc(orgPath).get().then(function(doc) {
+        if (!doc.exists) { console.log('[ANAYASA_MASTER] Firestore boş, hardcoded default kullanılıyor.'); return; }
+        var data = doc.data();
+        if (!data.belgeler || !data.kx_kurallari) { console.warn('[ANAYASA_MASTER] Firestore data eksik.'); return; }
+        // Hardcoded'ı override et
+        window.ANAYASA_CONTENT = Object.freeze({
+          belgeler: data.belgeler,
+          kx_kurallari: data.kx_kurallari,
+          meta: Object.freeze(Object.assign({}, data._meta || {}, {
+            kaynak: 'firestore',
+            toplam_belge: data.belgeler.length,
+            toplam_kx: data.kx_kurallari.length
+          }))
+        });
+        console.log('[ANAYASA_MASTER] Firestore\'dan yüklendi:', data.belgeler.length, 'belge,', data.kx_kurallari.length, 'KX.');
+      }).catch(function(err) {
+        console.warn('[ANAYASA_MASTER] Firestore fetch hata:', err.message);
+      });
+    } catch (e) { console.warn('[ANAYASA_MASTER] init hata:', e.message); }
+  });
+})();
