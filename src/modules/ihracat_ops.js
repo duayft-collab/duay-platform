@@ -208,11 +208,10 @@ function _ihrRenderContent() {
   switch (_aktifTab) {
     case 'dashboard': window._ihrRenderDashboard?.(el); break;
     case 'emirler': _ihrRenderEmirler(el); break;
-    case 'gcb': _ihrRenderGcbList(el); break;
-    case 'konsimento': _ihrRenderBlList(el); break;
-    case 'belgeler': _ihrRenderBelgeler(el); break;
-    case 'roller': _ihrRenderRoller(el); break;
-    case 'templateler': _ihrRenderTemplates(el); break;
+    /* V198a IHR-OLU-MODUL-TEMIZLIGI-001 EDIT 1 — 5 dead module-level cases removed
+       (gcb / konsimento / belgeler / roller / templateler).
+       IHR_TABS dispatch only carries 'dashboard' and 'emirler';
+       remaining cases were never reachable from UI. */
   }
 }
 
@@ -601,25 +600,11 @@ function _ihrRenderDosyaDetay(id) {
   _ihrDetayRenderOzet(d);
 }
 
-/* ── GÇB LİSTESİ ────────────────────────────────────────── */
-function _ihrRenderGcbList(el) {
-  var gcbAll = _loadG().filter(function(g) { return !g.isDeleted; });
-  var h = '<div style="display:flex;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)"><div style="font-size:13px;font-weight:500">GÇB Takip</div><button class="btn btnp" onclick="window._ihrGcbEkle(null)" style="font-size:11px">+ GÇB Ekle</button></div>';
-  if (!gcbAll.length) { h += '<div style="text-align:center;padding:48px;color:var(--t2)">Henüz GÇB yok</div>'; el.innerHTML = h; return; }
-  h += '<table class="tbl"><thead><tr><th>GÇB No</th><th>Dosya</th><th>Tescil</th><th>FOB</th><th>Durum</th><th></th></tr></thead><tbody>';
-  gcbAll.forEach(function(g) { var dosya = _loadD().find(function(d) { return d.id === g.dosya_id; }); h += '<tr><td style="font-family:monospace;font-size:11px;color:var(--ac)">' + _esc(g.beyan_no || '—') + '</td><td style="font-size:11px">' + _esc(dosya?.dosyaNo || '—') + '</td><td style="font-size:11px;font-family:monospace">' + _esc(g.tescil_tarihi || '—') + '</td><td style="font-size:11px">' + (g.fob_deger ? g.fob_deger.toLocaleString('tr-TR') + ' ' + (g.doviz || '') : '—') + '</td><td>' + _badge(g.durum || 'bekliyor', '#D97706', 'rgba(217,119,6,.1)') + '</td><td><button class="btn btns" onclick="window._ihrGcbDuzenle(\'' + g.id + '\')" style="font-size:11px;padding:3px 8px">\u270f\ufe0f</button><button class="btn btns btnd" onclick="event.stopPropagation();window._ihrGcbSil?.(\'' + g.id + '\')" style="font-size:11px;padding:3px 8px">\ud83d\uddd1</button></td></tr>'; });
-  h += '</tbody></table>'; el.innerHTML = h;
-}
-
-/* ── BL LİSTESİ ──────────────────────────────────────────── */
-function _ihrRenderBlList(el) {
-  var blAll = _loadBL().filter(function(b) { return !b.isDeleted; });
-  var h = '<div style="display:flex;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--b)"><div style="font-size:13px;font-weight:500">Konşimento Takip</div><button class="btn btnp" onclick="window._ihrBlEkle(null)" style="font-size:11px">+ BL Ekle</button></div>';
-  if (!blAll.length) { h += '<div style="text-align:center;padding:48px;color:var(--t2)">Henüz BL yok</div>'; el.innerHTML = h; return; }
-  h += '<table class="tbl"><thead><tr><th>BL No</th><th>Dosya</th><th>Consignee</th><th>Yükleme</th><th>Tür</th><th></th></tr></thead><tbody>';
-  blAll.forEach(function(b) { var dosya = _loadD().find(function(d) { return d.id === b.dosya_id; }); h += '<tr><td style="font-family:monospace;font-size:11px;color:var(--ac)">' + _esc(b.bl_no || '—') + '</td><td style="font-size:11px">' + _esc(dosya?.dosyaNo || '—') + '</td><td style="font-size:11px">' + _esc(b.consignee || '—') + '</td><td style="font-size:11px;font-family:monospace">' + _esc(b.yukleme_tarihi || '—') + '</td><td style="font-size:11px">' + _esc({ seaway: 'SeaWay', hardcopy: 'Hard Copy', telex: 'Telex' }[b.bl_turu] || '—') + '</td><td><button class="btn btns" onclick="window._ihrBlDuzenle(\'' + b.id + '\')" style="font-size:11px;padding:3px 8px">\u270f\ufe0f</button><button class="btn btns btnd" onclick="event.stopPropagation();window._ihrBlSil?.(\'' + b.id + '\')" style="font-size:11px;padding:3px 8px">\ud83d\uddd1</button></td></tr>'; });
-  h += '</tbody></table>'; el.innerHTML = h;
-}
+/* V198a IHR-OLU-MODUL-TEMIZLIGI-001 EDIT 2 — 2 truly-dead module-level render functions removed:
+   _ihrRenderGcbList, _ihrRenderBlList. Only these two had no live dispatch after EDIT 1
+   removed switch cases 'gcb'/'konsimento'. The other three (_ihrRenderBelgeler, _ihrRenderRoller,
+   _ihrRenderTemplates) remain — they are dispatched from _ihrBelgelerModal and _ihrAyarlarTab
+   modals, both reachable from Dashboard KPI cards. Behavior change: NONE. */
 
 /* ── BELGELER ────────────────────────────────────────────── */
 function _ihrRenderBelgeler(el) {
@@ -746,7 +731,6 @@ function _ihrRenderTemplates(el) {
   templates.forEach(function(t) { h += '<div style="border:0.5px solid var(--b);border-radius:10px;padding:14px"><div style="font-size:13px;font-weight:500;margin-bottom:4px">' + _esc(t.ad) + '</div><div style="font-size:11px;color:var(--t2);margin-bottom:8px">' + _esc(t.musteriAd || 'Genel') + '</div><button class="btn btnp" onclick="window._ihrYeniEmir(\'' + t.id + '\')" style="font-size:10px;width:100%">Bu Template ile Aç</button></div>'; });
   h += '</div>'; el.innerHTML = h;
 }
-
 /* ── YENİ EMİR ───────────────────────────────────────────── */
 /* ══════════════════════════════════════════════════════════════
    YENİ EMİR V2 — 7 Adımlı Wizard (YENI-EMIR-V2-001)
@@ -1384,8 +1368,9 @@ window._ihrDetayTab = function(tab, id) {
      Yukaridaki 'IHR-NAV-001' redirect satiri tab degerini 'paydas'a yonlendirir,
      o zaman da 'paydas' branch'i match eder ve _ihrRenderPaydas cagrilir.
      Davranis degisikligi YOK — branch'lar zaten redirect sonrasi olu koddu. */
-  if (tab === 'gcb') { var gcb = _loadG().filter(function(g) { return String(g.dosya_id) === String(d.id); })[0]; c.innerHTML = '<div style="padding:16px 20px">' + (gcb ? _detayRow('Beyanname No', gcb.beyan_no) + _detayRow('Tescil', gcb.tescil_tarihi) + _detayRow('FOB', gcb.fob_deger ? gcb.fob_deger.toLocaleString('tr-TR') + ' ' + (gcb.doviz || '') : '—') + _detayRow('Durum', gcb.durum) + '<div style="margin-top:12px;display:flex;gap:6px"><button class="btn btns" onclick="window._ihrGcbDuzenle(\'' + gcb.id + '\')" style="font-size:11px">✏️</button>' + (gcb.durum !== 'kapandi' ? '<button class="btn btns" onclick="window._ihrGcbKapat(\'' + gcb.id + '\')" style="font-size:11px;color:#16A34A">Kapat</button>' : '') + '</div>' : '<div style="text-align:center;padding:24px;color:var(--t3)">GÇB yok<br><button class="btn btnp" onclick="window._ihrGcbEkle(\'' + d.id + '\')" style="margin-top:8px;font-size:11px">+ GÇB Ekle</button></div>') + '</div>'; return; }
-  if (tab === 'bl') { var bl = _loadBL().filter(function(b) { return String(b.dosya_id) === String(d.id); })[0]; c.innerHTML = '<div style="padding:16px 20px">' + (bl ? _detayRow('BL No', bl.bl_no) + _detayRow('Consignee', bl.consignee) + _detayRow('Yükleme', bl.yukleme_tarihi) + _detayRow('Tür', bl.bl_turu) + '<div style="margin-top:12px"><button class="btn btns" onclick="window._ihrBlDuzenle(\'' + bl.id + '\')" style="font-size:11px">✏️</button></div>' : '<div style="text-align:center;padding:24px;color:var(--t3)">BL yok<br><button class="btn btnp" onclick="window._ihrBlEkle(\'' + d.id + '\')" style="margin-top:8px;font-size:11px">+ BL Ekle</button></div>') + '</div>'; return; }
+  /* V198a IHR-OLU-MODUL-TEMIZLIGI-001 EDIT 1 — gcb/bl inline branches also removed;
+     SEKMELER has no 'gcb'/'bl' tabs and _ihrDetayTab('gcb',...) was never dispatched.
+     Already dead. Behavior change: NONE. */
 };
 window._ihrSearch = function(v) { _search = v; _ihrRenderContent(); };
 window._ihrEmirChkDegis = function() {
@@ -2236,7 +2221,7 @@ window._sigMailGonder = function() {
   var tarih = (_g('sig-tarih') || {}).value || '';
   var yukl = (_g('sig-yukl') || {}).value || '';
   var konu = 'Sigorta Teklif Talebi — ' + varis + ' / ' + deger;
-  var body = 'Sayın İlgili,\n\nAşağıdaki sevkiyat için kargo sigortası teklifi talep etmekteyiz.\n\nSEVK BİLGİLERİ\nYükleme  : ' + yukl + '\nVarış    : ' + varis + '\nÜrün     : ' + urun + '\nBrüt KG  : ' + kg + ' kg | Hacim: ' + m3 + ' m³\nKonteyner: ' + kont + '\n\nSİGORTA TALEBİ\nSigorta Değeri : ' + deger + '\nSigorta Türü   : ' + tur + '\nYükleme Tarihi : ' + tarih + '\n\nTeklifinizi bekliyoruz.\nSaygılarımızla, ' + ((window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || 'Duay Uluslararası Ticaret Ltd. Şti.');
+  var body = 'Sayın İlgili,\n\nAşağıdaki sevkiyat için kargo sigortası teklifi talep etmekteyiz.\n\nSEVK BİLGİLERİ\nYükleme  : ' + yukl + '\nVarış    : ' + varis + '\nÜrün     : ' + urun + '\nBrüt KG  : ' + kg + ' kg | Hacim: ' + m3 + ' m³\nKonteyner: ' + kont + '\n\nSİGORTA TALEBİ\nSigorta Değeri : ' + deger + '\nSigorta Türü   : ' + tur + '\nYükleme Tarihi : ' + tarih + '\n\nTeklifinizi bekliyoruz.\nSaygılarımızla, Duay Uluslararası Ticaret Ltd. Şti.';
   window.open('mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(konu) + '&body=' + encodeURIComponent(body));
   window.toast?.('Mail uygulaması açıldı', 'ok'); _g('mo-sigorta-teklif')?.remove();
 };
@@ -2291,7 +2276,7 @@ window._fwMailGonder = function() {
   var son = (_g('fw-son-tarih') || {}).value || ''; var armator = (_g('fw-armator') || {}).value || '';
   var email = (_g('fw-email') || {}).value || '';
   var konu = 'Navlun Fiyat Talebi — ' + pol + ' / ' + pod;
-  var body = 'Sayın İlgili,\n\nAşağıdaki sevkiyat için navlun fiyatı talep etmekteyiz.\n\nSEVK BİLGİLERİ\nYükleme : ' + pol + '\nVarış   : ' + pod + '\nKonteyner: ' + adet + 'x ' + kont + '\nBrüt KG : ' + kg + ' kg\nHacim   : ' + m3 + ' m³\nÜrün    : ' + urun + '\nB/L     : ' + bl + '\nNavlun  : ' + odeme + '\nYükleme : ' + tarih + (armator ? '\nTercih  : ' + armator : '') + '\nSon Teklif: ' + son + '\n\nSaygılarımızla,\n' + ((window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || 'Duay Uluslararası Ticaret Ltd. Şti.');
+  var body = 'Sayın İlgili,\n\nAşağıdaki sevkiyat için navlun fiyatı talep etmekteyiz.\n\nSEVK BİLGİLERİ\nYükleme : ' + pol + '\nVarış   : ' + pod + '\nKonteyner: ' + adet + 'x ' + kont + '\nBrüt KG : ' + kg + ' kg\nHacim   : ' + m3 + ' m³\nÜrün    : ' + urun + '\nB/L     : ' + bl + '\nNavlun  : ' + odeme + '\nYükleme : ' + tarih + (armator ? '\nTercih  : ' + armator : '') + '\nSon Teklif: ' + son + '\n\nSaygılarımızla,\nDuay Uluslararası Ticaret Ltd. Şti.';
   window.open('mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(konu) + '&body=' + encodeURIComponent(body));
   window.toast?.('Mail uygulaması açıldı', 'ok'); _g('mo-forwarder-teklif')?.remove();
 };
@@ -2339,7 +2324,7 @@ window._nakMailGonder = function(durakSayisi) {
   var durakMet = '';
   for (var i = 0; i < durakSayisi; i++) { var adr = (_g('nak-adr-' + i) || {}).value || '—'; var koli = (_g('nak-koli-' + i) || {}).value || '0'; var kg = (_g('nak-kg-' + i) || {}).value || '0'; durakMet += '\n  ' + (i + 1) + '. Durak: ' + adr + ' — ' + koli + ' koli / ' + kg + ' kg'; }
   var konu = 'İç Nakliye Teklif Talebi — ' + teslim;
-  var body = 'Sayın İlgili,\n\nAşağıdaki sevkiyat için iç nakliye teklifi talep etmekteyiz.\n\nYÜKLEME DURAKLARI:' + durakMet + '\n\nTESLİM BİLGİLERİ\nTeslim Yeri  : ' + teslim + '\nTeslim Tarihi: ' + tarih + '\nKonteyner    : ' + kont + '\nToplam KG    : ' + kgTop + ' kg\nToplam m³    : ' + m3Top + (not ? '\nÖzel Talimat : ' + not : '') + '\n\nSaygılarımızla,\n' + ((window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || 'Duay Uluslararası Ticaret Ltd. Şti.');
+  var body = 'Sayın İlgili,\n\nAşağıdaki sevkiyat için iç nakliye teklifi talep etmekteyiz.\n\nYÜKLEME DURAKLARI:' + durakMet + '\n\nTESLİM BİLGİLERİ\nTeslim Yeri  : ' + teslim + '\nTeslim Tarihi: ' + tarih + '\nKonteyner    : ' + kont + '\nToplam KG    : ' + kgTop + ' kg\nToplam m³    : ' + m3Top + (not ? '\nÖzel Talimat : ' + not : '') + '\n\nSaygılarımızla,\nDuay Uluslararası Ticaret Ltd. Şti.';
   window.open('mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(konu) + '&body=' + encodeURIComponent(body));
   window.toast?.('Mail uygulaması açıldı', 'ok'); _g('mo-ic-nakliye')?.remove();
 };
@@ -3054,8 +3039,12 @@ window._ihrMutabakatExcel = function(dosyaId) {
   window.toast?.('Excel indirildi', 'ok');
 };
 
-/* IHR-OLUKOD-001: _ihrTumBelgeleriUret olu kod temizlendi — _ihrBelgePaneliAc kullaniliyor */
-window._ihrTumBelgeleriUret = function(dosyaId) { window._ihrBelgePaneliAc?.(dosyaId); };
+/* V198a IHR-OLU-MODUL-TEMIZLIGI-001 EDIT 3 — 2 dead wrappers and 3 duplicate var declarations removed:
+   wrappers: _ihrTumBelgeleriUret (this site), _ihrBelgeFloatPanel (~6860 area).
+   duplicates: _loadE / _loadG / _loadBL second definitions (~3399/3403/3405 area;
+   originals at 85/88/90 keep working). Other 13 var declarations in 3395-3410 left untouched
+   (2 of them — _storeU, _storeGM — have NO original definition; bulk delete would break runtime).
+   Behavior change: NONE. */
 
 /** Dogrudan belge uret — modal atla, tek adimda */
 window._ihrBelgeUretDogrudan = function(dosyaId, tur, lang, yon) {
@@ -3369,7 +3358,7 @@ window._evrakGonderMail = function(evrakId, dosyaId, tur) {
   var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
 
   var body = notTxt
-    ? notTxt + '\n\n---\n' + ((window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || 'Duay Uluslararası Ticaret Ltd. Şti.') + '\nDosya: ' + (d ? d.dosyaNo : '')
+    ? notTxt + '\n\n---\nDuay Uluslararası Ticaret Ltd. Şti.\nDosya: ' + (d ? d.dosyaNo : '')
     : 'Sayın ilgili,\n\nEkte ' + tur + ' belgesi gönderilmiştir.\n\nSaygılarımızla,\nDuay Uluslararası Ticaret Ltd. Şti.\nDosya: ' + (d ? d.dosyaNo : '');
 
   var mailtoUrl = 'mailto:' + encodeURIComponent(email)
@@ -4022,8 +4011,8 @@ window._forwarderAtaKaydet = function() {
 };
 
 // ── MAİL TASLAKLARI ──────────────────────────────────────
-window._ihrGumrukcuMail = function(dosyaId) { var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return; var gm = _loadGM().find(function(g) { return g.id === d.gumrukcu_id; }); var mail = 'Sayın ' + (gm?.yetkili_adi || 'İlgili') + ',\n\nDosya: ' + d.dosyaNo + '\nMüşteri: ' + d.musteriAd + '\nTeslim: ' + d.teslim_sekli + '\nLiman: ' + d.varis_limani + '\n\n' + (d.gumrukcu_notu || '') + '\n\nSaygılarımızla,\n' + ((window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || 'Duay Uluslararası Ticaret Ltd. Şti.'); _moAc('mo-mail-gm', 'Gümrükçü Mail', '<div class="fg"><div class="fl">Kime</div><input class="fi" id="m-gm-to" value="' + _esc(gm?.email || '') + '"></div><textarea class="fi" id="m-gm-body" rows="10" style="resize:vertical;font-family:monospace;font-size:11px;margin-top:8px">' + _esc(mail) + '</textarea>', '<button class="btn btns" onclick="document.getElementById(\'mo-mail-gm\')?.remove()">Kapat</button><button class="btn btns" onclick="navigator.clipboard?.writeText(document.getElementById(\'m-gm-body\')?.value);window.toast?.(\'Kopyalandı\',\'ok\')">Kopyala</button><button class="btn btnp" onclick="window.open(\'mailto:\'+encodeURIComponent(document.getElementById(\'m-gm-to\')?.value)+\'?body=\'+encodeURIComponent(document.getElementById(\'m-gm-body\')?.value))">Mail Aç</button>'); };
-window._ihrForwarderMail = function(dosyaId) { var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return; var fw = _loadFW().find(function(f) { return f.id === d.forwarder_id; }); var mail = 'Sayın ' + (fw?.firma_adi || 'İlgili') + ',\n\nDosya: ' + d.dosyaNo + '\nTeslim: ' + d.teslim_sekli + '\nLiman: ' + d.varis_limani + '\n\nNavlun fiyatı ve uygun sefer önerisi beklenmektedir.\n\nSaygılarımızla,\n' + ((window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || 'Duay Uluslararası Ticaret Ltd. Şti.'); _moAc('mo-mail-fw', 'Forwarder Mail', '<div class="fg"><div class="fl">Kime</div><input class="fi" id="m-fw-to" value="' + _esc(fw?.email || '') + '"></div><textarea class="fi" id="m-fw-body" rows="10" style="resize:vertical;font-family:monospace;font-size:11px;margin-top:8px">' + _esc(mail) + '</textarea>', '<button class="btn btns" onclick="document.getElementById(\'mo-mail-fw\')?.remove()">Kapat</button><button class="btn btns" onclick="navigator.clipboard?.writeText(document.getElementById(\'m-fw-body\')?.value);window.toast?.(\'Kopyalandı\',\'ok\')">Kopyala</button><button class="btn btnp" onclick="window.open(\'mailto:\'+encodeURIComponent(document.getElementById(\'m-fw-to\')?.value)+\'?body=\'+encodeURIComponent(document.getElementById(\'m-fw-body\')?.value))">Mail Aç</button>'); };
+window._ihrGumrukcuMail = function(dosyaId) { var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return; var gm = _loadGM().find(function(g) { return g.id === d.gumrukcu_id; }); var mail = 'Sayın ' + (gm?.yetkili_adi || 'İlgili') + ',\n\nDosya: ' + d.dosyaNo + '\nMüşteri: ' + d.musteriAd + '\nTeslim: ' + d.teslim_sekli + '\nLiman: ' + d.varis_limani + '\n\n' + (d.gumrukcu_notu || '') + '\n\nSaygılarımızla,\nDuay Uluslararası Ticaret Ltd. Şti.'; _moAc('mo-mail-gm', 'Gümrükçü Mail', '<div class="fg"><div class="fl">Kime</div><input class="fi" id="m-gm-to" value="' + _esc(gm?.email || '') + '"></div><textarea class="fi" id="m-gm-body" rows="10" style="resize:vertical;font-family:monospace;font-size:11px;margin-top:8px">' + _esc(mail) + '</textarea>', '<button class="btn btns" onclick="document.getElementById(\'mo-mail-gm\')?.remove()">Kapat</button><button class="btn btns" onclick="navigator.clipboard?.writeText(document.getElementById(\'m-gm-body\')?.value);window.toast?.(\'Kopyalandı\',\'ok\')">Kopyala</button><button class="btn btnp" onclick="window.open(\'mailto:\'+encodeURIComponent(document.getElementById(\'m-gm-to\')?.value)+\'?body=\'+encodeURIComponent(document.getElementById(\'m-gm-body\')?.value))">Mail Aç</button>'); };
+window._ihrForwarderMail = function(dosyaId) { var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); }); if (!d) return; var fw = _loadFW().find(function(f) { return f.id === d.forwarder_id; }); var mail = 'Sayın ' + (fw?.firma_adi || 'İlgili') + ',\n\nDosya: ' + d.dosyaNo + '\nTeslim: ' + d.teslim_sekli + '\nLiman: ' + d.varis_limani + '\n\nNavlun fiyatı ve uygun sefer önerisi beklenmektedir.\n\nSaygılarımızla,\nDuay Uluslararası Ticaret Ltd. Şti.'; _moAc('mo-mail-fw', 'Forwarder Mail', '<div class="fg"><div class="fl">Kime</div><input class="fi" id="m-fw-to" value="' + _esc(fw?.email || '') + '"></div><textarea class="fi" id="m-fw-body" rows="10" style="resize:vertical;font-family:monospace;font-size:11px;margin-top:8px">' + _esc(mail) + '</textarea>', '<button class="btn btns" onclick="document.getElementById(\'mo-mail-fw\')?.remove()">Kapat</button><button class="btn btns" onclick="navigator.clipboard?.writeText(document.getElementById(\'m-fw-body\')?.value);window.toast?.(\'Kopyalandı\',\'ok\')">Kopyala</button><button class="btn btnp" onclick="window.open(\'mailto:\'+encodeURIComponent(document.getElementById(\'m-fw-to\')?.value)+\'?body=\'+encodeURIComponent(document.getElementById(\'m-fw-body\')?.value))">Mail Aç</button>'); };
 
 // ── TEMPLATE CRUD ────────────────────────────────────────
 window._ihrTemplateEkle = function() { var dosyalar = _loadD().filter(function(d) { return !d.isDeleted; }).slice(0, 30); _moAc('mo-tpl', '+ Template Kaydet', '<div class="fg"><div class="fl">Template Adı *</div><input class="fi" id="tpl-ad"></div><div class="fg" style="margin-top:8px"><div class="fl">Dosyadan Doldur</div><select class="fi" id="tpl-dosya"><option value="">Manuel</option>' + dosyalar.map(function(d) { return '<option value="' + d.id + '">' + _esc(d.dosyaNo) + ' — ' + _esc(d.musteriAd) + '</option>'; }).join('') + '</select></div>', '<button class="btn btns" onclick="document.getElementById(\'mo-tpl\')?.remove()">İptal</button><button class="btn btnp" onclick="window._tplKaydet()">Kaydet</button>'); };
@@ -6869,8 +6858,6 @@ window._bmTopluUret = function(dosyaId) {
 /* ══════════════════════════════════════════════════════════════
    KAR RAPORU (MUTABAKAT-001)
    ══════════════════════════════════════════════════════════════ */
-/* IHR-OLUKOD-001: _ihrBelgeFloatPanel olu kod temizlendi — _ihrBelgePaneliAc kullaniliyor */
-window._ihrBelgeFloatPanel = function(dosyaId) { window._ihrBelgePaneliAc?.(dosyaId); };
 
 window._ihrKarRaporu = function(dosyaId) {
   var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId) && !x.isDeleted; });
