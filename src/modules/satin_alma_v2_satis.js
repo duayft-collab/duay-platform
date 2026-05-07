@@ -7,9 +7,7 @@ window._saV2TeklifOlustur = function(id) {
   if (!id && !duzenleme) {
     var bos = { id: typeof window.generateId === 'function' ? window.generateId() : ('tmp-' + Date.now()), urunler: [], tedarikci: '', jobId: '', teslimYeri: '', teslimMasraf: '', toplamTutar: 0, toplamPara: 'USD', durum: 'taslak' };
     id = bos.id;
-    var _eskiLoad = window._saV2Load;
-    window._saV2Load = function() { return [bos].concat(typeof _eskiLoad === 'function' ? _eskiLoad() : []); };
-    setTimeout(function() { window._saV2Load = _eskiLoad; }, 5000);
+    window._saV2Load_Push?.(bos, 5000);
   }
   var liste = window._saV2Load?.() || [];
   var t = duzenleme || liste.find(function(x) { return String(x.id) === String(id); });

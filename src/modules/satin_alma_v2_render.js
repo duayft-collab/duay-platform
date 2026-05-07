@@ -629,20 +629,13 @@ window._saV2TopluFormAc = function(ids) {
     toplamTutar: birlesmisUrunler.reduce(function(s,u){return s + ((u.miktar||0)*(u.alisF||0));}, 0),
     durum: 'taslak'
   };
-  // _saV2Load monkey-patch — temp teklif'i listenin başına yerleştir
-  var _eskiLoad = window._saV2Load;
-  window._saV2Load = function() {
-    var orig = (typeof _eskiLoad === 'function') ? _eskiLoad() : [];
-    return [tempTeklif].concat(orig);
-  };
-  // Form'u aç
+  // V195c: _saV2Load_Push hub — race-safe stack-based inject (5sn restore)
+  window._saV2Load_Push?.(tempTeklif, 5000);
   if (typeof window._saV2TeklifOlustur === 'function') {
     window._saV2TeklifOlustur(tempId);
   } else {
     window.toast?.('_saV2TeklifOlustur tanımlı değil', 'err');
   }
-  // Restore (modal render etmesine yetecek süre)
-  setTimeout(function() { window._saV2Load = _eskiLoad; }, 5000);
 };
 
 /**
