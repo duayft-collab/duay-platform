@@ -1482,10 +1482,10 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <script src="src/modules/urun_db.js?v=20260428EP"></script>
 <script src="src/modules/satis_teklif.js?v=20260428EP"></script>
 <script src="src/modules/satin_alma_v2.js?v=20260428EP"></script>
-<script src="src/modules/satin_alma_v2_render.js?v=20260506V194c"></script>
+<script src="src/modules/satin_alma_v2_render.js?v=20260428EP"></script>
 <script src="src/modules/satin_alma_v2_liste.js?v=20260428EP"></script>
 <script src="src/modules/satin_alma_v2_satis.js?v=20260428EP"></script>
-<script src="src/modules/satin_alma_v2_form.js?v=20260506V194c"></script>
+<script src="src/modules/satin_alma_v2_form.js?v=20260428EP"></script>
 <script src="src/modules/satin_alma_v2_csv.js?v=20260428EP"></script>
 <script src="src/modules/satin_alma_v2_duzenleme.js?v=20260428EP"></script>
 <script src="src/modules/satin_alma_v2_pi.js?v=20260428EP"></script>
@@ -1498,20 +1498,20 @@ if(typeof st==='undefined')          window.st           = function(pre,id,btn){
 <script src="src/modules/hesap_ozeti.js?v=20260428EP"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="src/modules/muavin.js?v=20260428EP"></script>
-<script src="src/modules/muavin_parse.js?v=20260506V194c"></script>
+<script src="src/modules/muavin_parse.js?v=20260428EP"></script>
 <script src="src/modules/hesap_mutabakati.js?v=20260428EP"></script>
 <script src="src/modules/muavin_export.js?v=20260428EP"></script>
 <script src="src/modules/gcb.js?v=20260428EP"></script>
 <script src="src/modules/alarm.js?v=20260428EP"></script>
 <script src="src/modules/excel_import.js?v=20260428EP"></script>
-<script src="src/modules/finans.js?v=20260506V194c"></script>
+<script src="src/modules/finans.js?v=20260428EP"></script>
 <script src="src/modules/helpers.js?v=20260428EP"></script>
 
 <!-- 3b. Panel HTML Inject + Modals (helpers.js ve ik.js sonrasi) -->
 <script src="src/modules/announce.js?v=20260428EP"></script>
 <script src="src/modules/hedefler.js?v=20260428EP"></script>
 <script src="src/modules/odemeler.js?v=20260428EP"></script>
-<script src="src/modules/nakit_akis.js?v=20260506V194c"></script>
+<script src="src/modules/nakit_akis.js?v=20260428EP"></script>
 <script src="src/modules/cash_flow_works.js?v=20260506V193e6"></script>
 <script src="src/modules/cash_flow_compute.js?v=20260506V193e6"></script>
 <script src="src/modules/cash_flow.js?v=20260506V193e6"></script>

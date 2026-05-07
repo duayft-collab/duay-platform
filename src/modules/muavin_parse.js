@@ -794,7 +794,7 @@ window._mvNormalize = {
       var alacakUSD = self.tutarNormalize(_aDov === 'USD' ? _aMeb : 0);
       var borcTL = self.tutarNormalize(_bDov === 'TL' || _bDov === 'TRY' ? _bMeb : 0);
       var alacakTL = self.tutarNormalize(_aDov === 'TL' || _aDov === 'TRY' ? _aMeb : 0);
-      var kur = kurTablosu && s.tarih ? kurTablosu[self.tarihNormalize(s.tarih)] || kurTablosu['varsayilan'] || 44.55 : 44.55;
+      var _fb = (window.DUAY_KUR_GET ? DUAY_KUR_GET('USD', true) : 44.55); var kur = kurTablosu && s.tarih ? kurTablosu[self.tarihNormalize(s.tarih)] || kurTablosu['varsayilan'] || _fb : _fb;
       var netUSD = borcUSD - alacakUSD;
       var netTL = borcTL - alacakTL + (netUSD * kur);
       /* MUAVIN-KUR-CEK-001: döviz alanları + kur placeholder */

@@ -22,7 +22,7 @@
 
   // ── Sabitler ─────────────────────────────────────────────────────
   /** Fallback kur tablosu (window._saKur yoksa kullanılır — satin_alma_v2.js L82 ile uyumlu). */
-  var NA_FALLBACK_RATES = { TRY: 1, USD: 44.55, EUR: 51.70, GBP: 59.30, JPY: 0.30, CNY: 6.20, AED: 12.10, XAU: 3500, BTC: 2900000 };
+  var NA_FALLBACK_RATES = Object.assign({ JPY: 0.30, AED: 12.10, XAU: 3500, BTC: 2900000 }, (typeof DUAY_KUR_FALLBACK === "object" && DUAY_KUR_FALLBACK) ? DUAY_KUR_FALLBACK : { TRY: 1, USD: 44.55, EUR: 51.70, GBP: 59.30, CNY: 6.20 });
 
   /** Projeksiyon bucket'ları — başlangıç ve bitiş gün sayıları. */
   var NA_BUCKETS = [

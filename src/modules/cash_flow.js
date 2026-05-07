@@ -17,7 +17,7 @@
   const STORAGE_KEY = 'ak_cash_flow1';
   const RATES_CACHE_KEY = 'ak_cf_rates_cache';
   const RATES_TTL_MS = 60 * 60 * 1000;
-  const FALLBACK_RATES = { TRY: 1, USD: 44.55, EUR: 51.70, GBP: 59.30 };
+  const FALLBACK_RATES = (typeof DUAY_KUR_FALLBACK === "object" && DUAY_KUR_FALLBACK) ? DUAY_KUR_FALLBACK : { TRY: 1, USD: 44.55, EUR: 51.70, GBP: 59.30 };
   const PARA_BIRIMLERI = ['TRY','USD','EUR','GBP'];
   const KATEGORILER = ['gelir','gider','transfer'];
   const _DEFAULT_TABLO_AD = 'Manuel Kasa';

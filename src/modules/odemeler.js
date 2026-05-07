@@ -157,12 +157,12 @@ async function _odmFetchTCMB() {
   }
   // Hiçbir kaynak yoksa ticker'dan al
   if (!_odmRatesCache || !Object.keys(_odmRatesCache).length) {
-    _odmRatesCache = { USD: _tickerRates.USD || 44.55, EUR: _tickerRates.EUR || 51.70, GBP: _tickerRates.GBP || 59.30 };
+    _odmRatesCache = { USD: DUAY_KUR_GET("USD", true), EUR: DUAY_KUR_GET("EUR", true), GBP: DUAY_KUR_GET("GBP", true) };
   }
   // KUR-MERKEZI-001: Taze (2 saat altı) DUAY_KUR varsa override — cihazlar arası tutarlılık
   if (window.DUAY_KUR && window.DUAY_KUR._ts) {
     var _kurYas = (Date.now() - new Date(window.DUAY_KUR._ts).getTime()) / 3600000;
-    if (_kurYas < 2) { Object.assign(_odmRatesCache, { USD: window.DUAY_KUR.USD, EUR: window.DUAY_KUR.EUR, GBP: window.DUAY_KUR.GBP }); }
+    if (_kurYas < 2) { Object.assign(_odmRatesCache, { USD: DUAY_KUR_GET("USD", true), EUR: DUAY_KUR_GET("EUR", true), GBP: DUAY_KUR_GET("GBP", true) }); }
   }
 }
 
@@ -4283,7 +4283,7 @@ window.openHighAmountSettings = function() {
 // ════════════════════════════════════════════════════════════════
 
 /** @type {Object} Güncel kur verileri */
-var _tickerRates = { USD: 44.55, EUR: 51.70, GBP: 59.30, ALTIN: 4100, BTC: 83000, GUMUS: 48.00 };
+var _tickerRates = Object.assign({ ALTIN: 4100, BTC: 83000, GUMUS: 48.00 }, (typeof DUAY_KUR_FALLBACK === "object" && DUAY_KUR_FALLBACK) ? { USD: DUAY_KUR_FALLBACK.USD, EUR: DUAY_KUR_FALLBACK.EUR, GBP: DUAY_KUR_FALLBACK.GBP } : { USD: 44.55, EUR: 51.70, GBP: 59.30 });
 
 function _calcAlisSatis() {
   _tickerRates.USD_ALIS = Math.round(_tickerRates.USD * 0.997 * 100) / 100;

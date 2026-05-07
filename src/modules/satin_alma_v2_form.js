@@ -365,7 +365,7 @@ window._saV2YeniTeklif = function(duzenleKayit) {
           var fiyatEl = document.getElementById('sav2u-'+si+'-alisF');
           var miktarEl = document.getElementById('sav2u-'+si+'-miktar');
           var _p = paraEl?.value || 'USD';
-          var _kv = parseFloat((window._saKur||window.DUAY_KUR||{})[_p]) || (_p==='USD'?44.55:_p==='EUR'?51.70:_p==='GBP'?59.30:1);
+          var _kv = DUAY_KUR_GET(_p, true);
           var _f = parseFloat(fiyatEl?.value) || 0;
           var _m = parseFloat(miktarEl?.value) || 0;
           var kurEl = document.getElementById('sav2u-'+si+'-kurTL');
@@ -410,9 +410,9 @@ window._saV2YeniTeklif = function(duzenleKayit) {
       fetch('https://api.frankfurter.app/latest?from=USD&to=TRY,EUR,GBP').then(function(r){return r.ok?r.json():null;}).then(function(d){
         if (!d || !d.rates) return;
         window._saKur = window._saKur || {};
-        window._saKur.USD = parseFloat(d.rates.TRY) || 44.55;
-        window._saKur.EUR = (parseFloat(d.rates.TRY) / parseFloat(d.rates.EUR)) || 51.70;
-        window._saKur.GBP = (parseFloat(d.rates.TRY) / parseFloat(d.rates.GBP)) || 59.30;
+        window._saKur.USD = parseFloat(d.rates.TRY) || (window.DUAY_KUR_FALLBACK ? DUAY_KUR_FALLBACK.USD : 44.55);
+        window._saKur.EUR = (parseFloat(d.rates.TRY) / parseFloat(d.rates.EUR)) || (window.DUAY_KUR_FALLBACK ? DUAY_KUR_FALLBACK.EUR : 51.70);
+        window._saKur.GBP = (parseFloat(d.rates.TRY) / parseFloat(d.rates.GBP)) || (window.DUAY_KUR_FALLBACK ? DUAY_KUR_FALLBACK.GBP : 59.30);
         window._saKur.TRY = 1;
         /* Tüm satırlarda miktar input'una dispatchEvent ile kur hesabı tetiklenir */
         document.querySelectorAll('[id$="-miktar"]').forEach(function(el){ el.dispatchEvent(new Event('input',{bubbles:true})); });
@@ -586,7 +586,7 @@ window._saV2FormKaydet = function() {
   urunler.forEach(function(u) { var p = u.para || 'USD'; if (_paraSet.indexOf(p) === -1) _paraSet.push(p); });
   var _tekPara = _paraSet.length === 1 ? _paraSet[0] : null;
   var _kurlar = window._saKur || window.DUAY_KUR || {};
-  var _fallbackKur = function(p) { return p==='USD'?44.55:p==='EUR'?51.70:p==='GBP'?59.30:p==='TRY'?1:1; };
+  var _fallbackKur = function(p) { return DUAY_KUR_GET(p, true) || 1; };
   var toplamTutar, toplamPara;
   if (_tekPara) {
     toplamTutar = urunler.reduce(function(s, u) { return s + parseFloat(u.toplam || 0); }, 0);
@@ -761,7 +761,7 @@ window._saV2SatisUrunEkle = function(t) {
   }
   var orjPara = t.para || 'USD';
   var orjF = parseFloat(t.alisF) || 0;
-  var kur = (window._saKur||{})[orjPara] || 44.55;
+  var kur = DUAY_KUR_GET(orjPara, true);
   var alisTl = parseFloat((orjF*kur).toFixed(2));
   window._saV2SatisUrunler.push({ id:t.id, duayKodu:t.duayKodu||'', urunAdi:t.urunAdi||'', gorsel:t.gorsel||t.image||'', alisOrjF:orjF, alisOrjPara:orjPara, alisTl:alisTl, miktar:1, marj:33, birim: t.birim || 'Adet', mensei: t.mensei || '' });
   window._saV2SatisTabloyuGuncelle();

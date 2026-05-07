@@ -15,7 +15,7 @@ var HM_TEKLIF_KEY = 'ak_cmp_teklif1';
 // V194b: USD 38.50 → 44.55, EUR 41.20 → 51.70, GBP 48.90 → 59.30 — _saKur init (satin_alma_v2.js:110) ile uyum.
 // ALTIN_GR ve ALTIN_ONS dokunulmadi (ayri kaynak, V194c kapsaminda degil).
 // V194c'de bu literal silinecek, DUAY_KUR_GET(cur, true) kullanilacak.
-var HM_RATES = { USD: 44.55, EUR: 51.70, GBP: 59.30, ALTIN_GR: 3850, ALTIN_ONS: 2650 };
+var HM_RATES = Object.assign({ ALTIN_GR: 3850, ALTIN_ONS: 2650 }, (typeof DUAY_KUR_FALLBACK === "object" && DUAY_KUR_FALLBACK) ? { USD: DUAY_KUR_FALLBACK.USD, EUR: DUAY_KUR_FALLBACK.EUR, GBP: DUAY_KUR_FALLBACK.GBP } : { USD: 44.55, EUR: 51.70, GBP: 59.30 });
 
 // TCMB'den kur çek — CORS proxy ile
 (function _hmFetchRates() {

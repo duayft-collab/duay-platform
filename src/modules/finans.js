@@ -31,9 +31,9 @@ const CUR_FLAGS = {
 
 // KUR-MERKEZI-002: USD/EUR/GBP fallback DUAY_KUR'dan okur (module load time'da varsa)
 const FALLBACK_RATES = {
-  USD: window.DUAY_KUR?.USD || 44.55,
-  EUR: window.DUAY_KUR?.EUR || 51.70,
-  GBP: window.DUAY_KUR?.GBP || 59.30,
+  USD: DUAY_KUR_GET("USD", true),
+  EUR: DUAY_KUR_GET("EUR", true),
+  GBP: DUAY_KUR_GET("GBP", true),
   ALTIN: 4350,
   PETROL: 85.0,
   CHF: 51.20,

@@ -22,7 +22,7 @@ window._saV2TeklifOlustur = function(id) {
   modal.onclick = function(e){ if(e.target===modal) { modal.remove(); window._saV2AktifDuzenlemeTeklif = null; } };
   var _u0 = (t.urunler && t.urunler.length) ? t.urunler[0] : t;
   var _para = t.toplamPara || _u0.para || t.para || 'USD';
-  var kur = (window._saKur||{})[_para]||44.55;
+  var kur = DUAY_KUR_GET(_para, true);
   var alisF = t.toplamTutar ? parseFloat(t.toplamTutar) : (parseFloat(_u0.alisF || t.alisF) || 0);
   var alisTl = (alisF*kur).toFixed(2);
   var marj = 33;
@@ -79,7 +79,7 @@ window._saV2TeklifOlustur = function(id) {
   ic += '<input id="st-liman" value="Turkey" oninput="event.stopPropagation();window._saV2PIOnizlemeGuncelle()" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"></div>';
   ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">PARA BİRİMİ</div>';
   ic += '<select id="st-para-birimi" onchange="event.stopPropagation();window._saV2SatisTabloyuGuncelle?.();window._saV2PIOnizlemeGuncelle();window._saV2BankaGuncelle(this.value);var _kEl=document.getElementById(\'st-kur-mini\');if(_kEl){var _k=window._saKur&&window._saKur[this.value];if(_k){_kEl.style.display=\'block\';_kEl.textContent=\'1 \'+this.value+\' = \'+_k.toFixed(2)+\' TRY\';}else{_kEl.style.display=\'none\';}}" style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t);font-family:inherit"><option>USD</option><option>EUR</option><option>GBP</option><option>TRY</option><option>CNY</option></select></div>';
-  ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">KUR</div><div id="st-kur-mini" style="font-size:10px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t3);font-family:monospace">1 USD = '+(window._saKur?.USD||44.55).toFixed(2)+' TRY</div></div>';
+  ic += '<div><div style="font-size:8px;font-weight:500;color:var(--t3);letter-spacing:.06em;margin-bottom:4px">KUR</div><div id="st-kur-mini" style="font-size:10px;padding:7px 10px;border:0.5px solid var(--b);border-radius:5px;background:var(--s2);color:var(--t3);font-family:monospace">1 USD = '+DUAY_KUR_GET('USD', true).toFixed(2)+' TRY</div></div>';
   ic += '<div id="st-freight-row" style="display:none;padding:8px 16px 0;align-items:center;flex-wrap:wrap;gap:10px">';
   ic += '<button type="button" id="st-freight-toggle" onclick="event.stopPropagation();window._saV2FreightToggle&&window._saV2FreightToggle()" style="height:26px;padding:0 10px;border:0.5px solid var(--b);border-radius:6px;background:var(--s2);font-size:11px;cursor:pointer;font-family:inherit;color:var(--t2)"><span id="st-freight-toggle-icon">○</span> Freight/Ins. ayri satir</button>';
   ic += '<div id="st-freight-inputs" style="display:none;gap:8px;align-items:center">';
@@ -572,7 +572,7 @@ window._saV2SatisKaydet = function(alisId) {
   var _yeniRevNo = String(_sonRev + 1).padStart(2,'0');
   /* PARA-BUG: seçilen para birimini oku, toplamSatis (TL) → o para birimine çevir */
   var _paraSec = document.getElementById('st-para-birimi')?.value || 'USD';
-  var _kur = (window._saKur||{})[_paraSec] || (_paraSec==='TRY' ? 1 : 44.55);
+  var _kur = DUAY_KUR_GET(_paraSec, true);
   var kayit = {
     id:window._saId?.(),
     teklifId:teklifId,
@@ -587,7 +587,7 @@ window._saV2SatisKaydet = function(alisId) {
       freightAmount: parseFloat(window._stFreightAmount) || 0,
       insuranceAmount: parseFloat(window._stInsuranceAmount) || 0,
     toplamSatis:toplamSatis.toFixed(2),
-    toplamEUR: (parseFloat(toplamSatis) / ((window._saKur||{}).EUR||51.70) * ((window._saKur||{}).USD||44.55)).toFixed(2),
+    toplamEUR: (parseFloat(toplamSatis) / DUAY_KUR_GET("EUR", true) * DUAY_KUR_GET("USD", true)).toFixed(2),
     toplamKar:toplamKar,
     ortMarj:ortMarj,
     teslim:document.getElementById('st-teslim')?.value||document.getElementById('st-incoterm')?.value||'',
