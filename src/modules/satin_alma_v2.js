@@ -27,14 +27,7 @@ var _saId   = window._saId   = function(){ return typeof window.generateId==='fu
 var _saCu   = window._saCu   = function(){ return window.Auth?.getCU?.() || window.CU?.(); };
 
 /* ── Teklif ID üretici ──────────────────────────────────────── */
-window._saTeklifId = function(musteriKod) {
-  var d = new Date();
-  var pad = function(n,l){ return String(n).padStart(l||2,'0'); };
-  var yy = String(d.getFullYear()).slice(-2);
-  var tarih = yy + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes());
-  var kod = String(musteriKod||'0000').slice(-4).padStart(4,'0');
-  return kod + '-' + tarih;
-};
+/* V194d-master.1: _saTeklifId taşındı → core/duay_teklif_id.js */
 
 /* ── Veri fonksiyonları ─────────────────────────────────────── */
 function _saV2Load() {
@@ -106,34 +99,7 @@ window._saV2Kpi = function() {
   return { buAy:buAyListe.length, bekleyen:bekleyen.length, ortMarj:ortMarj, toplam:toplam };
 };
 
-/* ── Kur çekici (fallback zinciri) ─────────────────────────── */
-window._saKur = window._saKur || { USD:44.55, EUR:51.70, GBP:59.30, CNY:6.20, TRY:1, _son:null };
-window._saKurCek = function() {
-  var simdi = Date.now();
-  if(window._saKur._son && simdi - window._saKur._son < 3600000) return;
-  fetch('https://api.frankfurter.app/latest?from=USD&to=TRY,EUR,GBP')
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d&&d.rates){
-        window._saKur.USD = d.rates.TRY||44.55;
-        window._saKur.EUR = d.rates.TRY/d.rates.EUR||51.70;
-        window._saKur.GBP = d.rates.TRY/d.rates.GBP||59.30;
-        window._saKur.CNY = d.rates.TRY/7.2||6.20;
-        window._saKur.TRY = 1;
-        window._saKur._son = Date.now();
-        console.log('[KUR] G\u00fcncellendi:', {USD:window._saKur.USD.toFixed(2), EUR:window._saKur.EUR.toFixed(2), GBP:window._saKur.GBP.toFixed(2)});
-        // KUR-MERKEZI-001: merkezi kur objesi + Firestore sync
-        window.DUAY_KUR = { USD: window._saKur.USD, EUR: window._saKur.EUR, GBP: window._saKur.GBP, CNY: window._saKur.CNY, TRY: 1, _ts: new Date().toISOString() };
-        if (typeof _write === 'function') _write('ak_doviz_kur', window.DUAY_KUR);
-        var _kurFp = typeof _fsPath === 'function' ? _fsPath('kur') : null;
-        if (_kurFp && typeof _syncFirestore === 'function') _syncFirestore(_kurFp, window.DUAY_KUR);
-      }
-    })
-    .catch(function(e){
-      console.warn('[KUR] API hatas\u0131, fallback kullan\u0131l\u0131yor:', e.message);
-    });
-};
-window._saKurCek();
+/* V194d-master.1: _saKur + _saKurCek taşındı → core/duay_kur_master.js */
 
 /* ── Durum Map (SA-DURUM-MIGRATE-001) ───────────────────────
    Eski durum değerlerini (onay_bekliyor/onay-hazir/kabul vs.)
