@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /duay_tenant_default/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // [SEC-004] public create kapatıldı — kod tarafı kullanmıyor, anonim spam riski
+    match /ihracat_uploads/{doc} {
+      allow read, write: if request.auth != null;
+    }
+
+    // [SEC-004] public create kapatıldı — kod tarafı kullanmıyor, sahte teklif riski
+    match /ihracat_teklifler/{doc} {
+      allow read, write: if request.auth != null;
+    }
+
+    // [SEC-004] public read+create kapatıldı — PII (davetiye email/firma) sızıntı riski
+    match /ihracat_teklif_davetler/{doc} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
