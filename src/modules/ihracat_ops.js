@@ -370,9 +370,29 @@ function _ihrRenderDosyaDetayInto(id, targetEl) {
     h += '<div onclick="event.stopPropagation();window._ihrDetayTab(\'' + t.id + '\',\'' + id + '\')" id="ihr-dt-' + t.id + '" style="padding:0 12px;font-size:11px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;border-bottom:2px solid ' + (i === 0 ? 'var(--ac);color:var(--ac);font-weight:500' : 'transparent;color:var(--t2)') + '">' + _esc(t.l) + _tb3 + '</div>';
   });
   h += '</div>';
-  h += '<div style="display:flex;gap:4px;flex-shrink:0">';
-  h += '<button class="btn btns" onclick="event.stopPropagation();window._ihrDosyaDuzenle?.(\'' + id + '\')" style="font-size:10px;padding:3px 8px">D\u00fczenle</button>';
-  if (_isManager()) h += '<button class="btn" style="font-size:10px;padding:3px 10px;background:#16A34A;color:#fff;border-color:#16A34A" onclick="event.stopPropagation();window._ihrDurumDegistir?.(\'' + id + '\')">Durum</button>';
+  /* V195.2 IHR-UI-HOTFIX-002 — Right buttons in second render path (_ihrRenderDosyaDetayInto).
+     V195 EDIT 4 only patched _ihrRenderDosyaDetay (line 477+); this Into-variant was missed
+     and still rendered legacy "Düzenle / Durum" pair. Apply identical state-dispatched
+     "Sonraki Adım" CTA + ⋮ menu pattern. No new handler; behavior change: NONE. */
+  h += '<div style="display:flex;gap:4px;flex-shrink:0;align-items:center">';
+  /* State-dispatched primary CTA — hidden on kapandi/iptal */
+  var _nCta = null;
+  if (d.durum === 'taslak')          _nCta = { l: '+ \u00dcr\u00fcn Ekle',     fn: "window._ihrDetayTab('urunler','" + id + "');setTimeout(function(){window._ihrUrunEkle?.('" + id + "')},80)" };
+  else if (d.durum === 'hazirlaniyor') _nCta = { l: 'Belgeleri \u00dcret',     fn: "window._ihrBelgePaneliAc?.('" + id + "')" };
+  else if (d.durum === 'yukleniyor')   _nCta = { l: 'Konteyner Bilgisi',       fn: "window._ihrKonteynerGorunum?.('" + id + "')" };
+  else if (d.durum === 'yuklendi')     _nCta = { l: 'Belgeleri G\u00f6nder',   fn: "window._ihrBelgePaneliAc?.('" + id + "')" };
+  else if (d.durum === 'yolda')        _nCta = { l: 'BL Y\u00fckle',           fn: "window._ihrBlEkle?.('" + id + "')" };
+  else if (d.durum === 'teslim')       _nCta = { l: 'Mutabakat\u0131 Kontrol', fn: "window._ihrDetayTab('mutabakat','" + id + "')" };
+  if (_nCta) h += '<button class="btn" style="font-size:10px;padding:3px 12px;background:#185FA5;color:#fff;border:none;border-radius:4px;font-weight:500;cursor:pointer;font-family:inherit" onclick="event.stopPropagation();' + _nCta.fn + '">' + _esc(_nCta.l) + '</button>';
+  /* ⋮ menu — native <details> popover */
+  var _miI = 'display:block;width:100%;text-align:left;padding:5px 10px;background:transparent;border:none;font-size:10px;color:var(--t);cursor:pointer;font-family:inherit;border-bottom:0.5px solid var(--b)';
+  h += '<details class="ihr-detay-menu" style="position:relative;flex-shrink:0">';
+  h += '<summary style="list-style:none;font-size:13px;padding:2px 8px;border-radius:4px;border:0.5px solid var(--b);background:var(--sf);color:var(--t2);cursor:pointer;user-select:none" title="Daha fazla aksiyon">\u22ee</summary>';
+  h += '<div style="position:absolute;right:0;top:calc(100% + 4px);z-index:30;background:var(--sf);border:0.5px solid var(--b);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.08);min-width:180px;padding:2px 0">';
+  h += '<button onclick="event.stopPropagation();window._ihrDosyaDuzenle?.(\'' + id + '\')" style="' + _miI + '">D\u00fczenle</button>';
+  if (_isManager()) h += '<button onclick="event.stopPropagation();window._ihrDurumDegistir?.(\'' + id + '\')" style="' + _miI + ';color:#16A34A;font-weight:500;border-bottom:none">Durum De\u011fi\u015ftir</button>';
+  h += '</div>';
+  h += '</details>';
   h += '</div></div>';
   h += timelineH;
   h += '<div id="ihr-detay-content" style="padding:0;flex:1;overflow-y:auto"></div>';
