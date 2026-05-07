@@ -3286,7 +3286,7 @@ window._openSAContract = function(id) {
   var cur = sa.currency||'USD';
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>Sözleşme #'+id+'</title><style>body{font-family:system-ui;padding:40px;max-width:700px;margin:0 auto;font-size:12px;line-height:1.6}h1{text-align:center;color:#1a365d;font-size:18px}h2{font-size:14px;color:#1a365d;margin-top:20px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{padding:8px;border:1px solid #ddd;font-size:11px}th{background:#f5f5f5}.sig{display:flex;justify-content:space-between;margin-top:40px}.sig div{width:40%;text-align:center}@media print{button{display:none!important}}</style></head><body>'
-    +'<h1>SATIN ALMA SÖZLEŞMESİ</h1><div style="text-align:center;color:#666;margin-bottom:20px">DUAY GLOBAL LLC — '+esc(sa.supplier||sa.piNo||'')+'</div>'
+    +'<h1>SATIN ALMA SÖZLEŞMESİ</h1><div style="text-align:center;color:#666;margin-bottom:20px">' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') + ' — '+esc(sa.supplier||sa.piNo||'')+'</div>'
     +'<h2>1. Taraflar</h2><p><b>Alıcı:</b> '+ ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') +'<br><span style="font-size:11px;color:#555;margin-left:48px">'+ ((window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || 'Duay Uluslararası Ticaret Ltd. Şti.') +'</span><br><b>Satıcı:</b> '+esc(sa.vendor?.name||sa.supplier||'')+'</p>'
     +'<h2>2. Ürün Bilgileri</h2><table><tr><th>Açıklama</th><th>Toplam</th><th>KDV</th><th>Döviz</th></tr>'
     +'<tr><td>'+esc(sa.supplier||sa.piNo||'Ürün')+'</td><td>'+(sa.totalAmount||0)+' '+cur+'</td><td>'+(sa.kdv||0)+' '+cur+'</td><td>'+cur+'</td></tr></table>'
@@ -3588,7 +3588,7 @@ window._createPR = function(teklifId) {
   var prNo = 'PR-'+yr+'-'+prSeq;
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>PR '+prNo+'</title><style>body{font-family:system-ui;padding:30px;max-width:700px;margin:0 auto;font-size:12px}h1{text-align:center;color:#1a365d;font-size:16px}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{padding:6px 8px;border:1px solid #ddd;font-size:11px}th{background:#f5f5f5}@media print{button{display:none!important}}</style></head><body>'
-    +'<h1>PURCHASE REQUISITION</h1><div style="text-align:center;color:#666;font-size:11px;margin-bottom:16px">DUAY GLOBAL LLC — İÇ BELGE</div>'
+    +'<h1>PURCHASE REQUISITION</h1><div style="text-align:center;color:#666;font-size:11px;margin-bottom:16px">' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') + ' — İÇ BELGE</div>'
     +'<table><tr><td><b>PR No:</b> '+prNo+'</td><td><b>Tarih:</b> '+new Date().toISOString().slice(0,10)+'</td></tr>'
     +'<tr><td><b>Satış Teklif Ref:</b> '+esc(t.teklifNo)+'</td><td><b>Müşteri:</b> '+esc(t.musteri||'')+'</td></tr>'
     +'<tr><td colspan="2"><b>Job ID:</b> '+(t.jobId||'—')+'</td></tr></table>'
@@ -4543,7 +4543,7 @@ window._createIsTakipBelgesi = function(s) {
   var kalan = (parseFloat(s.totalAmount)||0) - avans;
   var w = window.open('', '_blank');
   w.document.write('<!DOCTYPE html><html><head><title>ITB '+itbNo+'</title><style>body{font-family:Arial,sans-serif;padding:25px;max-width:700px;margin:0 auto;font-size:11px}h1{text-align:center;color:#1a365d;font-size:16px;margin-bottom:2px}h2{text-align:center;font-size:10px;color:#666;margin-bottom:16px}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#1a365d;color:#fff;padding:6px 8px;font-size:9px;text-transform:uppercase}td{padding:5px 8px;border-bottom:1px solid #ddd;font-size:10px}.sec{font-size:12px;font-weight:700;color:#1a365d;margin-top:14px;margin-bottom:6px;border-bottom:2px solid #1a365d;padding-bottom:3px}.warn{background:#FEF3C7;border:1px solid #F59E0B;border-radius:4px;padding:8px;font-size:10px;color:#92400E;margin:8px 0}@media print{button{display:none!important}}</style></head><body>'
-    +'<h1>İŞ TAKİP BELGESİ — SATIN ALMA</h1><h2>DUAY GLOBAL LLC</h2>'
+    +'<h1>İŞ TAKİP BELGESİ — SATIN ALMA</h1><h2>' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') + '</h2>'
     +'<table><tr><td><b>Belge No:</b> '+itbNo+'</td><td><b>Tarih:</b> '+(s.approvedAt||new Date().toISOString()).slice(0,10)+'</td></tr><tr><td><b>Job ID:</b> '+esc(s.jobId||'—')+'</td><td><b>PI No:</b> '+esc(s.piNo||'—')+'</td></tr></table>'
     +'<div class="warn"><b>SORUMLU:</b> '+esc(sorumlu?.name||'—')+'<br>Bu siparişi takip etmekle yükümlüsünüz.</div>'
     +'<div class="sec">TEDARİKÇİ BİLGİLERİ</div><table><tr><td><b>Ad:</b> '+esc(s.supplier||'')+'</td><td><b>İletişim:</b> '+esc(s.supplierContact||'—')+'</td></tr></table>'
