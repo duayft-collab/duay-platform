@@ -2925,7 +2925,7 @@ window._printSatisTeklif = function(id) {
     + '.sig-line{border-top:1px solid #333;margin-top:40px;padding-top:4px;font-size:10px}'
     + '@media print{button{display:none!important}body{padding:10mm}}</style></head><body>'
     // Header
-    + '<div class="header"><h1>DUAY GLOBAL LLC</h1><h2>ISTANBUL &bull; T\u00dcRK\u0130YE</h2><h3>PROFORMA INVOICE</h3></div>'
+    + '<div class="header"><h1>' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') + '</h1><h2>ISTANBUL &bull; T\u00dcRK\u0130YE</h2><h3>PROFORMA INVOICE</h3></div>'
     // Meta
     /* PDF-HARMONIZE-001: REF + revNo · VALIDITY n.gecerlilik
        CLAUDE-KURAL-PI-001 madde 1: tarih DD MMM YYYY */
@@ -2968,7 +2968,7 @@ window._printSatisTeklif = function(id) {
     // Satıcı notu (opsiyonel)
     + (function(){var sn=t.saticiNotu;if(!sn||!sn.pdfEkle)return '';var html='<div style="margin-top:15px;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:4px;font-size:9px;color:#0c4a6e"><h4 style="color:#0c4a6e;font-size:10px;margin-bottom:6px">SELLER\'S NOTES</h4>';if(sn.urunKarsilastir)html+='<div style="margin-bottom:4px">'+esc(sn.urunKarsilastir)+'</div>';if(sn.ozelHusus)html+='<div>'+esc(sn.ozelHusus)+'</div>';return html+'</div>';})()
     // Signature
-    + '<div class="sig"><div><div class="sig-line">DUAY GLOBAL LLC</div></div><div><div class="sig-line">' + esc(t.musteri||'Customer') + '</div></div></div>'
+    + '<div class="sig"><div><div class="sig-line">' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') + '</div></div><div><div class="sig-line">' + esc(t.musteri||'Customer') + '</div></div></div>'
     // Footer
     /* CLAUDE-KURAL-PI-001 madde 5: kurumsal ortak footer (PI_ADRES) */
     + (window._pdfOrtakFooter ? window._pdfOrtakFooter('tam') : '<div class="footer">Duay Global LLC · www.duaycor.com</div>')
@@ -3112,7 +3112,7 @@ window._printSatisTeklifB = function(id) {
        CLAUDE-KURAL-PI-001 madde 1: tarih DD MMM YYYY */
     +'<div style="text-align:right"><div style="font-size:14px;font-weight:700">PROFORMA INVOICE</div><div style="font-size:11px;color:#666">'+esc(n.teklifNo)+(n.revNo !== '01' ? ' · R'+esc(n.revNo) : '')+'</div><div style="font-size:11px;color:#666">'+(window._pdfTarihFormat ? window._pdfTarihFormat(t.ts) : (t.ts||'').slice(0,10))+'</div></div></div>'
     /* PDF-HARMONIZE-001: müşteri detay — kod + adres + vergi no */
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px"><div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">From</div><div style="font-weight:600">DUAY GLOBAL LLC</div><div style="font-size:11px;color:#666">Istanbul, Turkey</div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px"><div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">From</div><div style="font-weight:600">' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') + '</div><div style="font-size:11px;color:#666">Istanbul, Turkey</div></div>'
     +'<div style="padding:12px;background:#f8fafc;border-radius:8px"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">To</div><div style="font-weight:600">'+esc(n.musteri||'')+'</div>'
     +(n.musteriAdres ? '<div style="font-size:10px;color:#666;line-height:1.4;margin-top:3px">'+esc(n.musteriAdres)+'</div>' : '')
     +(n.musteriTelefon ? '<div style="font-size:10px;color:#666;margin-top:2px">Tel: '+esc(n.musteriTelefon)+'</div>' : '')
@@ -3174,7 +3174,7 @@ window._printSatisTeklifC = function(id) {
     +'@media print{button{display:none!important}}</style></head><body>'
     // Kapak
     /* PDF-HARMONIZE-001: teklifNo + revNo header */
-    +'<div style="text-align:center;padding:60px 0"><h1>DUAY GLOBAL LLC</h1><h2>Commercial Proposal</h2><div style="margin:30px 0;font-size:16px;color:#1a365d">'+esc(n.teklifNo)+(n.revNo !== '01' ? ' · R'+esc(n.revNo) : '')+'</div>'
+    +'<div style="text-align:center;padding:60px 0"><h1>' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') + '</h1><h2>Commercial Proposal</h2><div style="margin:30px 0;font-size:16px;color:#1a365d">'+esc(n.teklifNo)+(n.revNo !== '01' ? ' · R'+esc(n.revNo) : '')+'</div>'
     /* PDF-HARMONIZE-001: müşteri detay — kod + adres + vergi no */
     +'<div style="font-size:14px">Prepared for: <b>'+esc(n.musteri||'')+'</b></div>'
     +(n.musteriAdres ? '<div style="font-size:11px;color:#666;line-height:1.5;margin-top:4px">'+esc(n.musteriAdres)+'</div>' : '')
@@ -3207,7 +3207,7 @@ window._printSatisTeklifC = function(id) {
     +'<div><b>' + esc(banka.banka||'Albaraka Türk') + '</b> — ' + esc(banka.sube||'') + '</div>'
     +'<div>' + esc(cur) + ' IBAN: ' + esc(banka.iban||'') + '</div>'
     +'<div><b>SWIFT:</b> ' + esc(banka.swift||'BTFHTRIS') + '</div></div>'
-    +'<div style="display:flex;justify-content:space-between;margin-top:60px"><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">DUAY GLOBAL LLC</div></div><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">'+esc(n.musteri||'Customer')+'</div></div></div></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-top:60px"><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') + '</div></div><div style="width:40%;text-align:center"><div style="border-top:1px solid #333;padding-top:8px;margin-top:60px">'+esc(n.musteri||'Customer')+'</div></div></div></div>'
     /* CLAUDE-KURAL-PI-001 madde 5: kurumsal ortak footer (sade) */
     + (window._pdfOrtakFooter ? '<div style="margin-top:20px">' + window._pdfOrtakFooter('sade') + '</div>' : '')
     +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer">Print</button></body></html>');
@@ -3293,7 +3293,7 @@ window._openSAContract = function(id) {
     +'<h2>3. Ödeme Koşulları</h2><p>Avans: %'+(sa.advanceRate||0)+' ('+(sa.advanceAmount||0)+' '+cur+')<br>Kalan: '+(sa.remainingAmount||0)+' '+cur+' — Vade: '+(sa.vadeDate||'—')+'</p>'
     +'<h2>4. Teslimat</h2><p>Teslimat Tarihi: '+(sa.deliveryDate||'—')+'<br>Teslimat Yeri: '+(sa.deliveryPlace||'—')+'</p>'
     +'<h2>5. Özel Şartlar</h2><p>'+(sa.notes||'—')+'</p>'
-    +'<div class="sig"><div><div style="border-top:1px solid #333;margin-top:60px;padding-top:4px">ALICI<br>DUAY GLOBAL LLC</div></div><div><div style="border-top:1px solid #333;margin-top:60px;padding-top:4px">SATICI<br>'+esc(sa.vendor?.name||sa.supplier||'')+'</div></div></div>'
+    +'<div class="sig"><div><div style="border-top:1px solid #333;margin-top:60px;padding-top:4px">ALICI<br>' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') + '</div></div><div><div style="border-top:1px solid #333;margin-top:60px;padding-top:4px">SATICI<br>'+esc(sa.vendor?.name||sa.supplier||'')+'</div></div></div>'
     +'<button onclick="window.print()" style="margin-top:20px;padding:8px 20px;cursor:pointer">🖨 Yazdır / PDF</button></body></html>');
   w.document.close();
 };
@@ -4320,7 +4320,7 @@ window._printTedPerf = function() {
   var esc = window._esc;
   var w = window.open('', '_blank');
   w.document.write('<!DOCTYPE html><html><head><title>Tedarikçi Performans</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px;max-width:800px;margin:0 auto}h1{text-align:center;color:#1a365d;font-size:16px}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#1a365d;color:#fff;padding:6px 8px;font-size:9px;text-transform:uppercase}td{padding:5px 8px;border-bottom:1px solid #ddd;font-size:10px}.good{color:#16A34A;font-weight:700}.bad{color:#DC2626;font-weight:700}@media print{button{display:none!important}}</style></head><body>'
-    + '<h1>TEDARİKÇİ PERFORMANS RAPORU</h1><div style="text-align:center;color:#666;font-size:10px;margin-bottom:12px">DUAY GLOBAL LLC' + (from || to ? ' · ' + (from || '...') + ' — ' + (to || '...') : '') + ' · ' + new Date().toISOString().slice(0, 10) + '</div>'
+    + '<h1>TEDARİKÇİ PERFORMANS RAPORU</h1><div style="text-align:center;color:#666;font-size:10px;margin-bottom:12px">' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') + '' + (from || to ? ' · ' + (from || '...') + ' — ' + (to || '...') : '') + ' · ' + new Date().toISOString().slice(0, 10) + '</div>'
     + '<table><thead><tr><th>Tedarikçi</th><th>Toplam ($)</th><th>Sayı</th><th>Ort. Teslimat</th><th>Zamanında %</th><th>Fiyat Sapma %</th><th>Risk</th></tr></thead><tbody>'
     + data.map(function(t) {
         var cls = t.riskSkor <= 20 ? 'good' : t.riskSkor > 50 ? 'bad' : '';
@@ -4513,7 +4513,7 @@ window._printMustAnaliz = function() {
   var esc = window._esc;
   var w = window.open('', '_blank');
   w.document.write('<!DOCTYPE html><html><head><title>Müşteri Analizi</title><style>body{font-family:Arial,sans-serif;padding:20px;font-size:11px;max-width:800px;margin:0 auto}h1{text-align:center;color:#1a365d;font-size:16px}table{width:100%;border-collapse:collapse;margin:12px 0}th{background:#1a365d;color:#fff;padding:6px 8px;font-size:9px;text-transform:uppercase}td{padding:5px 8px;border-bottom:1px solid #ddd;font-size:10px}.good{color:#16A34A;font-weight:700}.bad{color:#DC2626;font-weight:700}@media print{button{display:none!important}}</style></head><body>'
-    + '<h1>MÜŞTERİ ANALİZ RAPORU</h1><div style="text-align:center;color:#666;font-size:10px;margin-bottom:12px">DUAY GLOBAL LLC' + (from || to ? ' · ' + (from || '...') + ' — ' + (to || '...') : '') + ' · ' + new Date().toISOString().slice(0, 10) + '</div>'
+    + '<h1>MÜŞTERİ ANALİZ RAPORU</h1><div style="text-align:center;color:#666;font-size:10px;margin-bottom:12px">' + ((window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC') + '' + (from || to ? ' · ' + (from || '...') + ' — ' + (to || '...') : '') + ' · ' + new Date().toISOString().slice(0, 10) + '</div>'
     + '<table><thead><tr><th>Müşteri</th><th>Satış ($)</th><th>Kâr ($)</th><th>Marj %</th><th>Kabul %</th><th>Ödeme</th><th>Gecikmiş</th><th>CLV</th></tr></thead><tbody>'
     + data.map(function(m) {
         var cls = m.degerSkor >= 60 ? 'good' : m.degerSkor < 30 ? 'bad' : '';
