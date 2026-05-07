@@ -77,7 +77,33 @@ window.renderPlatformStandartlari = function() {
     +'<div style="font-size:16px;font-weight:600;color:var(--t);margin-bottom:4px">Platform Standartları</div>'
     +'<div style="font-size:11px;color:var(--t3);margin-bottom:24px">IBAN bilgileri, varsayılan şartlar, kodlama standartları</div>'
 
-    +'<div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">Banka IBAN Bilgileri</div>'
+    +'<div style="font-size:12px;font-weight:500;color:var(--t);margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">Şirket Bilgileri</div>'
+    +(function(){
+        var s = window.SIRKET_DATA || {};
+        var fmt = function(v){ return v ? window._esc(String(v)) : '<span style="color:var(--t3)">—</span>'; };
+        var row = function(lbl, val){
+          return '<div style="display:flex;justify-content:space-between;font-size:11px;padding:6px 0;border-bottom:0.5px solid var(--b)">'
+            +'<span style="color:var(--t3);min-width:140px">'+lbl+'</span>'
+            +'<span style="color:var(--t);text-align:right;font-family:'+(['Vergi No','Mersis No','Ticaret Sicil'].indexOf(lbl)>-1?'monospace':'inherit')+'">'+fmt(val)+'</span>'
+            +'</div>';
+        };
+        return '<div style="border:0.5px solid var(--b);border-radius:8px;padding:14px 16px;margin-bottom:14px;background:var(--sf)">'
+          +row('Resmi Unvan (TR)', s.unvan_tr)
+          +row('Ticari Unvan (EN)', s.unvan_en)
+          +row('Hesap Sahibi', s.hesapSahibi)
+          +row('Adres', s.adres_tr)
+          +row('Telefon', s.tel)
+          +row('WhatsApp', s.whatsapp)
+          +row('Web', s.web)
+          +row('E-posta', s.email)
+          +row('Vergi Dairesi', s.vergi_dairesi)
+          +row('Vergi No', s.vergi_no)
+          +row('Mersis No', s.mersis)
+          +row('Ticaret Sicil', s.ticaret_sicil)
+          +'</div>';
+    })()
+
+    +'<div style="font-size:12px;font-weight:500;color:var(--t);margin-top:20px;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">Banka IBAN Bilgileri</div>'
     +ibanHTML
 
     +'<div style="font-size:12px;font-weight:500;color:var(--t);margin-top:20px;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--b)">Varsayılan Teklif Şartları</div>'
