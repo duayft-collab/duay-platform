@@ -771,7 +771,7 @@ function _emirRenderAdim() {
     h += '<div style="padding:8px 10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">';
     h += '<div>' + _fl('red', 'Form Tipi *') + '<select class="fi" id="ihr-form-tipi" onclick="event.stopPropagation()"><option value="">— Se\u00e7in —</option><option value="bedelli">Bedelli \u0130hracat</option><option value="bedelsiz">Bedelsiz \u0130hracat</option><option value="numune">Numune \u0130hracat\u0131</option><option value="gecici">Ge\u00e7ici \u0130hracat</option></select></div>';
     h += '<div>' + _fl('red', 'Teslim \u015eekli *') + '<select class="fi" id="ihr-incoterms" onclick="event.stopPropagation()"><option value="">— Se\u00e7in —</option>' + INCOTERMS.map(function(i) { return '<option value="' + i + '">' + i + '</option>'; }).join('') + '</select></div>';
-    h += '<div>' + _fl('green', '\u0130hracat ID') + _fiA(_genId()) + '</div>';
+    h += '<div>' + _fl('green', '\u0130hracat ID') + '<input class="fi" type="text" id="ihr-emir-id" value="' + _esc(String(_genId())) + '" style="background:#EAF3DE;color:#27500A;border-color:#C0DD97" onclick="event.stopPropagation()"></div>';
     h += '<div>' + _fl('red', 'Talimat Giren *') + '<select class="fi" id="ihr-talimat-giren" onclick="event.stopPropagation()"><option value="">— Se\u00e7in —</option>' + uOpts + '</select></div>';
     h += '<div>' + _fl('red', 'Onaylayan *') + '<select class="fi" id="ihr-talimat-onaylayan" onclick="event.stopPropagation()"><option value="">— Se\u00e7in —</option>' + uOpts + '</select></div>';
     h += '<div>' + _fl('green', 'Giri\u015f Tarihi') + _fiA(_today()) + '</div>';
@@ -905,6 +905,8 @@ window._ihrEmirKaydet = function() {
       var musteriE = _loadCari().find(function(c){ return String(c.id)===String(musteriId); });
       de.form_tipi = formTipi; de.musteri_id = musteriId; de.musteriAd = musteriE?.name || de.musteriAd;
       de.teslim_sekli = incoterms; de.varis_limani = varis;
+      /* V199 IHR-MANUAL-ID-FILTER-FIX-001 — manual export id override (only if user entered a value) */
+      var _emirIdInputE = _g('ihr-emir-id')?.value || ''; if (_emirIdInputE) de.ihracat_id = _emirIdInputE;
       de.talimat_giren = _g('ihr-talimat-giren')?.value || de.talimat_giren;
       de.talimat_onaylayan = _g('ihr-talimat-onaylayan')?.value || de.talimat_onaylayan;
       de.gorev_sorumlusu = _g('ihr-gorev-sorumlusu')?.value || de.gorev_sorumlusu;
@@ -944,6 +946,8 @@ window._ihrEmirKaydet = function() {
   var bitis = new Date(baslangic); bitis.setDate(bitis.getDate() + 30);
   var dosya = {
     id: _genId(), dosyaNo: formTipi.toUpperCase().slice(0, 3) + '-' + _today().replace(/-/g, '').slice(2),
+    /* V199 IHR-MANUAL-ID-FILTER-FIX-001 — manual export id (or auto-generated when input empty) */
+    ihracat_id: _g('ihr-emir-id')?.value || String(_genId()),
     form_tipi: formTipi, musteri_id: musteriId, musteriAd: musteri?.name || '',
     teslim_sekli: incoterms, varis_limani: varis,
     talimat_giren: _g('ihr-talimat-giren')?.value || '', talimat_onaylayan: _g('ihr-talimat-onaylayan')?.value || '',
@@ -1420,8 +1424,10 @@ window._ihrLoadBL      = function(id) { return (_loadBL() || []).find(function(b
 window._ihrUrunAra = function(q) {
   window._ihrUrunAramaQ = q;
   window._ihrUrunSayfa = 1;
-  if (_aktifDosyaId) {
-    var _dosya = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); });
+  /* V199 IHR-MANUAL-ID-FILTER-FIX-001 — multi-IIFE scope fallback for active file id */
+  var _afid = _aktifDosyaId || window._ihrAktifDosyaId;
+  if (_afid) {
+    var _dosya = _loadD().find(function(x) { return String(x.id) === String(_afid); });
     var _cont = _g('ihr-detay-content');
     if (_dosya && _cont) { _ihrDetayRenderUrunler(_dosya, _cont); }
     setTimeout(function() {
@@ -2333,8 +2339,10 @@ window._ihrFiltrele = function(kolon, deger) {
   if (!window._ihrUrunFiltreler) window._ihrUrunFiltreler = {};
   window._ihrUrunFiltreler[kolon] = deger;
   window._ihrUrunSayfa = 1;
-  if (_aktifDosyaId) {
-    var _d2 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); });
+  /* V199 IHR-MANUAL-ID-FILTER-FIX-001 — multi-IIFE scope fallback for active file id */
+  var _afid = _aktifDosyaId || window._ihrAktifDosyaId;
+  if (_afid) {
+    var _d2 = _loadD().find(function(x) { return String(x.id) === String(_afid); });
     var _c2 = _g('ihr-detay-content');
     if (_d2 && _c2) _ihrDetayRenderUrunler(_d2, _c2);
   } else { _ihrRenderContent(); }
@@ -2343,8 +2351,10 @@ window._ihrFiltreTemizle = function() {
   window._ihrUrunFiltreler = {};
   window._ihrUrunAramaQ = '';
   window._ihrUrunSayfa = 1;
-  if (_aktifDosyaId) {
-    var _d3 = _loadD().find(function(x) { return String(x.id) === String(_aktifDosyaId); });
+  /* V199 IHR-MANUAL-ID-FILTER-FIX-001 — multi-IIFE scope fallback for active file id */
+  var _afid = _aktifDosyaId || window._ihrAktifDosyaId;
+  if (_afid) {
+    var _d3 = _loadD().find(function(x) { return String(x.id) === String(_afid); });
     var _c3 = _g('ihr-detay-content');
     if (_d3 && _c3) _ihrDetayRenderUrunler(_d3, _c3);
   } else { _ihrRenderContent(); }
