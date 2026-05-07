@@ -6147,6 +6147,46 @@ window.renderPlatformKurallari = function() {
   });
   h += '</div>';
   panel.innerHTML = h;
+
+  /* V194e-2: Anayasa Belgeleri + KX Kuralları eki */
+  (function _pkAnayasaEk() {
+    if (!window.ANAYASA_CONTENT) return;
+    var panel2 = document.getElementById('panel-platform-rules');
+    if (!panel2 || document.getElementById('pk-anayasa-ek')) return;
+    var blg = window.ANAYASA_CONTENT.belgeler || [];
+    var kx  = window.ANAYASA_CONTENT.kx_kurallari || [];
+    if (!blg.length && !kx.length) return;
+    var wrap = document.createElement('div');
+    wrap.id = 'pk-anayasa-ek';
+    wrap.style.cssText = 'margin-top:24px;padding-top:16px;border-top:0.5px solid var(--b)';
+    var th = '<div style="display:flex;gap:2px;border-bottom:0.5px solid var(--b);margin-bottom:14px;overflow-x:auto">';
+    th += '<button id="pk-tab-belgeler" onclick="window._pkEkTab(\'belgeler\')" style="padding:7px 14px;font-size:11px;border:none;background:transparent;cursor:pointer;border-bottom:2px solid var(--ac);color:var(--ac);font-weight:500">Anayasa Belgeleri ('+blg.length+')</button>';
+    th += '<button id="pk-tab-kx" onclick="window._pkEkTab(\'kx\')" style="padding:7px 14px;font-size:11px;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--t3);font-weight:400">KX Kuralları ('+kx.length+')</button>';
+    th += '</div>';
+    var bh = '<div id="pk-content-belgeler">';
+    bh += blg.map(function(b) {
+      return '<div onclick="window._psShowBelge(\''+b.id+'\')" style="padding:10px 14px;background:var(--sf);border:0.5px solid var(--b);border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+        +'<div><div style="font-size:12px;font-weight:500;color:var(--t)">'+b.baslik+'</div>'
+        +'<div style="font-size:9px;color:var(--t3);margin-top:2px">'+b.versiyon+' · '+b.tarih+'</div></div>'
+        +'<span style="font-size:14px;color:var(--t3)">→</span></div>';
+    }).join('');
+    bh += '</div>';
+    var kh = '<div id="pk-content-kx" style="display:none">';
+    kh += kx.map(function(k) {
+      var renk = k.durum==='aktif'?'#16a34a':'#6B7280';
+      var bg   = k.durum==='aktif'?'#E1F5EE':'#F3F4F6';
+      return '<div style="padding:10px 14px;background:var(--sf);border:0.5px solid var(--b);border-left:3px solid '+renk+';border-radius:7px;margin-bottom:6px;display:flex;align-items:flex-start;gap:10px">'
+        +'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;background:#E6F1FB;color:#0C447C;font-family:monospace;flex-shrink:0;margin-top:1px">'+k.id+'</span>'
+        +'<div style="flex:1"><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'
+        +'<span style="font-size:12px;font-weight:600;color:var(--t)">'+k.baslik+'</span>'
+        +'<span style="font-size:8px;padding:1px 6px;border-radius:3px;background:'+bg+';color:'+renk+'">'+k.durum+'</span></div>'
+        +'<div style="font-size:10px;color:var(--t2);line-height:1.5">'+k.aciklama+'</div></div>'
+        +'<span style="font-size:9px;color:var(--t3);font-family:monospace;white-space:nowrap">'+k.tarih+'</span></div>';
+    }).join('');
+    kh += '</div>';
+    wrap.innerHTML = th + bh + kh;
+    panel2.appendChild(wrap);
+  })();
 };
 
 /** @description Platform kuralı durum değiştir (admin only) */
@@ -7473,3 +7513,52 @@ window._statusBadge = function(label, tone) {
     }
   } catch(e) {}
 })();
+
+window._pkEkTab = function(tab) {
+  ['belgeler','kx'].forEach(function(t) {
+    var el = document.getElementById('pk-content-'+t);
+    var btn = document.getElementById('pk-tab-'+t);
+    if (el) el.style.display = t === tab ? '' : 'none';
+    if (btn) {
+      btn.style.borderBottomColor = t === tab ? 'var(--ac)' : 'transparent';
+      btn.style.color = t === tab ? 'var(--ac)' : 'var(--t3)';
+      btn.style.fontWeight = t === tab ? '500' : '400';
+    }
+  });
+};
+
+window._psShowBelge = function(belgeId) {
+  if (!window.ANAYASA_CONTENT) return;
+  var b = window.ANAYASA_CONTENT.belgeler.find(function(x){return x.id===belgeId;});
+  if (!b) return;
+  var existing = document.getElementById('ps-belge-modal');
+  if (existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'ps-belge-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  var inner = document.createElement('div');
+  inner.style.cssText = 'background:var(--s);border-radius:12px;width:820px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column';
+  var header = document.createElement('div');
+  header.style.cssText = 'padding:16px 20px;border-bottom:0.5px solid var(--b);display:flex;justify-content:space-between;align-items:center;flex-shrink:0';
+  header.innerHTML = '<div><div style="font-size:14px;font-weight:600;color:var(--t)">' + b.baslik + '</div>'
+    + '<div style="font-size:10px;color:var(--t3);margin-top:2px">' + b.versiyon + ' · ' + b.tarih + ' · read-only</div></div>';
+  var closeBtn = document.createElement('button');
+  closeBtn.textContent = 'Kapat ✕';
+  closeBtn.style.cssText = 'font-size:11px;padding:6px 14px;border:0.5px solid var(--b);border-radius:6px;background:transparent;cursor:pointer;color:var(--t2)';
+  closeBtn.onclick = function() { modal.remove(); };
+  header.appendChild(closeBtn);
+  var body = document.createElement('div');
+  body.style.cssText = 'padding:20px 28px;overflow-y:auto;flex:1;font-size:12px;line-height:1.7;color:var(--t)';
+  if (window._psRenderMarkdown) {
+    body.innerHTML = window._psRenderMarkdown(b.icerik);
+  } else {
+    var pre = document.createElement('pre');
+    pre.style.cssText = 'white-space:pre-wrap;font-size:11px;line-height:1.6';
+    pre.textContent = b.icerik;
+    body.appendChild(pre);
+  }
+  inner.appendChild(header);
+  inner.appendChild(body);
+  modal.appendChild(inner);
+  document.body.appendChild(modal);
+};
