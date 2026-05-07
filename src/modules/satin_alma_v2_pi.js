@@ -1032,3 +1032,271 @@ window._piTasarimD2 = function(t, bugun, satirlar, katman, gizliKod, L) {
 };
 
 /* SATIS-009: production console.log temizliği — load mesajı kaldırıldı */
+
+/* ════════════════════════════════════════════════════════════════
+ * V195a SATINALMA-CHECKUP-001 KONSOLIDASYON
+ * satis.js → pi.js: PI/Banka/Sart/Freight/Incoterm/TamOnIzle
+ * 14 fn + 1 state global, KX8 birebir kopya, 259 satir
+ * ════════════════════════════════════════════════════════════════ */
+
+/* ── SATIS-FORM-C-001: Canlı PI Önizleme + Banka + Kaydet&Git ─── */
+window._saV2BankaGuncelle = function(para) {
+  // BANKA-IBAN-FIX-001 + V194b GBP-DEVRE-DISI: gerçek IBAN'larla güncellendi (Garanti + Albaraka).
+  // GBP fallback YANLIS USD IBAN'ı gösteriyordu — devre dışı bırakıldı (gerçek GBP IBAN yok).
+  // V194d'de bu blok DUAY_BANKA(cur) accessor'ına bağlanacak.
+  var bankalar = {
+    'USD': 'T. GARANTİ BANKASI A.Ş. · USD IBAN: TR39 0006 2001 1810 0009 0812 68 · SWIFT: TGBATRIS · YEŞİLPINAR ŞUBESİ / 1181',
+    'EUR': 'T. GARANTİ BANKASI A.Ş. · EUR IBAN: TR66 0006 2001 1810 0009 0812 67 · SWIFT: TGBATRIS · YEŞİLPINAR ŞUBESİ / 1181',
+    'TRY': 'T. GARANTİ BANKASI A.Ş. · TL IBAN: TR24 0006 2001 1810 0006 2960 86 · YEŞİLPINAR ŞUBESİ / 1181 | ALBARAKA TÜRK · TL IBAN: TR54 0020 3000 0889 5310 0000 05 · ALİBEYKÖY / 117',
+    'GBP': 'GBP transfer şu an desteklenmiyor — lütfen USD veya EUR seçin.'
+  };
+  var el = document.getElementById('st-banka-bilgi');
+  if(el) el.textContent = bankalar[para] || bankalar['USD'];
+  /* T03-8 v2: sağ PI paneldeki kardeş banka div'i de senkron güncelle */
+  var elPI = document.getElementById('st-banka-bilgi-pi');
+  if(elPI) elPI.textContent = bankalar[para] || bankalar['USD'];
+};
+
+window._saV2PIOnizlemeGuncelle = function() {
+  var onizleme = document.getElementById('st-pi-onizleme');
+  if(!onizleme) return;
+  var musteri = document.getElementById('st-musteri-ad')?.value||'—';
+  var gecerlilik = document.getElementById('st-gecerlilik')?.value||'—';
+  var incoterm = document.getElementById('st-incoterm')?.value||'EXW';
+  var liman = document.getElementById('st-liman')?.value||'Turkey';
+  var odeme = document.getElementById('st-odeme')?.value||'—';
+  var para = document.getElementById('st-para-birimi')?.value||'USD';
+  var piNo = document.getElementById('st-id')?.value||'—';
+  var urunler = window._saV2SatisUrunler||[];
+  var toplamSatis = urunler.reduce(function(s,u){return s+(parseFloat(u.satisFiyat)||0)*(parseFloat(u.miktar)||0);},0);
+  /* PI-TASARIM-PREVIEW-BADGE-001: aktif tasarım + dil görsel feedback (preview hardcoded ama kullanıcı state'i görmeli) */
+  var _aktifT = window._saV2AktifPITasarim || 'A';
+  var _aktifD = window._saV2AktifPIDil || 'EN';
+  var h = '<div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:4px"><span style="font-size:8px;padding:2px 6px;border-radius:3px;background:var(--t);color:var(--sf);font-family:monospace">'+_aktifT+'</span><span style="font-size:8px;padding:2px 6px;border-radius:3px;background:var(--bm);color:var(--t);font-family:monospace">'+_aktifD+'</span></div>';
+  h += '<div style="text-align:center;border-bottom:0.5px solid var(--b);padding-bottom:8px;margin-bottom:8px">';
+  h += '<div style="font-size:11px;font-weight:500;color:var(--t)">DUAY ULUSLARARASI TİCARET LTD. ŞTİ.</div>';
+  h += '<div style="font-size:8px;color:var(--t3)">www.duaycor.com · +90 212 625 5 444 · WhatsApp: +90 532 270 5 113</div>';
+  h += '<div style="font-size:11px;font-weight:500;margin-top:6px;color:var(--t)">PROFORMA INVOICE</div>';
+  h += '<div style="font-size:8px;color:var(--t3)">No: '+piNo+'</div>';
+  h += '</div>';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px;font-size:8px">';
+  h += '<div><span style="color:var(--t3)">TO: </span><strong>'+musteri+'</strong></div>';
+  h += '<div><span style="color:var(--t3)">VALID: </span>'+gecerlilik+'</div>';
+  h += '<div><span style="color:var(--t3)">DELIVERY: </span>'+incoterm+' '+liman+'</div>';
+  h += '<div><span style="color:var(--t3)">PAYMENT: </span>'+odeme.slice(0,20)+'</div>';
+  h += '</div>';
+  if(urunler.length){
+    h += '<table style="width:100%;border-collapse:collapse;font-size:8px;margin-bottom:6px">';
+    h += '<thead><tr style="background:var(--s2)"><th style="padding:3px 4px;text-align:left">IMG</th><th style="padding:3px 4px;text-align:left">DESCRIPTION</th><th style="padding:3px 4px;text-align:right">QTY</th><th style="padding:3px 4px;text-align:right">TOTAL</th></tr></thead><tbody>';
+    urunler.forEach(function(u){
+      var toplam = ((parseFloat(u.satisFiyat)||0)*(parseFloat(u.miktar)||0)).toLocaleString('tr-TR',{maximumFractionDigits:2});
+      h += '<tr style="border-bottom:0.5px solid var(--b)">';
+      if(u.gorsel) h += '<td style="padding:3px 4px"><img src="'+u.gorsel+'" style="width:24px;height:24px;border-radius:3px;object-fit:cover"></td>';
+      else h += '<td style="padding:3px 4px"><div style="width:24px;height:24px;background:var(--s2);border-radius:3px;border:0.5px solid var(--b)"></div></td>';
+      h += '<td style="padding:3px 4px"><div style="font-weight:500">'+(u.duayKodu||'')+(u.duayKodu?' — ':'')+(u.urunAdi||'')+'</div>';
+      if(u.eskiKod) h += '<div style="color:var(--t3);">('+u.eskiKod+')</div>';
+      h += '</td>';
+      h += '<td style="padding:3px 4px;text-align:right">'+u.miktar+' '+(u.birim||'pcs')+'</td>';
+      h += '<td style="padding:3px 4px;text-align:right;font-weight:500;color:#0F6E56">'+toplam+' '+para+'</td>';
+      h += '</tr>';
+    });
+    h += '</tbody></table>';
+    if (window._stFreightToggle && (incoterm === 'CFR' || incoterm === 'CIF' || incoterm === 'CIP')) {
+        var freight = parseFloat(window._stFreightAmount) || 0;
+        var insurance = (incoterm === 'CIF' || incoterm === 'CIP') ? (parseFloat(window._stInsuranceAmount) || 0) : 0;
+        var grandTotal = toplamSatis + freight + insurance;
+        h += '<div style="border-top:0.5px solid var(--b);padding-top:4px;margin-top:4px;text-align:right;font-size:9px;color:var(--t3)">';
+        h += '<div>Subtotal: '+toplamSatis.toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+para+'</div>';
+        h += '<div>Freight: '+freight.toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+para+'</div>';
+        if (incoterm === 'CIF' || incoterm === 'CIP') {
+          h += '<div>Insurance: '+insurance.toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+para+'</div>';
+        }
+        h += '<div style="font-size:10px;font-weight:500;color:#0F6E56;border-top:0.5px solid var(--b);padding-top:2px;margin-top:2px">TOTAL: '+grandTotal.toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+para+'</div>';
+        h += '</div>';
+      } else {
+        h += '<div style="text-align:right;font-size:10px;font-weight:500;color:#0F6E56;border-top:0.5px solid var(--b);padding-top:4px">TOTAL: '+toplamSatis.toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+para+'</div>';
+      }
+  } else {
+    h += '<div style="text-align:center;color:var(--t3);padding:16px;font-size:9px">Ürün ekleyince burada görünür</div>';
+  }
+  h += '<div style="margin-top:8px;padding-top:6px;border-top:0.5px solid var(--b);font-size:7px;color:var(--t3);font-style:italic">Product images are for illustration purposes only.</div>';
+  h += '<div style="margin-top:4px;font-size:7px;color:var(--t3)">'+window._saV2BankaMetni(para)+'</div>';
+  onizleme.innerHTML = h;
+  var ozet = document.getElementById('st-ozet-toplam-satis');
+  if(ozet) ozet.textContent = toplamSatis.toLocaleString('tr-TR',{maximumFractionDigits:2})+' '+para;
+};
+
+
+/** Banka bilgisi — ak_bankalar1 key'inden veya varsayılan */
+window._saV2BankaMetni = function(para) {
+  var ayarlar = typeof window._loadBankalar === 'function' ? window._loadBankalar() : {};
+  // BANKA-IBAN-FIX-001 + V194b GBP-DEVRE-DISI: gerçek IBAN'larla güncellendi (Garanti + Albaraka).
+  // GBP fallback YANLIS USD IBAN'ı gösteriyordu — devre dışı bırakıldı (gerçek GBP IBAN yok).
+  // V194d'de bu blok DUAY_BANKA(cur) accessor'ına bağlanacak.
+  var varsayilan = {
+    'USD': 'T. GARANTİ BANKASI A.Ş. · USD IBAN: TR39 0006 2001 1810 0009 0812 68 · SWIFT: TGBATRIS · YEŞİLPINAR ŞUBESİ / 1181',
+    'EUR': 'T. GARANTİ BANKASI A.Ş. · EUR IBAN: TR66 0006 2001 1810 0009 0812 67 · SWIFT: TGBATRIS · YEŞİLPINAR ŞUBESİ / 1181',
+    'TRY': 'T. GARANTİ BANKASI A.Ş. · TL IBAN: TR24 0006 2001 1810 0006 2960 86 · YEŞİLPINAR ŞUBESİ / 1181 | ALBARAKA TÜRK · TL IBAN: TR54 0020 3000 0889 5310 0000 05 · ALİBEYKÖY / 117',
+    'GBP': 'GBP transfer şu an desteklenmiyor — lütfen USD veya EUR seçin.'
+  };
+  return ayarlar[para] || varsayilan[para] || varsayilan['USD'];
+};
+window._loadBankalar = function() { try { var d = localStorage.getItem('ak_bankalar1'); return d ? JSON.parse(d) : {}; } catch(e) { return {}; } };
+window._saveBankalar = function(obj) { try { localStorage.setItem('ak_bankalar1', JSON.stringify(obj)); } catch(e) {} };
+
+/** PI Şartları — varsayılan 10 madde, ayarlardan yönetilebilir */
+window._saV2Sartlar = function() {
+  try { var d = localStorage.getItem('ak_pi_sartlar'); if (d) return JSON.parse(d); } catch(e) {}
+  return [
+    'Payment: 30% deposit, 70% before dispatch/shipment.',
+    'Tax Note: 20% VAT applicable for domestic shipments only.',
+    'Bank Charges: All transfer fees outside T\u00fcrkiye belong to buyer.',
+    'Disputes: Istanbul Courts shall have jurisdiction.',
+    'Insurance: Buyer\'s responsibility unless CIF terms.',
+    'Attention: Goods must be inspected within 14 days from delivery.',
+    'Validity: This offer is valid for the period stated above only.',
+    'Packaging: Standard export packaging unless otherwise agreed.',
+    'Force Majeure: Seller not liable for delays due to force majeure.',
+    'Governing Law: Republic of T\u00fcrkiye law applies to this contract.'
+  ];
+};
+window._saV2SartlarKaydet = function(liste) { try { localStorage.setItem('ak_pi_sartlar', JSON.stringify(liste)); } catch(e) {} };
+
+window._stSartlar = [];
+window._saV2SartListeGuncelle = function() {
+  var el = document.getElementById('st-sartlar-liste');
+  if (!el) return;
+  if (!window._stSartlar.length) { el.innerHTML = '<div style="font-size:9px;color:var(--t3);padding:4px 0">Hen\u00fcz \u015fart eklenmedi</div>'; return; }
+  el.innerHTML = window._stSartlar.map(function(s, i) {
+    return '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:0.5px solid var(--b);font-size:9px">'
+      + '<span style="color:var(--t3);min-width:14px">' + (i + 1) + '.</span>'
+      + '<span style="flex:1;color:var(--t2)">' + s + '</span>'
+      + '<button onclick="event.stopPropagation();window._stSartlar.splice(' + i + ',1);window._saV2SartListeGuncelle()" style="font-size:9px;border:none;background:none;cursor:pointer;color:#A32D2D;padding:0 2px">\u2715</button></div>';
+  }).join('');
+};
+window._saV2FreightToggle = function() {
+  window._stFreightToggle = !window._stFreightToggle;
+  var icon = document.getElementById('st-freight-toggle-icon');
+  var inputs = document.getElementById('st-freight-inputs');
+  var btn = document.getElementById('st-freight-toggle');
+  if (icon) icon.textContent = window._stFreightToggle ? '●' : '○';
+  if (inputs) inputs.style.display = window._stFreightToggle ? 'flex' : 'none';
+  if (btn) btn.style.background = window._stFreightToggle ? 'var(--s3)' : 'var(--s2)';
+  if (typeof window._saV2PIOnizlemeGuncelle === 'function') window._saV2PIOnizlemeGuncelle();
+};
+
+window._saV2FreightChange = function(val, key) {
+  var n = parseFloat(val) || 0;
+  if (key === 'freight') window._stFreightAmount = n;
+  else if (key === 'insurance') window._stInsuranceAmount = n;
+  if (typeof window._saV2PIOnizlemeGuncelle === 'function') window._saV2PIOnizlemeGuncelle();
+};
+
+window._saV2IncotermAutoSart = function(incoterm) {
+  if (!Array.isArray(window._stSartlar)) window._stSartlar = [];
+  if (typeof window._stFreightToggle !== 'boolean') window._stFreightToggle = false;
+  if (typeof window._stFreightAmount !== 'number') window._stFreightAmount = 0;
+  if (typeof window._stInsuranceAmount !== 'number') window._stInsuranceAmount = 0;
+  var prefixes = ['Freight: Covered by seller', 'Freight & Insurance: Covered by seller', 'Carriage & Insurance: Covered by seller'];
+  window._stSartlar = window._stSartlar.filter(function(s) {
+    return !prefixes.some(function(p) { return s.indexOf(p) === 0; });
+  });
+  var msgs = {
+    CFR: 'Freight: Covered by seller as per CFR terms.',
+    CIF: 'Freight & Insurance: Covered by seller as per CIF terms.',
+    CIP: 'Carriage & Insurance: Covered by seller as per CIP terms.'
+  };
+  if (msgs[incoterm] && window._stSartlar.length < 10) {
+    window._stSartlar.push(msgs[incoterm]);
+  }
+  if (typeof window._saV2SartListeGuncelle === 'function') window._saV2SartListeGuncelle();
+  var row = document.getElementById('st-freight-row');
+  var insLabel = document.getElementById('st-insurance-label');
+  var insInp = document.getElementById('st-insurance-amount');
+  var showRow = (incoterm === 'CFR' || incoterm === 'CIF' || incoterm === 'CIP');
+  if (row) row.style.display = showRow ? 'flex' : 'none';
+  if (!showRow) {
+    var inputs = document.getElementById('st-freight-inputs');
+    var icon = document.getElementById('st-freight-toggle-icon');
+    var btn = document.getElementById('st-freight-toggle');
+    var freightInp = document.getElementById('st-freight-amount');
+    if (inputs) inputs.style.display = 'none';
+    if (icon) icon.textContent = '○';
+    if (btn) btn.style.background = 'var(--s2)';
+  }
+  var showIns = (incoterm === 'CIF' || incoterm === 'CIP');
+  if (insLabel) insLabel.style.display = showIns ? '' : 'none';
+  if (insInp) insInp.style.display = showIns ? '' : 'none';
+};
+
+window._saV2SartEkle = function() {
+  if (window._stSartlar.length >= 10) { window.toast?.('Maksimum 10 \u015fart', 'warn'); return; }
+  window._stSartlar.push('Yeni \u015fart...');
+  window._saV2SartListeGuncelle();
+};
+window._saV2SartComboEkle = function() {
+  var sel = document.getElementById('st-sart-sec');
+  if (!sel || !sel.value) { window.toast?.('\u015eart se\u00e7in', 'warn'); return; }
+  if (window._stSartlar.length >= 10) { window.toast?.('Maksimum 10 \u015fart', 'warn'); return; }
+  if (window._stSartlar.indexOf(sel.value) !== -1) { window.toast?.('Bu \u015fart zaten ekli', 'warn'); return; }
+  window._stSartlar.push(sel.value);
+  window._saV2SartListeGuncelle();
+  sel.value = '';
+};
+window._saV2SartManuelEkle = function() {
+  var inp = document.getElementById('st-sart-manuel');
+  if (!inp || !inp.value.trim()) { window.toast?.('\u015eart yaz\u0131n', 'warn'); return; }
+  if (window._stSartlar.length >= 10) { window.toast?.('Maksimum 10 \u015fart', 'warn'); return; }
+  window._stSartlar.push(inp.value.trim());
+  window._saV2SartListeGuncelle();
+  inp.value = '';
+};
+
+/* SATIS-UI-001: Tam Önizleme — _piOlustur ile gerçek PDF preview */
+window._saV2TamOnIzle = function() {
+  var musteri = document.getElementById('st-musteri-ad')?.value || '';
+  var teklifId = document.getElementById('st-id')?.value || '';
+  if (!musteri) { window.toast?.('\u00d6nce m\u00fc\u015fteri se\u00e7in', 'warn'); return; }
+  if (!window._saV2SatisUrunler || !window._saV2SatisUrunler.length) {
+    window.toast?.('En az bir \u00fcr\u00fcn ekleyin', 'warn');
+    return;
+  }
+  var teklif = {
+    teklifId: teklifId,
+    musteriAd: musteri,
+    musteriKod: document.getElementById('st-musteri-kod')?.value || '',
+    gecerlilik: document.getElementById('st-gecerlilik')?.value || '',
+    teslim: (document.getElementById('st-incoterm')?.value || 'EXW') + ' ' + (document.getElementById('st-liman')?.value || 'Turkey'),
+    odeme: document.getElementById('st-odeme')?.value || '',
+    paraBirimi: document.getElementById('st-para-birimi')?.value || 'USD',
+    urunler: window._saV2SatisUrunler.map(function(u) {
+      return {
+        duayKodu: u.duayKodu || '',
+        urunAdi: u.urunAdi || '',
+        miktar: u.miktar || 1,
+        birim: u.birim || 'pcs',
+        alisF: u.alisHedef || u.alisOrjF || 0,
+        satisFiyat: u.satisFiyat || 0,
+        toplam: u.toplam || 0,
+        para: u.paraBirimi || 'USD',
+        gorsel: u.gorsel || ''
+      };
+    }),
+    revNo: '01',
+    dil: window._saV2AktifPIDil || 'EN',
+    /* SATIS-PI-PREVIEW-FIELDS-FIX-001: PI fn'lerinin (subtotal, freight, insurance, sartlar) ihtiyaç duyduğu field'lar — canlı önizleme (_saV2PIOnizlemeGuncelle) ile aynı formüller */
+    toplamSatis: window._saV2SatisUrunler.reduce(function(s, u) {
+      return s + (parseFloat(u.satisFiyat) || 0) * (parseFloat(u.miktar) || 0);
+    }, 0).toFixed(2),
+    sartlar: (window._stSartlar || []).slice(),
+    freightToggle: !!window._stFreightToggle,
+    freightAmount: parseFloat(window._stFreightAmount) || 0,
+    insuranceAmount: parseFloat(window._stInsuranceAmount) || 0
+  };
+  var tasarim = window._saV2AktifPITasarim || 'A';
+  if (typeof window._piOlustur !== 'function') {
+    window.toast?.('PI mod\u00fcl\u00fc y\u00fcklenmedi', 'warn');
+    return;
+  }
+  window._piOlustur(teklif, tasarim, 'musteri');
+};
