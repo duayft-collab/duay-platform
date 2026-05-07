@@ -70,21 +70,51 @@
    * ════════════════════════════════════════════════════════════ */
   window.DUAY_BANKA = function (cur) {
     try {
+      /* V194d-1a: IBAN_DATA (platform_standartlari.js master) onceli */
+      if (Array.isArray(window.IBAN_DATA) && window.IBAN_DATA.length > 0) {
+        var bank0 = window.IBAN_DATA[0];
+        var ibanKey = (cur === 'TRY' || cur === 'TL') ? 'TL' : cur;
+        if (cur && bank0[ibanKey]) {
+          return Object.freeze({
+            banka: bank0.banka,
+            sube: bank0.sube,
+            iban: bank0[ibanKey],
+            swift: 'TGBATRIS',
+            hesapSahibi: 'Duay Global Trade Company'
+          });
+        }
+        if (!cur) {
+          var clone = {};
+          ['USD', 'EUR', 'TRY'].forEach(function(c) {
+            var k = c === 'TRY' ? 'TL' : c;
+            if (bank0[k]) {
+              clone[c] = Object.freeze({
+                banka: bank0.banka,
+                sube: bank0.sube,
+                iban: bank0[k],
+                swift: 'TGBATRIS',
+                hesapSahibi: 'Duay Global Trade Company'
+              });
+            }
+          });
+          return Object.freeze(clone);
+        }
+      }
+      /* Fallback: _loadBankalar (eski davranis) */
       if (typeof window._loadBankalar === 'function') {
         var b = window._loadBankalar() || {};
         if (cur) {
           var single = b[cur] || b['USD'] || null;
           return single ? Object.freeze(Object.assign({}, single)) : null;
         }
-        /* Tum bankalar — shallow freeze (her alt-obje ayrica frozen) */
-        var clone = {};
+        var clone2 = {};
         Object.keys(b).forEach(function (k) {
-          clone[k] = Object.freeze(Object.assign({}, b[k]));
+          clone2[k] = Object.freeze(Object.assign({}, b[k]));
         });
-        return Object.freeze(clone);
+        return Object.freeze(clone2);
       }
     } catch (e) {
-      console.warn('[V194a DUAY_BANKA] error:', e);
+      console.warn('[V194d-1a DUAY_BANKA] error:', e);
     }
     return null;
   };
