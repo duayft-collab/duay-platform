@@ -1468,7 +1468,7 @@ window._saOnayliKargoOlustur = function(saTeklif) {
     /* Mevcut kargo.js şeması */
     tip: 'deniz', tur: 'FCL', firma: '',
     gonderen: saTeklif.tedarikci || '',
-    alici: 'Duay Global LLC',
+    alici: (window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC',
     pol: '', pod: '',
     yukleme_tarihi: '', eta: '',
     brut_kg: 0, hacim_m3: 0,

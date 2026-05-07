@@ -2899,7 +2899,7 @@ window._printSatisTeklif = function(id) {
   var totalAmt = window._pdfNum(t.genelToplam, cur, true);
   /* PI-BANKA-001: Para birimi → banka helper (platform_standartlari.js IBAN_DATA) */
   var bankaList = window._pdfBankaListesi ? window._pdfBankaListesi(n.paraBirimi || cur) : [];
-  var banka = bankaList[0] || { banka:'Albaraka Türk', sube:'Alibeyköy/117', iban:'', swift:'BTFHTRIS', hesapSahibi:(window.PI_ADRES?.unvanTR || 'Duay Uluslararası Ticaret Ltd. Şti.') };
+  var banka = bankaList[0] || { banka:'Albaraka Türk', sube:'Alibeyköy/117', iban:'', swift:'BTFHTRIS', hesapSahibi:(window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || (window.PI_ADRES?.unvanTR) || 'Duay Uluslararası Ticaret Ltd. Şti.' };
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><title>PI ' + esc(t.teklifNo) + '</title>'
     /* FEAT-07d: tarayıcı native header/footer gizle (@page margin 0) */
@@ -3101,7 +3101,7 @@ window._printSatisTeklifB = function(id) {
   var cur = t.paraBirimi||'USD';
   /* PI-BANKA-001: Para birimi → banka helper (Format B) */
   var bankaList = window._pdfBankaListesi ? window._pdfBankaListesi(n.paraBirimi || cur) : [];
-  var banka = bankaList[0] || { banka:'Albaraka Türk', sube:'Alibeyköy/117', iban:'', swift:'BTFHTRIS', hesapSahibi:(window.PI_ADRES?.unvanTR || 'Duay Uluslararası Ticaret Ltd. Şti.') };
+  var banka = bankaList[0] || { banka:'Albaraka Türk', sube:'Alibeyköy/117', iban:'', swift:'BTFHTRIS', hesapSahibi:(window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || (window.PI_ADRES?.unvanTR) || 'Duay Uluslararası Ticaret Ltd. Şti.' };
   var w = window.open('','_blank');
   /* FEAT-07d: tarayıcı native header/footer gizle (@page margin 0) */
   w.document.write('<!DOCTYPE html><html><head><title>'+esc(n.teklifNo)+'</title><style>@page { size: A4; margin: 0 }*{margin:0;box-sizing:border-box}body{font-family:system-ui;color:#1a1a1a;font-size:12px;padding:30px;max-width:800px;margin:0 auto}'
@@ -3163,7 +3163,7 @@ window._printSatisTeklifC = function(id) {
   var cur = t.paraBirimi||'USD';
   /* PI-BANKA-001: Para birimi → banka helper (Format C) */
   var bankaList = window._pdfBankaListesi ? window._pdfBankaListesi(n.paraBirimi || cur) : [];
-  var banka = bankaList[0] || { banka:'Albaraka Türk', sube:'Alibeyköy/117', iban:'', swift:'BTFHTRIS', hesapSahibi:(window.PI_ADRES?.unvanTR || 'Duay Uluslararası Ticaret Ltd. Şti.') };
+  var banka = bankaList[0] || { banka:'Albaraka Türk', sube:'Alibeyköy/117', iban:'', swift:'BTFHTRIS', hesapSahibi:(window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || (window.PI_ADRES?.unvanTR) || 'Duay Uluslararası Ticaret Ltd. Şti.' };
   var w = window.open('','_blank');
   /* FEAT-07d: tarayıcı native header/footer gizle (@page margin 0) */
   w.document.write('<!DOCTYPE html><html><head><title>'+esc(n.teklifNo)+'</title><style>@page { size: A4; margin: 0 }*{margin:0;box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a1a;font-size:12px;padding:40px;max-width:700px;margin:0 auto}'
@@ -3543,7 +3543,7 @@ setTimeout(_checkEvrakZamanlayici, 10000);
     name: 'Albaraka Türk', sube: 'Alibeyköy Şubesi - 117',
     hesapTur: 'USD', iban: 'TR650020300008895310000001', swift: 'BTFHTRIS',
     ibanEur: 'TR380020300008895310000002', ibanTry: 'TR120020300008895310000003',
-    hesapSahibi: (window.PI_ADRES?.unvanTR || 'Duay Uluslararası Ticaret Ltd. Şti.'),
+    hesapSahibi: (window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || (window.PI_ADRES?.unvanTR) || 'Duay Uluslararası Ticaret Ltd. Şti.',
     createdAt: new Date().toISOString()
   });
   if (typeof storeBankalar==='function') storeBankalar(bankalar);

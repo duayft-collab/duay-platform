@@ -11,14 +11,14 @@
    PI'da görünen alanlar: sirket, adres, tel, mail, web */
 var PI_ADRES = {
   /* PI'da görünen alanlar */
-  sirket: 'Duay Global LLC',
+  sirket: (window.SIRKET_DATA && window.SIRKET_DATA.unvan_en) || 'Duay Global LLC',
   adres: 'Karadolap District, Neseli St. 1/5, Eyupsultan, Istanbul, TÜRKİYE',
   tel: '+90 212 625 5 444',
   mobil: '+90 532 270 5113',
   mail: 'brn.simsek@gmail.com',
   web: 'www.duaycor.com',
   /* PI'da görünmeyen — gelecek raporlar/dokümanlar için */
-  unvanTR: 'Duay Uluslararası Ticaret Ltd. Şti.',
+  unvanTR: (window.SIRKET_DATA && window.SIRKET_DATA.hesapSahibi) || 'Duay Uluslararası Ticaret Ltd. Şti.',
   vergiDairesi: 'GOP',
   vergiNo: '3131095135',
   mersisNo: '0313 1095 1350 0001',
