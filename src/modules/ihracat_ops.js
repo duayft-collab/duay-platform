@@ -3411,13 +3411,10 @@ var _isAdmin = function() { return window.isAdmin?.() || (_cu()?.role === 'admin
 var _isManager = function() { return _isAdmin() || (_cu()?.role === 'manager'); };
 var _loadD = function() { return typeof window.loadIhracatDosyalar === 'function' ? window.loadIhracatDosyalar() : []; };
 var _storeD = function(d) { window.storeIhracatDosyalar?.(d); };
-var _loadE = function() { return typeof window.loadIhracatEvraklar === 'function' ? window.loadIhracatEvraklar() : []; };
 var _storeE = function(d) { window.storeIhracatEvraklar?.(d); };
 var _loadU = function() { return typeof window.loadIhracatUrunler === 'function' ? window.loadIhracatUrunler() : []; };
 var _storeU = function(d) { window.storeIhracatUrunler?.(d); };
-var _loadG = function() { return typeof window.loadIhracatGcb === 'function' ? window.loadIhracatGcb() : []; };
 var _storeG = function(d) { window.storeIhracatGcb?.(d); };
-var _loadBL = function() { return typeof window.loadIhracatBl === 'function' ? window.loadIhracatBl() : []; };
 var _storeBL = function(d) { window.storeIhracatBl?.(d); };
 var _loadT = function() { return typeof window.loadIhracatTemplate === 'function' ? window.loadIhracatTemplate() : []; };
 var _storeT = function(d) { window.storeIhracatTemplate?.(d); };
