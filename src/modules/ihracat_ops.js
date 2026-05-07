@@ -3708,7 +3708,9 @@ window._gmKaydet = function() {
   if (id) { var ex = list.find(function(x) { return String(x.id) === String(id); }); if (ex) Object.assign(ex, entry); } else { entry.id = _genId(); entry.createdAt = _now(); list.unshift(entry); }
   _storeGM(list); _g('mo-gm')?.remove(); window.toast?.('Gümrükçü kaydedildi', 'ok'); _ihrReRender();
 };
-window._ihrGumrukcuAta = function(dosyaId) { var gm = _loadGM().filter(function(g) { return !g.isDeleted && g.aktif; }); _moAc('mo-gm-ata', 'Gümrükçü Ata', '<input type="hidden" id="gm-ata-d" value="' + dosyaId + '"><div class="fg"><div class="fl">Gümrükçü</div><select class="fi" id="gm-ata-sel"><option value="">—</option>' + gm.map(function(g) { return '<option value="' + g.id + '">' + _esc(g.firma_adi) + '</option>'; }).join('') + '</select></div>', '<button class="btn btns" onclick="document.getElementById(\'mo-gm-ata\')?.remove()">İptal</button><button class="btn btnp" onclick="window._gmAtaKaydet()">Ata</button>'); };
+/* V196 IHR-OLU-KOD-TEMIZLIGI-001 EDIT 1 — Removed first definition of _ihrGumrukcuAta.
+   This compact definition was overridden by the longer one at line 3912 (last-def-wins).
+   No behavior change; the active version remains the second definition. */
 window._gmAtaKaydet = function() { var did = _g('gm-ata-d')?.value; var gid = _g('gm-ata-sel')?.value; if (!gid) return; var d = _loadD(); var dosya = d.find(function(x) { return String(x.id) === String(did); }); if (dosya) { dosya.gumrukcu_id = gid; dosya.updatedAt = _now(); _storeD(d); } _g('mo-gm-ata')?.remove(); window.toast?.('Atandı', 'ok'); _ihrReRender(); };
 
 // ── FORWARDER CRUD ───────────────────────────────────────
@@ -3727,7 +3729,9 @@ window._fwKaydet = function() {
   if (id) { var ex = list.find(function(x) { return String(x.id) === String(id); }); if (ex) Object.assign(ex, entry); } else { entry.id = _genId(); entry.createdAt = _now(); list.unshift(entry); }
   _storeFW(list); _g('mo-fw')?.remove(); window.toast?.('Forwarder kaydedildi', 'ok'); _ihrReRender();
 };
-window._ihrForwarderAta = function(dosyaId) { var fw = _loadFW().filter(function(f) { return !f.isDeleted && f.aktif; }); _moAc('mo-fw-ata', 'Forwarder Ata', '<input type="hidden" id="fw-ata-d" value="' + dosyaId + '"><div class="fg"><div class="fl">Forwarder</div><select class="fi" id="fw-ata-sel"><option value="">—</option>' + fw.map(function(f) { return '<option value="' + f.id + '">' + _esc(f.firma_adi) + '</option>'; }).join('') + '</select></div>', '<button class="btn btns" onclick="document.getElementById(\'mo-fw-ata\')?.remove()">İptal</button><button class="btn btnp" onclick="window._fwAtaKaydet()">Ata</button>'); };
+/* V196 IHR-OLU-KOD-TEMIZLIGI-001 EDIT 2 — Removed first definition of _ihrForwarderAta.
+   This compact definition was overridden by the longer one at line 3970 (last-def-wins).
+   No behavior change; the active version remains the second definition. */
 window._fwAtaKaydet = function() { var did = _g('fw-ata-d')?.value; var fid = _g('fw-ata-sel')?.value; if (!fid) return; var d = _loadD(); var dosya = d.find(function(x) { return String(x.id) === String(did); }); if (dosya) { dosya.forwarder_id = fid; dosya.updatedAt = _now(); _storeD(d); } _g('mo-fw-ata')?.remove(); window.toast?.('Atandı', 'ok'); _ihrReRender(); };
 
 // ── GÇB CRUD ─────────────────────────────────────────────
@@ -5866,94 +5870,15 @@ window._ihrKlonKaydet = function(kaynakId) {
    fonksiyon icinden cagriliyordu — V196 mini-cycle'da temizlenecek. */
 
 /** Musteri bilgileri duzenleme modali */
-window._ihrMusteriDuzenle = function(dosyaId) {
-  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
-  if (!d) return;
-  var old = _g('mo-mus-edit'); if (old) old.remove();
-  var fS = 'class="fi" style="font-size:11px;width:100%" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"';
-  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-mus-edit';
-  mo.innerHTML = '<div class="moc" style="max-width:500px;padding:0;border-radius:14px;overflow:hidden">'
-    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">Musteri Bilgileri Duzenle</div>'
-    + '<div style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Firma Adi</div><input ' + fS + ' id="me-firma" value="' + _esc(d.musteriAd || '') + '"></div>'
-    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Yetkili</div><input ' + fS + ' id="me-yetkili" value="' + _esc(d.musteri_yetkili || '') + '"></div>'
-    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">E-posta</div><input ' + fS + ' id="me-mail" value="' + _esc(d.musteri_mail || '') + '"></div>'
-    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Telefon</div><input ' + fS + ' id="me-tel" value="' + _esc(d.musteri_tel || '') + '"></div>'
-    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Ulke</div><input ' + fS + ' id="me-ulke" value="' + _esc(d.musteri_ulke || '') + '"></div>'
-    + '<div style="grid-column:1/-1"><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Adres</div><input ' + fS + ' id="me-adres" value="' + _esc(d.musteri_adres || '') + '"></div>'
-    + '</div>'
-    + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
-    + '<button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-mus-edit\')?.remove()">Iptal</button>'
-    + '<button class="btn btnp" onclick="event.stopPropagation();window._ihrMusteriKaydet(\'' + dosyaId + '\')">Kaydet</button>'
-    + '</div></div>';
-  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
-};
+/* V196 IHR-OLU-KOD-TEMIZLIGI-001 EDIT 3 — Removed dead _ihrMusteriDuzenle modal +
+   paired _ihrMusteriKaydet handler. Their only call site was the V195-removed
+   _ihrDetayRenderMusteri render. Customer editing is now handled by the extern
+   _ihrRenderPaydas module on the Paydaşlar tab. No reachable behavior change. */
 
-window._ihrMusteriKaydet = function(dosyaId) {
-  var dosyalar = _loadD();
-  var d = dosyalar.find(function(x) { return String(x.id) === String(dosyaId); });
-  if (!d) return;
-  d.musteriAd = (_g('me-firma')?.value || '').trim();
-  d.musteri_yetkili = (_g('me-yetkili')?.value || '').trim();
-  d.musteri_mail = (_g('me-mail')?.value || '').trim();
-  d.musteri_tel = (_g('me-tel')?.value || '').trim();
-  d.musteri_ulke = (_g('me-ulke')?.value || '').trim();
-  d.musteri_adres = (_g('me-adres')?.value || '').trim();
-  d.updatedAt = _now();
-  _storeD(dosyalar);
-  _g('mo-mus-edit')?.remove();
-  window.toast?.('Musteri bilgileri guncellendi', 'ok');
-  window._ihrLog(dosyaId, 'Musteri bilgileri guncellendi', null, null);
-  _ihrReRender();
-};
-
-/** Sigortaci bilgileri duzenleme modali */
-window._ihrSigortaciDuzenle = function(dosyaId) {
-  var d = _loadD().find(function(x) { return String(x.id) === String(dosyaId); });
-  if (!d) return;
-  var old = _g('mo-sig-edit'); if (old) old.remove();
-  var fS = 'class="fi" style="font-size:11px;width:100%" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"';
-  var mo = document.createElement('div'); mo.className = 'mo'; mo.id = 'mo-sig-edit';
-  mo.innerHTML = '<div class="moc" style="max-width:500px;padding:0;border-radius:14px;overflow:hidden">'
-    + '<div style="padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;font-weight:600">Sigortaci Bilgileri Duzenle</div>'
-    + '<div style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Firma</div><input ' + fS + ' id="se-firma" value="' + _esc(d.sigortaFirma || '') + '"></div>'
-    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Yetkili</div><input ' + fS + ' id="se-yetkili" value="' + _esc(d.sigorta_yetkili || '') + '"></div>'
-    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">E-posta</div><input ' + fS + ' id="se-mail" value="' + _esc(d.sigorta_mail || '') + '"></div>'
-    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Telefon</div><input ' + fS + ' id="se-tel" value="' + _esc(d.sigorta_tel || '') + '"></div>'
-    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Police No</div><input ' + fS + ' id="se-police" value="' + _esc(d.police_no || '') + '"></div>'
-    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Police Tarihi</div><input type="date" ' + fS + ' id="se-ptarihi" value="' + _esc(d.police_tarihi || '') + '"></div>'
-    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Bitis Tarihi</div><input type="date" ' + fS + ' id="se-pbitis" value="' + _esc(d.police_bitis || '') + '"></div>'
-    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Prim Tutari</div><input type="number" ' + fS + ' id="se-prim" value="' + _esc(d.sigorta_prim || '') + '"></div>'
-    + '<div><div style="font-size:10px;color:var(--t3);margin-bottom:3px">Navlun Bedeli</div><input type="number" ' + fS + ' id="se-navlun" value="' + _esc(d.navlun_bedeli || '') + '"></div>'
-    + '</div>'
-    + '<div style="padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end">'
-    + '<button class="btn btns" onclick="event.stopPropagation();document.getElementById(\'mo-sig-edit\')?.remove()">Iptal</button>'
-    + '<button class="btn btnp" onclick="event.stopPropagation();window._ihrSigortaciKaydet(\'' + dosyaId + '\')">Kaydet</button>'
-    + '</div></div>';
-  document.body.appendChild(mo); setTimeout(function() { mo.classList.add('open'); }, 10);
-};
-
-window._ihrSigortaciKaydet = function(dosyaId) {
-  var dosyalar = _loadD();
-  var d = dosyalar.find(function(x) { return String(x.id) === String(dosyaId); });
-  if (!d) return;
-  d.sigortaFirma = (_g('se-firma')?.value || '').trim();
-  d.sigorta_yetkili = (_g('se-yetkili')?.value || '').trim();
-  d.sigorta_mail = (_g('se-mail')?.value || '').trim();
-  d.sigorta_tel = (_g('se-tel')?.value || '').trim();
-  d.police_no = (_g('se-police')?.value || '').trim();
-  d.police_tarihi = (_g('se-ptarihi')?.value || '').trim();
-  d.police_bitis = (_g('se-pbitis')?.value || '').trim();
-  d.sigorta_prim = parseFloat(_g('se-prim')?.value || 0) || null;
-  d.navlun_bedeli = parseFloat(_g('se-navlun')?.value || 0) || null;
-  d.updatedAt = _now();
-  _storeD(dosyalar);
-  _g('mo-sig-edit')?.remove();
-  window.toast?.('Sigortaci bilgileri guncellendi', 'ok');
-  window._ihrLog(dosyaId, 'Sigortaci bilgileri guncellendi', null, null);
-  _ihrReRender();
-};
+/* V196 IHR-OLU-KOD-TEMIZLIGI-001 EDIT 4 — Removed dead _ihrSigortaciDuzenle modal +
+   paired _ihrSigortaciKaydet handler. Their only call site was the V195-removed
+   _ihrDetayRenderSigortaci render. Insurer editing is now handled by the extern
+   _ihrRenderPaydas module on the Paydaşlar tab. No reachable behavior change. */
 
 /** Kambiyo odeme durumu toggle */
 window._ihrKambiyoOde = function(dosyaId) {
